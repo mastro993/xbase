@@ -45,3 +45,7 @@ Run these from the repository root. `typecheck`, `test` and `build` run in every
 To work on one app, filter by its package name, for example `pnpm --filter @xbase/extension test`, or run the script from the app's folder.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the tooling, the checks and how to open a pull request.
+
+## License
+
+[MIT](LICENSE)

@@ -139,4 +139,4 @@ To build, test or change x-companion, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
-[MIT](LICENSE)
+[MIT](../../LICENSE)
