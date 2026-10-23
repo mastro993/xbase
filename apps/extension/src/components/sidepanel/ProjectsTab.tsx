@@ -48,7 +48,8 @@ export function ProjectsTab({ settings }: { settings: Settings }) {
   }
 
   return (
-    <FieldSet>
+    // min-w-0: a fieldset defaults to min-content width, which overflows narrow panels.
+    <FieldSet className="min-w-0">
       <FieldLegend>Projects</FieldLegend>
       <FieldDescription>
         Add what you build, up to {MAX_PROJECTS}. The AI mentions a project only when it fits, using
