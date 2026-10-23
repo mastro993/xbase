@@ -1,0 +1,40 @@
+# Dependencies
+node_modules
+
+# Build output and generated files
+# .output: WXT builds and zips
+.output
+# .wxt: WXT generated types, plus the persistent dev Chrome profile (.wxt/chrome-data)
+.wxt
+# .tanstack: TanStack Start build cache
+.tanstack
+.nitro
+# dist must stay ignored: Tailwind skips ignored paths, and scanning a previous
+# client build changes the CSS hash between TanStack Start's client and SSR builds.
+dist
+dist-ssr
+stats.html
+stats-*.json
+
+# Environment and personal overrides
+.env
+.env.*
+!.env.example
+*.local
+# Local WXT runner override (see apps/extension/CONTRIBUTING.md)
+web-ext.config.ts
+
+# Logs
+logs
+*.log
+
+# Editor and OS files
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea
+.DS_Store
+*.sw?
+# Claude Code local state
+.claude/settings.local.json
+.claude/*.lock
