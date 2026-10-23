@@ -15,6 +15,11 @@
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-info: var(--info);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -66,6 +71,12 @@
   --success: #00ba7c;
   --info: #1d9bf0;
   --warning: #ff7a00;
+  /* Series colours for PanelUI's charts, and the tints Avatar picks from a name. */
+  --chart-1: #1d9bf0;
+  --chart-2: #00ba7c;
+  --chart-3: #ffd400;
+  --chart-4: #f91880;
+  --chart-5: #7856ff;
   --border: #eff3f4;
   --input: #cfd9de;
   --ring: #1d9bf0;
@@ -84,11 +95,21 @@
     --secondary: #202327;
     --secondary-foreground: #e7e9ea;
     --muted: #16181c;
-    --muted-foreground: #71767b;
+    /* Lighter than X's #71767b, which fails WCAG AA contrast (3.9:1) on --card and --muted. */
+    --muted-foreground: #80858a;
     --accent: #16181c;
     --accent-foreground: #e7e9ea;
     --border: #2f3336;
     --input: #536471;
+  }
+}
+
+/* PanelUI draws focus rings with box-shadow, which forced-colors mode drops. Outside any layer,
+   so it wins over the utilities' outline-none. */
+@media (forced-colors: active) {
+  :focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
   }
 }
 
