@@ -2,7 +2,13 @@
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { expect, it } from 'vitest';
-import { DEFAULT_SETTINGS, getSettings, saveSettings, type Settings } from '@/lib/settings';
+import {
+  DEFAULT_SETTINGS,
+  getSettings,
+  MAX_PROJECTS,
+  saveSettings,
+  type Settings,
+} from '@/lib/settings';
 import { ProjectsTab } from '../ProjectsTab';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -43,4 +49,27 @@ it('adds a project, saves its edits on unmount and removes it after confirming',
   await act(async () => button(container, 'Remove').click());
   expect((await getSettings()).projects).toEqual([keep]);
   await act(async () => again.unmount());
+});
+
+it('keeps Add project focusable at the limit, so removing a project focuses it', async () => {
+  const projects = Array.from({ length: MAX_PROJECTS }, (_, i) => ({
+    id: `p${i}`,
+    name: `P${i}`,
+    description: '',
+    link: '',
+  }));
+  await saveSettings({ ...DEFAULT_SETTINGS, projects });
+  const container = document.body.appendChild(document.createElement('div'));
+  const root = createRoot(container);
+  await act(async () => root.render(<ProjectsTab settings={{ ...DEFAULT_SETTINGS, projects }} />));
+
+  const add = button(container, 'Add project');
+  expect(add.getAttribute('aria-disabled')).toBe('true');
+  await act(async () => add.click());
+  expect((await getSettings()).projects).toHaveLength(MAX_PROJECTS);
+
+  await act(async () => button(container, 'Remove P0').click());
+  await act(async () => button(container, 'Remove').click());
+  expect(document.activeElement).toBe(add);
+  await act(async () => root.unmount());
 });

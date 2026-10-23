@@ -1,5 +1,5 @@
 import { RefreshCwIcon } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from 'panelui-web/button';
 import {
   Combobox,
   ComboboxContent,
@@ -35,6 +35,7 @@ export function ModelPicker({ hasKey, value, models, loading, onChange, onRefres
   const items = selected
     ? [selected, ...(models ?? []).filter((m) => m.id !== selected.id)]
     : (models ?? []);
+  const refreshDisabled = !hasKey || loading;
 
   return (
     <Field data-disabled={!hasKey || undefined}>
@@ -42,11 +43,12 @@ export function ModelPicker({ hasKey, value, models, loading, onChange, onRefres
         <FieldLabel htmlFor="model">Model</FieldLabel>
         <Button
           variant="ghost"
-          size="icon-xs"
+          size="icon-sm"
           aria-label="Refresh models"
-          disabled={!hasKey || loading}
-          focusableWhenDisabled
-          onClick={onRefresh}
+          // aria-disabled, not disabled: the button keeps focus while the list reloads.
+          aria-disabled={refreshDisabled || undefined}
+          className="size-6 aria-disabled:pointer-events-none aria-disabled:opacity-50"
+          onClick={() => !refreshDisabled && onRefresh()}
         >
           {loading ? <Spinner aria-hidden /> : <RefreshCwIcon />}
         </Button>

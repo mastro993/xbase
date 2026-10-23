@@ -1,7 +1,8 @@
 import { PlusIcon } from 'lucide-react';
 import { useId, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
-import { Button } from '@/components/ui/button';
+import { Button } from 'panelui-web/button';
+import { Input } from 'panelui-web/input';
 import {
   Field,
   FieldDescription,
@@ -10,7 +11,6 @@ import {
   FieldLegend,
   FieldSet,
 } from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
 import {
   InputGroup,
   InputGroupAddon,
@@ -29,6 +29,7 @@ import {
 
 export function ProjectsTab({ settings }: { settings: Settings }) {
   const { projects } = settings;
+  const full = projects.length >= MAX_PROJECTS;
   const [added, setAdded] = useState<string | null>(null);
   const addButton = useRef<HTMLButtonElement>(null);
 
@@ -67,15 +68,15 @@ export function ProjectsTab({ settings }: { settings: Settings }) {
           ))}
         </ul>
       )}
+      {/* aria-disabled, not disabled: remove() moves focus here, even at the limit. */}
       <Button
         ref={addButton}
         variant="outline"
-        className="self-start"
-        disabled={projects.length >= MAX_PROJECTS}
-        focusableWhenDisabled
-        onClick={add}
+        className="self-start aria-disabled:pointer-events-none aria-disabled:opacity-50"
+        aria-disabled={full || undefined}
+        onClick={() => !full && add()}
       >
-        <PlusIcon data-icon="inline-start" />
+        <PlusIcon />
         Add project
       </Button>
     </FieldSet>
@@ -164,12 +165,12 @@ function ProjectCard({
             <span id={confirmId} className="min-w-0 flex-1 truncate">
               Remove {label}?
             </span>
-            <Button size="xs" variant="destructive" onClick={onRemove}>
+            <Button size="sm" variant="destructive" onClick={onRemove}>
               Remove
             </Button>
             {/* The safe choice gets focus, so a repeated Enter doesn't remove the project. */}
             <Button
-              size="xs"
+              size="sm"
               variant="ghost"
               autoFocus
               onClick={() => {
@@ -185,7 +186,7 @@ function ProjectCard({
             <span role="status" className="text-xs text-muted-foreground">
               {saved && 'Saved'}
             </span>
-            <Button ref={removeButton} size="xs" variant="ghost" onClick={() => setConfirming(true)}>
+            <Button ref={removeButton} size="sm" variant="ghost" onClick={() => setConfirming(true)}>
               Remove
               <span className="sr-only"> {label}</span>
             </Button>

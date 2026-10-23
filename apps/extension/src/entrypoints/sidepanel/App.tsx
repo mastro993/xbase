@@ -1,8 +1,8 @@
+import { Tabs } from 'panelui-web/tabs';
 import { ProjectsTab } from '@/components/sidepanel/ProjectsTab';
 import { ProviderTab } from '@/components/sidepanel/ProviderTab';
 import { StatusHeader } from '@/components/sidepanel/StatusHeader';
 import { StyleTab } from '@/components/sidepanel/StyleTab';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useSettings } from '@/hooks/use-settings';
 import { getStatus } from '@/lib/settings';
 
@@ -13,23 +13,29 @@ export default function App() {
   return (
     <div className="flex min-h-svh min-w-0 flex-col">
       <StatusHeader status={getStatus(settings)} />
-      <Tabs defaultValue="provider" className="gap-4 p-4">
-        <TabsList variant="line" className="w-full">
-          <TabsTrigger value="provider">Provider</TabsTrigger>
-          <TabsTrigger value="style">Style</TabsTrigger>
-          <TabsTrigger value="projects">Projects</TabsTrigger>
-        </TabsList>
+      <Tabs variant="underline" defaultValue="provider" className="p-4">
+        <Tabs.List>
+          <Tabs.Trigger value="provider" className="flex-1">
+            Provider
+          </Tabs.Trigger>
+          <Tabs.Trigger value="style" className="flex-1">
+            Style
+          </Tabs.Trigger>
+          <Tabs.Trigger value="projects" className="flex-1">
+            Projects
+          </Tabs.Trigger>
+        </Tabs.List>
         {/* Stays mounted so the model list and open key forms survive tab switches.
             Style and Projects unmount on purpose: that flushes their pending edits. */}
-        <TabsContent value="provider" keepMounted>
+        <Tabs.Content value="provider" keepMounted>
           <ProviderTab settings={settings} />
-        </TabsContent>
-        <TabsContent value="style">
+        </Tabs.Content>
+        <Tabs.Content value="style">
           <StyleTab settings={settings} />
-        </TabsContent>
-        <TabsContent value="projects">
+        </Tabs.Content>
+        <Tabs.Content value="projects">
           <ProjectsTab settings={settings} />
-        </TabsContent>
+        </Tabs.Content>
       </Tabs>
     </div>
   );

@@ -52,6 +52,9 @@ importers:
       lucide-react:
         specifier: ^1.61.0
         version: 1.61.0(@types/react@19.3.0)(react@19.3.1)
+      panelui-web:
+        specifier: 'catalog:'
+        version: 0.8.0(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(tailwindcss@4.3.3)
       react:
         specifier: 'catalog:'
         version: 19.3.1

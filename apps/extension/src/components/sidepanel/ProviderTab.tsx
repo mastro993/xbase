@@ -1,14 +1,8 @@
 import { ShieldAlertIcon } from 'lucide-react';
 import { useEffect } from 'react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Alert } from 'panelui-web/alert';
+import { Select } from 'panelui-web/select';
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { useModels } from '@/hooks/use-models';
 import { setProviderKey, updateSettings } from '@/hooks/use-settings';
 import { PROVIDER_IDS, PROVIDERS, type ProviderId } from '@/lib/providers';
@@ -32,31 +26,33 @@ export function ProviderTab({ settings }: { settings: Settings }) {
           value={active}
           onValueChange={(id) => id && updateSettings((s) => ({ ...s, activeProvider: id }))}
         >
-          <SelectTrigger id="active-provider" className="w-full">
-            <SelectValue placeholder="Choose a provider" />
-          </SelectTrigger>
-          <SelectContent>
+          <Select.Trigger id="active-provider">
+            <Select.Value placeholder="Choose a provider" />
+          </Select.Trigger>
+          <Select.Content>
             {providerItems.map((item) => (
-              <SelectItem key={item.value} value={item.value}>
+              <Select.Item key={item.value} value={item.value}>
                 {item.label}
-              </SelectItem>
+              </Select.Item>
             ))}
-          </SelectContent>
+          </Select.Content>
         </Select>
       </Field>
       {active && <ActiveProvider key={active} provider={active} saved={settings.providers[active]} />}
       <OtherKeys settings={settings} />
       {/* Always on screen: role="alert" would announce it on every visit to the tab. */}
-      <Alert role="note">
-        <ShieldAlertIcon aria-hidden />
-        <AlertTitle>Keys are stored in this browser</AlertTitle>
-        <AlertDescription>
+      <Alert role="note" variant="plain">
+        <Alert.Icon>
+          <ShieldAlertIcon />
+        </Alert.Icon>
+        <Alert.Title>Keys are stored in this browser</Alert.Title>
+        <Alert.Description>
           They're saved unencrypted in your browser profile. Give each key a spending limit, and use
           one made only for x-companion.{' '}
           <a href={LIMIT_KEY_URL} target="_blank" rel="noreferrer">
             How to limit a key ↗
           </a>
-        </AlertDescription>
+        </Alert.Description>
       </Alert>
     </FieldGroup>
   );

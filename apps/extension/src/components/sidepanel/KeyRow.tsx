@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Button } from 'panelui-web/button';
+import { Input } from 'panelui-web/input';
 import { looksLikeKeyFor, PROVIDERS, type ProviderId } from '@/lib/providers';
 import { maskKey, NO_AUTOFILL } from './format';
 
@@ -67,12 +67,12 @@ export function KeyRow({ provider, apiKey, onSave, active = false, invalid, desc
         </div>
         {!showForm && !confirming && (
           <>
-            <Button ref={editButton} size="xs" variant="outline" onClick={() => setEditing(true)}>
+            <Button ref={editButton} size="sm" variant="outline" onClick={() => setEditing(true)}>
               {apiKey ? 'Replace' : 'Add'}
               <span className="sr-only"> {label} key</span>
             </Button>
             {apiKey && (
-              <Button size="xs" variant="ghost" onClick={() => setConfirming(true)}>
+              <Button size="sm" variant="ghost" onClick={() => setConfirming(true)}>
                 Remove
                 <span className="sr-only"> {label} key</span>
               </Button>
@@ -85,11 +85,11 @@ export function KeyRow({ provider, apiKey, onSave, active = false, invalid, desc
           <span id={confirmId} className="min-w-0 flex-1">
             Remove {label} key?
           </span>
-          <Button size="xs" variant="destructive" onClick={() => finish('')}>
+          <Button size="sm" variant="destructive" onClick={() => finish('')}>
             Remove
           </Button>
           {/* The safe choice gets focus, so a repeated Enter doesn't remove the key. */}
-          <Button size="xs" variant="ghost" autoFocus onClick={() => finish()}>
+          <Button size="sm" variant="ghost" autoFocus onClick={() => finish()}>
             Cancel
           </Button>
         </div>
