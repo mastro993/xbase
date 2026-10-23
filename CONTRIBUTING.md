@@ -31,6 +31,15 @@ pnpm-workspace.yaml    workspace folders, shared dependency versions (catalog)
 .oxfmtrc.json          format settings for the whole repository
 lefthook.yml           git hooks
 .github/workflows/     CI and the extension release
+.agents/skills/        agent skills for PanelUI and TanStack Start (see below)
+```
+
+### Agent skills
+
+`.agents/skills/` holds [agent skills](https://skills.sh/) that teach coding agents PanelUI web (`panelui-web`) and TanStack Start (`start-core` and the skills it links to). Codex reads them there; `.claude/skills/` links them for Claude Code. `skills-lock.json` records each skill's source and hash. They come from the `skills` CLI, so don't edit them by hand, and lint and formatting skip them. To pull the latest versions:
+
+```sh
+npx skills update --project
 ```
 
 ### Shared dependency versions

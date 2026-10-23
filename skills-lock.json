@@ -1,0 +1,77 @@
+{
+  "version": 1,
+  "skills": {
+    "auth-server-primitives": {
+      "source": "tanstack/router",
+      "sourceType": "github",
+      "skillPath": "packages/start-client-core/skills/start-core/auth-server-primitives/SKILL.md",
+      "computedHash": "f56099d948de6c9060465233acf51db802f3338bf111d7209ddab969252ca068"
+    },
+    "chrome-extensions": {
+      "source": "googlechrome/modern-web-guidance",
+      "sourceType": "github",
+      "skillPath": "skills/chrome-extensions/SKILL.md",
+      "computedHash": "1e8525bb49647008dcd3a6b7e5d3c3207345f086e7a64d7e6d5bcc67dbba7a71"
+    },
+    "deployment": {
+      "source": "tanstack/router",
+      "sourceType": "github",
+      "skillPath": "packages/start-client-core/skills/start-core/deployment/SKILL.md",
+      "computedHash": "4615ab7b6fdc262c7ab81e7ec50a5be0f2e9e61120b394974c53c89be69238fe"
+    },
+    "execution-model": {
+      "source": "tanstack/router",
+      "sourceType": "github",
+      "skillPath": "packages/start-client-core/skills/start-core/execution-model/SKILL.md",
+      "computedHash": "5b0c903da99f1541e7d0ea076aeb5badbb417319c070c5199d91ebc17853f239"
+    },
+    "mcp-builder": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "skillPath": "skills/mcp-builder/SKILL.md",
+      "computedHash": "826e46adf81e1372282e205c34e1a2ee876e72148007726e4a2512599d2fef7b"
+    },
+    "middleware": {
+      "source": "tanstack/router",
+      "sourceType": "github",
+      "skillPath": "packages/start-client-core/skills/start-core/middleware/SKILL.md",
+      "computedHash": "65b75b01a637eb85675bccb64c9c41cac03eb2d7b810da7b4b386fd11553bf9c"
+    },
+    "panelui-web": {
+      "source": "panel-ui/PanelUI",
+      "sourceType": "github",
+      "skillPath": "skills/panelui-web/SKILL.md",
+      "computedHash": "4c6233b6ce231ee74ae2a6141a688fc9a6710fb97944f86535191e6e8a04520d"
+    },
+    "react-start": {
+      "source": "tanstack/router",
+      "sourceType": "github",
+      "skillPath": "packages/react-start/skills/react-start/SKILL.md",
+      "computedHash": "2bdec68bf066fe3a9eef9670b1a0295e7c84cb686b4de04a22044958aea3180a"
+    },
+    "server-functions": {
+      "source": "tanstack/router",
+      "sourceType": "github",
+      "skillPath": "packages/start-client-core/skills/start-core/server-functions/SKILL.md",
+      "computedHash": "00f34ca633c34ba7f60170f86e3b2b10916956abd53d22e5a82ae6325cbdbb31"
+    },
+    "server-routes": {
+      "source": "tanstack/router",
+      "sourceType": "github",
+      "skillPath": "packages/start-client-core/skills/start-core/server-routes/SKILL.md",
+      "computedHash": "2af3c4193f978eda8f08844a2dde4cc2640aac284b8b5590611a58909c683f46"
+    },
+    "start-core": {
+      "source": "tanstack/router",
+      "sourceType": "github",
+      "skillPath": "packages/start-client-core/skills/start-core/SKILL.md",
+      "computedHash": "0a8fbde38d2b4aa31d34334f588c8a1fd7d42fe429f00ff3ece6bbbf2b390c94"
+    },
+    "start-server-core": {
+      "source": "tanstack/router",
+      "sourceType": "github",
+      "skillPath": "packages/start-server-core/skills/start-server-core/SKILL.md",
+      "computedHash": "79970a4cd4769d5e2d94982e3e6b8b1eb6619e19a5f653575896d5933f802506"
+    }
+  }
+}
