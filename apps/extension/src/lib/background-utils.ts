@@ -17,7 +17,8 @@ const MAX_THREAD = 10;
 
 const MAX_ERROR = 200;
 // Key shapes (sk-, sk-ant-, sk-or-, xai-), OpenAI org- and proj_ IDs, and UUIDs such as xAI team IDs.
-const SECRET_LIKE = /\b(?:sk|xai|org|proj)[-_][\w*.-]+|\b[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}\b/gi;
+const SECRET_LIKE =
+  /\b(?:sk|xai|org|proj)[-_][\w*.-]+|\b[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}\b/gi;
 
 /** Provider error text bound for x.com: without the key or anything key- or ID-shaped, and short. */
 export function safeError(message: string, apiKey: string): string {
@@ -40,7 +41,12 @@ const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'obj
  */
 function mediaUrl(raw: string): string | null {
   const u = URL.parse(raw);
-  const ok = u?.protocol === 'https:' && u.hostname === 'pbs.twimg.com' && !u.port && !u.username && !u.password;
+  const ok =
+    u?.protocol === 'https:' &&
+    u.hostname === 'pbs.twimg.com' &&
+    !u.port &&
+    !u.username &&
+    !u.password;
   return ok && u.href.length <= MAX_URL ? u.href : null;
 }
 
@@ -68,7 +74,8 @@ function parsePost(v: unknown, canQuote = true): Post | null {
   if (!isObject(v)) return null;
   const { author, text, truncated, quoted } = v;
   const images = parseAll(v.images, (i) => i.slice(0, MAX_IMAGES), parseImage);
-  if (!isString(author) || !isString(text) || typeof truncated !== 'boolean' || !images) return null;
+  if (!isString(author) || !isString(text) || typeof truncated !== 'boolean' || !images)
+    return null;
   if (quoted !== null && !isObject(quoted)) return null;
   const quote = quoted && canQuote ? parsePost(quoted, false) : null;
   if (quoted && canQuote && !quote) return null;

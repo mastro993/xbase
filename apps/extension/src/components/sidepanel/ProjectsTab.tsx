@@ -1,8 +1,8 @@
 import { PlusIcon } from 'lucide-react';
-import { useId, useRef, useState } from 'react';
-import { flushSync } from 'react-dom';
 import { Button } from 'panelui-web/button';
 import { Input } from 'panelui-web/input';
+import { useId, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import {
   Field,
   FieldDescription,
@@ -186,7 +186,12 @@ function ProjectCard({
             <span role="status" className="text-xs text-muted-foreground">
               {saved && 'Saved'}
             </span>
-            <Button ref={removeButton} size="sm" variant="ghost" onClick={() => setConfirming(true)}>
+            <Button
+              ref={removeButton}
+              size="sm"
+              variant="ghost"
+              onClick={() => setConfirming(true)}
+            >
               Remove
               <span className="sr-only"> {label}</span>
             </Button>

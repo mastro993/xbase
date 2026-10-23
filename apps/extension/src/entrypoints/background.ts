@@ -2,7 +2,12 @@ import { browser } from 'wxt/browser';
 import { defineBackground } from 'wxt/utils/define-background';
 import { isXUrl, parseRequest, safeError } from '@/lib/background-utils';
 import { generateText } from '@/lib/llm';
-import type { ActionResponse, BackgroundRequest, ContentPush, StatusResponse } from '@/lib/messages';
+import type {
+  ActionResponse,
+  BackgroundRequest,
+  ContentPush,
+  StatusResponse,
+} from '@/lib/messages';
 import { PROMPTS } from '@/lib/prompts';
 import { refinePostPrompt } from '@/lib/prompts/refine-post';
 import { cleanReply } from '@/lib/prompts/shared';

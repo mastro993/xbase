@@ -1,7 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fakeBrowser } from 'wxt/testing/fake-browser';
 import { PROVIDERS } from '../providers';
-import { getSettings, getStatus, saveSettings, settingsItem, type Settings, watchReady } from '../settings';
+import {
+  getSettings,
+  getStatus,
+  saveSettings,
+  settingsItem,
+  type Settings,
+  watchReady,
+} from '../settings';
 
 const model = PROVIDERS.openai.defaultModel;
 const style = { persona: '', audience: '', voice: '', rules: '' };
@@ -75,7 +82,11 @@ describe('settingsItem', () => {
     const apiKeys = { openai: 'sk-test' };
     await fakeBrowser.storage.local.set({ settings: v4, apiKeys });
     await settingsItem.migrate();
-    expect(await fakeBrowser.storage.local.get()).toEqual({ settings: v4, settings$: { v: 4 }, apiKeys });
+    expect(await fakeBrowser.storage.local.get()).toEqual({
+      settings: v4,
+      settings$: { v: 4 },
+      apiKeys,
+    });
     expect((await getSettings()).providers).toEqual(complete.providers);
   });
 });

@@ -74,7 +74,8 @@ export default defineContentScript({
       const draft = readEditor(c.editor);
       // The controls lag a frame behind typing: never let Generate overwrite a draft, or refine nothing.
       if ((action === 'reply') !== !draft.trim()) return render(wrap);
-      if (run !== 'reply' && draft.length > MAX_TEXT) return showAlert(wrap, 'This draft is too long to rewrite.');
+      if (run !== 'reply' && draft.length > MAX_TEXT)
+        return showAlert(wrap, 'This draft is too long to rewrite.');
 
       const { root } = c;
       const current = () =>
@@ -84,7 +85,8 @@ export default defineContentScript({
       let start = draft; // what the box holds while the model works
       try {
         if (action === 'refine') {
-          if (!(await setComposerText(c.editor, ''))) throw new Error("Couldn't clear the reply box. Try again.");
+          if (!(await setComposerText(c.editor, '')))
+            throw new Error("Couldn't clear the reply box. Try again.");
           start = readEditor(c.editor);
         }
         const res = await send<ActionResponse | undefined>(
@@ -92,7 +94,8 @@ export default defineContentScript({
             ? { type: 'refine-post', draft: start }
             : { type: 'run-action', action: run, post: post!, draft: start, me: viewerHandle() },
         );
-        if (!res?.ok) throw new Error(res?.error ?? 'No response from x-companion. Reload the page.');
+        if (!res?.ok)
+          throw new Error(res?.error ?? 'No response from x-companion. Reload the page.');
         // X may have re-mounted the controls, the editor or the focal post during the await.
         // Resolve from the root (closest() includes self): new controls may not be injected yet.
         const now = composerOf(root);
@@ -110,7 +113,8 @@ export default defineContentScript({
       } catch (e) {
         // A failed Refine gives the deleted draft back, unless the user has typed since.
         const ed = composerOf(root)?.editor;
-        if (action === 'refine' && ed?.isConnected && !readEditor(ed).trim()) await setComposerText(ed, draft);
+        if (action === 'refine' && ed?.isConnected && !readEditor(ed).trim())
+          await setComposerText(ed, draft);
         showAlert(current(), e instanceof Error ? e.message : String(e));
       } finally {
         busy.delete(root);
@@ -122,7 +126,10 @@ export default defineContentScript({
       if (msg?.type === 'status') setReady(msg.ready);
     };
     browser.runtime.onMessage.addListener(onPush);
-    send<StatusResponse | undefined>({ type: 'get-status' }).then((r) => setReady(r?.ready === true), () => {});
+    send<StatusResponse | undefined>({ type: 'get-status' }).then(
+      (r) => setReady(r?.ready === true),
+      () => {},
+    );
 
     let queued = false;
     const scan = () => {

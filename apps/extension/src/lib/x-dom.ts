@@ -12,7 +12,8 @@ const QUOTE = 'div[role="link"], [data-testid="card.wrapper"]';
 const REPLY_BUTTON = '[data-testid="reply"]';
 const EDITABLE = 'input, textarea, [contenteditable]';
 const CELL = '[data-testid="cellInnerDiv"]';
-const INSIDE_EDITOR = '[contenteditable], .DraftEditor-root, [data-testid$="RichTextInputContainer"]';
+const INSIDE_EDITOR =
+  '[contenteditable], .DraftEditor-root, [data-testid$="RichTextInputContainer"]';
 const MARK = 'data-xc-reply';
 const COMPOSE_PATH = '/compose/post';
 const HOME_PATH = '/home';
@@ -53,7 +54,8 @@ const LABELS: Record<RunningAction, { label: string; busy: string }> = {
 // Anchored: /photo/1, /video/1, /analytics are modals over the page below (e.g. the home composer).
 const statusId = () => location.pathname.match(/^\/(?:i\/web|[^/]+)\/status\/(\d+)\/?$/)?.[1];
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
-const follows = (a: Node, b: Node) => !!(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
+const follows = (a: Node, b: Node) =>
+  !!(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
 
 /** Composer root: a dialog, or `main` on a status page, the narrow-layout compose page or home. */
 export function rootOf(el: Element): Element | null {
@@ -74,9 +76,8 @@ function targetArticle({ root, editor }: Composer): HTMLElement | null {
   if (needsArticle(root)) {
     // The original sits above the editor; a quote preview mounts in `attachments` below it.
     return (
-      articles.findLast(
-        (a) => !a.closest('[data-testid="attachments"]') && follows(a, editor),
-      ) ?? null
+      articles.findLast((a) => !a.closest('[data-testid="attachments"]') && follows(a, editor)) ??
+      null
     );
   }
   const id = statusId();
@@ -182,7 +183,9 @@ export function injectControls(
   };
 
   if (c.kind === 'post') {
-    wrap.append(button('xc-reply-btn', 'refine-post', icon(SPARKLE), document.createElement('span')));
+    wrap.append(
+      button('xc-reply-btn', 'refine-post', icon(SPARKLE), document.createElement('span')),
+    );
   } else {
     const menu = document.createElement('div');
     menu.className = 'xc-menu';
@@ -197,7 +200,13 @@ export function injectControls(
     const generate = button('xc-reply-btn', 'reply', icon(SPARKLE), document.createElement('span'));
     const refine = button('xc-reply-btn xc-reply-btn--icon', 'refine', icon(REFRESH));
     refine.setAttribute('aria-label', 'Refine reply with x-companion'); // the icon has no visible text
-    const rewrite = button('xc-reply-btn', null, icon(SPARKLE), document.createElement('span'), icon(CHEVRON));
+    const rewrite = button(
+      'xc-reply-btn',
+      null,
+      icon(SPARKLE),
+      document.createElement('span'),
+      icon(CHEVRON),
+    );
     wrap.append(generate, refine, rewrite, menu);
   }
 
@@ -242,7 +251,8 @@ export function renderControls(wrap: Element, state: ControlsState): void {
     return;
   }
 
-  const [generate, refine, rewrite] = wrap.querySelectorAll<HTMLButtonElement>(':scope > .xc-reply-btn');
+  const [generate, refine, rewrite] =
+    wrap.querySelectorAll<HTMLButtonElement>(':scope > .xc-reply-btn');
   const menu = wrap.querySelector<HTMLElement>('.xc-menu');
   if (!generate || !refine || !rewrite || !menu) return;
   const rewriting = busy ? busy !== 'reply' : hasText;
@@ -251,7 +261,13 @@ export function renderControls(wrap: Element, state: ControlsState): void {
   refine.hidden = rewrite.hidden = !rewriting;
 
   setLabel(btn, busy ? LABELS[busy].busy : rewriting ? 'Rewrite' : LABELS.reply.label);
-  const verb = rewriting ? (busy ? 'Rewriting draft' : 'Rewrite draft') : busy ? 'Generating reply' : 'Generate reply';
+  const verb = rewriting
+    ? busy
+      ? 'Rewriting draft'
+      : 'Rewrite draft'
+    : busy
+      ? 'Generating reply'
+      : 'Generate reply';
   attr(btn, 'aria-label', `${verb} with x-companion`);
   for (const el of [btn, refine]) setState(el, state);
   attr(btn, 'title', !ready && SETUP_HINT);
@@ -289,7 +305,8 @@ export function showAlert(wrap: HTMLElement, message: string): void {
   alert.setAttribute('role', 'alert');
   alert.textContent = message;
   wrap.append(alert);
-  if (wrap.getBoundingClientRect().top < alert.offsetHeight + 8) alert.classList.add('xc-reply-alert--below');
+  if (wrap.getBoundingClientRect().top < alert.offsetHeight + 8)
+    alert.classList.add('xc-reply-alert--below');
   setTimeout(() => alert.remove(), 6000);
 }
 
@@ -384,7 +401,11 @@ export function trackReplySource(e: Event): void {
   const opens =
     e instanceof KeyboardEvent
       ? // X's "r" shortcut replies to the post that j/k focused. Typing, or an open dialog, opens none.
-        e.key === 'r' && !e.ctrlKey && !e.metaKey && !e.altKey && !el?.closest(`${EDITABLE}, [role="dialog"]`)
+        e.key === 'r' &&
+        !e.ctrlKey &&
+        !e.metaKey &&
+        !e.altKey &&
+        !el?.closest(`${EDITABLE}, [role="dialog"]`)
       : !!el?.closest(REPLY_BUTTON);
   if (!opens) return;
   const a = el?.closest(TWEET);
@@ -450,7 +471,9 @@ export function getTargetPost(c: Composer): TargetPost | null {
 
 /** The logged-in user's "@handle", from the side navigation's profile link; "" if not found. */
 export function viewerHandle(): string {
-  const href = document.querySelector('a[data-testid="AppTabBar_Profile_Link"]')?.getAttribute('href');
+  const href = document
+    .querySelector('a[data-testid="AppTabBar_Profile_Link"]')
+    ?.getAttribute('href');
   const handle = href?.match(/^\/(\w{1,15})$/)?.[1];
   return handle ? `@${handle}` : '';
 }
@@ -500,7 +523,12 @@ export async function setComposerText(ed: HTMLElement, text: string): Promise<bo
     write = new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true });
   } else {
     // Draft ignores an empty paste, but deletes the selection on Backspace (it reads keyCode).
-    write = new KeyboardEvent('keydown', { key: 'Backspace', keyCode: 8, bubbles: true, cancelable: true });
+    write = new KeyboardEvent('keydown', {
+      key: 'Backspace',
+      keyCode: 8,
+      bubbles: true,
+      cancelable: true,
+    });
   }
   ed.dispatchEvent(write);
   // Draft calls preventDefault() before anything else, so its handler ran: never stack a second write.

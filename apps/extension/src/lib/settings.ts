@@ -138,7 +138,10 @@ export function watchReady(onReady: (ready: boolean) => void): () => void {
   let last: Promise<boolean | undefined> = Promise.resolve(undefined);
   return watchSettings(() => {
     last = last.then(async (was) => {
-      const ready = await getSettings().then((s) => getStatus(s).ready, () => was);
+      const ready = await getSettings().then(
+        (s) => getStatus(s).ready,
+        () => was,
+      );
       if (ready !== undefined && ready !== was) onReady(ready);
       return ready;
     });

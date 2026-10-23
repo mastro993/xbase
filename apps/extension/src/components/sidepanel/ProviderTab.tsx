@@ -1,7 +1,7 @@
 import { ShieldAlertIcon } from 'lucide-react';
-import { useEffect } from 'react';
 import { Alert } from 'panelui-web/alert';
 import { Select } from 'panelui-web/select';
+import { useEffect } from 'react';
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { useModels } from '@/hooks/use-models';
 import { setProviderKey, updateSettings } from '@/hooks/use-settings';
@@ -38,7 +38,9 @@ export function ProviderTab({ settings }: { settings: Settings }) {
           </Select.Content>
         </Select>
       </Field>
-      {active && <ActiveProvider key={active} provider={active} saved={settings.providers[active]} />}
+      {active && (
+        <ActiveProvider key={active} provider={active} saved={settings.providers[active]} />
+      )}
       <OtherKeys settings={settings} />
       {/* Always on screen: role="alert" would announce it on every visit to the tab. */}
       <Alert role="note" variant="plain">
@@ -92,7 +94,10 @@ function ActiveProvider({ provider, saved }: { provider: ProviderId; saved?: Pro
         onChange={(model) =>
           updateSettings((s) => ({
             ...s,
-            providers: { ...s.providers, [provider]: { apiKey: '', ...s.providers[provider], model } },
+            providers: {
+              ...s.providers,
+              [provider]: { apiKey: '', ...s.providers[provider], model },
+            },
           }))
         }
         onRefresh={() => load(apiKey)}

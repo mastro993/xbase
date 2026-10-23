@@ -24,7 +24,7 @@ const DELIMITER = new RegExp(
 );
 
 function untrusted(s: string): string {
-  for (let prev = ''; prev !== s; ) {
+  for (let prev = ''; prev !== s;) {
     prev = s;
     s = s.replace(DELIMITER, '');
   }
@@ -60,7 +60,9 @@ export function profile({ style, projects }: Profile): string {
 }
 
 /** Rules that explain postBlock's layout, for every system prompt. */
-export const materialRules = (me: string) => `- <earlier> posts come before <post> in the conversation, oldest first. <later> posts are its author's own follow-ups below it. A <quote> is the post that the post around it quotes. truncated="true" marks a post shown only up to "Show more".
+export const materialRules = (
+  me: string,
+) => `- <earlier> posts come before <post> in the conversation, oldest first. <later> posts are its author's own follow-ups below it. A <quote> is the post that the post around it quotes. truncated="true" marks a post shown only up to "Show more".
 - [Image N] and [Video N] mark a post's media, then its alt text if any. A picture labelled "Image N:" or "Video N:" that comes with the message is that media (a video's is its thumbnail). For media without one, go by the alt text only and never guess what it shows.${
   // Handles are [A-Za-z0-9_], and the background checks this one.
   me && `\n- The user is ${me}: posts by ${me} are the user's own.`

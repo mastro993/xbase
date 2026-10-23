@@ -17,7 +17,12 @@ const questions = {
 } as const;
 const answers = {
   billing: { type: 'noul', noul: 0.98 },
-  tone: { type: 'choice', choice: 'calm', confidence: 0.7, probabilities: { calm: 0.8, angry: 0.2 } },
+  tone: {
+    type: 'choice',
+    choice: 'calm',
+    confidence: 0.7,
+    probabilities: { calm: 0.8, angry: 0.2 },
+  },
   urgency: { type: 'score', score: 0.9, confidence: 0.5, probabilities: { '0': 0.1, '1': 0.9 } },
 };
 
@@ -69,8 +74,16 @@ describe('decide', () => {
       () => json({ detail: { error_type: 'overloaded', message: 'Overloaded' } }, 529),
       '529: Overloaded',
     ],
-    ['TypeSafe 422 field list', () => json({ detail: [{ msg: 'Field required' }] }, 422), '422: Request failed'],
-    ['OpenRouter 200 with error', () => json({ error: { message: 'Upstream down' } }), 'Upstream down'],
+    [
+      'TypeSafe 422 field list',
+      () => json({ detail: [{ msg: 'Field required' }] }, 422),
+      '422: Request failed',
+    ],
+    [
+      'OpenRouter 200 with error',
+      () => json({ error: { message: 'Upstream down' } }),
+      'Upstream down',
+    ],
     ['no answers', () => json({ model: 'jev-1.13.0' }), 'Unexpected response'],
   ])('%s', async (_, res, message) => {
     mockFetch(res);

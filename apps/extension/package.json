@@ -1,8 +1,8 @@
 {
   "name": "@xbase/extension",
-  "description": "AI reply drafts for X posts in your writing style.",
-  "private": true,
   "version": "0.1.4",
+  "private": true,
+  "description": "AI reply drafts for X posts in your writing style.",
   "type": "module",
   "scripts": {
     "dev": "wxt",

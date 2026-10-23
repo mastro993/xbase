@@ -35,7 +35,8 @@ const tweet = (handle: string, id: string, body: string, attrs = '') => `
   </article>`;
 const text = (t: string) => `<div data-testid="tweetText"><span>${t}</span></div>`;
 const cell = (html: string) => `<div data-testid="cellInnerDiv">${html}</div>`;
-const pbs = (id: string, query = 'format=webp&name=small') => `https://pbs.twimg.com/media/${id}?${query}`;
+const pbs = (id: string, query = 'format=webp&name=small') =>
+  `https://pbs.twimg.com/media/${id}?${query}`;
 const sent = (id: string) => pbs(id, 'format=jpg&name=medium');
 const photo = (src: string, alt = 'Image') =>
   `<a href="/x/status/1/photo/1" role="link"><div data-testid="tweetPhoto"><img alt="${alt}" src="${src}"></div></a>`;
@@ -91,16 +92,30 @@ describe('findComposers + injectControls', () => {
   });
 
   it('narrow layout: /compose/post rendered as a page in main gets a button', () => {
-    page('/compose/post', '', tweet('alice', '111', text('Original')) + editor() + toolbar('tweetButton'));
+    page(
+      '/compose/post',
+      '',
+      tweet('alice', '111', text('Original')) + editor() + toolbar('tweetButton'),
+    );
     const [wrap] = scan();
     expect(wrap).toBeTruthy();
     expect(getTargetPost(composerOf(wrap!)!)?.author).toBe('@alice');
   });
 
   it.each([
-    ['new-post dialog', '/compose/post', `<div role="dialog">${editor()}${toolbar('tweetButton')}</div>`, ''],
+    [
+      'new-post dialog',
+      '/compose/post',
+      `<div role="dialog">${editor()}${toolbar('tweetButton')}</div>`,
+      '',
+    ],
     ['narrow-layout new post page', '/compose/post', '', editor() + toolbar('tweetButton')],
-    ['home composer', '/home', '', editor() + toolbar('tweetButtonInline') + tweet('bob', '9', text('Feed'))],
+    [
+      'home composer',
+      '/home',
+      '',
+      editor() + toolbar('tweetButtonInline') + tweet('bob', '9', text('Feed')),
+    ],
   ])('%s: a new post, with one Refine pill before Post', (_, path, layers, main) => {
     page(path, layers, main);
     const [c, ...rest] = findComposers();
@@ -116,7 +131,9 @@ describe('findComposers + injectControls', () => {
     page('/compose/post', `<div role="dialog">${editor()}${toolbar('tweetButton')}</div>`);
     const [post] = scan();
     expect(post!.getAttribute('data-xc-reply')).toBe('post');
-    document.querySelector('[role="dialog"]')!.insertAdjacentHTML('afterbegin', tweet('alice', '111', text('Original')));
+    document
+      .querySelector('[role="dialog"]')!
+      .insertAdjacentHTML('afterbegin', tweet('alice', '111', text('Original')));
     const [reply] = scan();
     expect(reply!.getAttribute('data-xc-reply')).toBe('reply');
     expect(post!.isConnected).toBe(false);
@@ -142,7 +159,11 @@ describe('findComposers + injectControls', () => {
   });
 
   it('is idempotent and re-injects after X drops our node', () => {
-    page('/alice/status/222', '', tweet('alice', '222', text('Focal')) + editor() + toolbar('tweetButtonInline'));
+    page(
+      '/alice/status/222',
+      '',
+      tweet('alice', '222', text('Focal')) + editor() + toolbar('tweetButtonInline'),
+    );
     scan();
     expect(scan()).toEqual([null]);
     expect(injectedControls()).toHaveLength(1);
@@ -152,7 +173,11 @@ describe('findComposers + injectControls', () => {
   });
 
   it('showAlert flips below the controls when there is no room above', () => {
-    page('/alice/status/222', '', tweet('alice', '222', text('Focal')) + editor() + toolbar('tweetButtonInline'));
+    page(
+      '/alice/status/222',
+      '',
+      tweet('alice', '222', text('Focal')) + editor() + toolbar('tweetButtonInline'),
+    );
     const [wrap] = scan() as HTMLElement[];
     wrap!.getBoundingClientRect = () => ({ top: 400 }) as DOMRect;
     showAlert(wrap!, 'Oops');
@@ -169,13 +194,19 @@ describe('controls', () => {
   let wrap: HTMLElement;
   beforeEach(() => {
     onClick.mockClear();
-    page('/alice/status/222', '', tweet('alice', '222', text('Focal')) + editor() + toolbar('tweetButtonInline'));
+    page(
+      '/alice/status/222',
+      '',
+      tweet('alice', '222', text('Focal')) + editor() + toolbar('tweetButtonInline'),
+    );
     wrap = injectControls(findComposers()[0]!, onClick)!;
   });
 
   const ready: ControlsState = { ready: true, busy: null, hasText: false };
   const pills = () =>
-    [...wrap.querySelectorAll<HTMLButtonElement>('.xc-reply-btn:not(.xc-reply-btn--icon)')].filter((b) => !b.hidden);
+    [...wrap.querySelectorAll<HTMLButtonElement>('.xc-reply-btn:not(.xc-reply-btn--icon)')].filter(
+      (b) => !b.hidden,
+    );
   const refine = () => wrap.querySelector<HTMLButtonElement>('.xc-reply-btn--icon')!;
   const shown = () => {
     const [btn, ...rest] = pills();
@@ -199,7 +230,11 @@ describe('controls', () => {
     renderControls(wrap, { ...ready, hasText: true });
     expect(shown().textContent).toBe('Rewrite');
     expect(shown().popoverTargetElement).toBe(menu());
-    expect([...menu().children].map((i) => i.textContent)).toEqual(['Polish', 'Punchier', 'Match style']);
+    expect([...menu().children].map((i) => i.textContent)).toEqual([
+      'Polish',
+      'Punchier',
+      'Match style',
+    ]);
     expect(refine().hidden).toBe(false);
     expect(refine().nextElementSibling).toBe(shown());
     expect(refine().textContent).toBe('');
@@ -339,15 +374,26 @@ describe('getTargetPost', () => {
       ${photo('https://pbs.twimg.com/tweet_video_thumb/Gif.jpg', 'Embedded video')}
       <img alt="avatar" src="https://pbs.twimg.com/profile_images/1/a_normal.jpg">
       ${quote('bob', `${text('Quoted take')}${photo(pbs('quoted'), 'Quoted photo')}<a data-testid="tweet-text-show-more-link">Show more</a>`)}`;
-    page('/compose/post', `<div role="dialog">${tweet('alice', '111', body)}${editor()}${toolbar('tweetButton')}</div>`);
+    page(
+      '/compose/post',
+      `<div role="dialog">${tweet('alice', '111', body)}${editor()}${toolbar('tweetButton')}</div>`,
+    );
     const [c] = findComposers();
     expect(getTargetPost(c!)).toEqual({
       author: '@alice',
       text: 'Hello 👋 world',
       images: [
         { url: sent('cat'), alt: 'A cat', video: false },
-        { url: 'https://pbs.twimg.com/amplify_video_thumb/9/img/k?format=jpg&name=medium', alt: '', video: true },
-        { url: 'https://pbs.twimg.com/tweet_video_thumb/Gif.jpg', alt: 'Embedded video', video: true },
+        {
+          url: 'https://pbs.twimg.com/amplify_video_thumb/9/img/k?format=jpg&name=medium',
+          alt: '',
+          video: true,
+        },
+        {
+          url: 'https://pbs.twimg.com/tweet_video_thumb/Gif.jpg',
+          alt: 'Embedded video',
+          video: true,
+        },
       ],
       truncated: true,
       quoted: {
@@ -363,12 +409,16 @@ describe('getTargetPost', () => {
   });
 
   const dialogPost = (body: string) => {
-    page('/compose/post', `<div role="dialog"><article data-testid="tweet">${body}</article>${editor()}${toolbar('tweetButton')}</div>`);
+    page(
+      '/compose/post',
+      `<div role="dialog"><article data-testid="tweet">${body}</article>${editor()}${toolbar('tweetButton')}</div>`,
+    );
     return getTargetPost(findComposers()[0]!);
   };
 
   it('span-only header (reply dialog copy): author from the @handle after the display name', () => {
-    const header = '<div data-testid="User-Name"><span>Alice | @acme</span><span>@alice</span><span>·</span><time>1h</time></div>';
+    const header =
+      '<div data-testid="User-Name"><span>Alice | @acme</span><span>@alice</span><span>·</span><time>1h</time></div>';
     expect(dialogPost(header + text('Hi'))?.author).toBe('@alice');
   });
 
@@ -389,7 +439,11 @@ describe('getTargetPost', () => {
 
   describe('post page conversation', () => {
     const thread = (...cells: string[]) =>
-      page('/alice/status/3', '', cells.map(cell).join('') + editor() + toolbar('tweetButtonInline'));
+      page(
+        '/alice/status/3',
+        '',
+        cells.map(cell).join('') + editor() + toolbar('tweetButtonInline'),
+      );
     const target = () => getTargetPost(findComposers()[0]!)!;
 
     it('sends the posts above as earlier, and the author’s run right below as later', () => {
@@ -449,7 +503,9 @@ describe('getTargetPost', () => {
         cells.map(cell).join(''),
       );
     const clickReplyOn = (postText: string) => {
-      const a = [...document.querySelectorAll('main article')].find((x) => x.textContent?.includes(postText))!;
+      const a = [...document.querySelectorAll('main article')].find((x) =>
+        x.textContent?.includes(postText),
+      )!;
       trackReplySource({ target: a.querySelector('[data-testid="reply"]') } as unknown as Event);
     };
 
@@ -526,14 +582,25 @@ describe('getTargetPost', () => {
     it('without a Reply click (the photo viewer), takes the only matching post on the page', () => {
       page('/compose/post', copy(text('Hello')), timeline(text('Hello') + photo(pbs('own'))));
       expect(target().images).toHaveLength(1);
-      page('/compose/post', copy(text('Hello')), timeline(text('Something else') + photo(pbs('own'))));
+      page(
+        '/compose/post',
+        copy(text('Hello')),
+        timeline(text('Something else') + photo(pbs('own'))),
+      );
       expect(target().images).toEqual([]);
-      page('/compose/post', copy(text('Hello')), timeline(text('Hello') + photo(pbs('own')), 'bob'));
+      page(
+        '/compose/post',
+        copy(text('Hello')),
+        timeline(text('Hello') + photo(pbs('own')), 'bob'),
+      );
       expect(target().images).toEqual([]); // same text, another author
     });
 
     // Two media-only posts by the same author both match a media-only copy.
-    const twins = [1, 2].map((n) => tweet('alice', `${n}`, photo(pbs(`p${n}`)) + replyButton)).map(cell).join('');
+    const twins = [1, 2]
+      .map((n) => tweet('alice', `${n}`, photo(pbs(`p${n}`)) + replyButton))
+      .map(cell)
+      .join('');
     const urls = () => target().images.map((i) => i.url);
 
     it('when several posts match, takes the one whose Reply was clicked, even after X re-renders it', () => {
@@ -597,7 +664,8 @@ describe('readEditor', () => {
     page('/home', '', editor());
     const ed = document.querySelector<HTMLElement>('[data-testid="tweetTextarea_0"]')!;
     expect(readEditor(ed)).toBe('');
-    ed.firstElementChild!.innerHTML = '<div data-block="true"><span>One</span></div><div data-block="true"><span></span></div><div data-block="true"><span>Three</span></div>';
+    ed.firstElementChild!.innerHTML =
+      '<div data-block="true"><span>One</span></div><div data-block="true"><span></span></div><div data-block="true"><span>Three</span></div>';
     expect(readEditor(ed)).toBe('One\n\nThree');
   });
 });
@@ -667,14 +735,19 @@ describe('setComposerText', () => {
     ed.addEventListener('keydown', (e) => {
       if (e.keyCode !== 8) return;
       e.preventDefault();
-      ed.firstElementChild!.innerHTML = '<div data-block="true"><span><br data-text="true"></span></div>';
+      ed.firstElementChild!.innerHTML =
+        '<div data-block="true"><span><br data-text="true"></span></div>';
     });
     expect(await run(ed, '')).toBe(true);
     expect(exec.mock.calls.filter(([cmd]) => cmd === 'delete')).toEqual([]);
   });
 
   it('empties an unhandled textarea with one delete', async () => {
-    page('/compose/post', '', '<div data-testid="tweetTextarea_0"><textarea>Old draft</textarea></div>');
+    page(
+      '/compose/post',
+      '',
+      '<div data-testid="tweetTextarea_0"><textarea>Old draft</textarea></div>',
+    );
     const ta = document.querySelector('textarea')!;
     exec.mockImplementation((cmd) => {
       if (cmd === 'delete') ta.value = '';

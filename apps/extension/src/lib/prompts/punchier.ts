@@ -1,7 +1,8 @@
 import { rewritePrompt } from './rewrite';
 
 /** Clearer, with more impact. */
-export const punchierPrompt = rewritePrompt(`Help me make this content clearer, punchier, and catchier while preserving my writing style and the core message.
+export const punchierPrompt =
+  rewritePrompt(`Help me make this content clearer, punchier, and catchier while preserving my writing style and the core message.
 
 Focus on:
 

@@ -23,7 +23,11 @@ export type JevContent = string | Record<string, unknown> | unknown[];
 
 export type JevQuestion =
   /** Yes or no. Criteria, if any, say what counts as each. */
-  | { type: 'noul'; instructions?: JevContent; criteria?: { true?: JevContent; false?: JevContent } }
+  | {
+      type: 'noul';
+      instructions?: JevContent;
+      criteria?: { true?: JevContent; false?: JevContent };
+    }
   /** One of up to 255 options, keyed by name. A null description lets the name speak for itself. */
   | { type: 'choice'; instructions?: JevContent; criteria: Record<string, JevContent | null> }
   /** Up to 10 ordered levels, lowest first. */

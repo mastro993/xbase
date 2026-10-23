@@ -13,18 +13,25 @@ import {
   InputGroupTextarea,
 } from '@/components/ui/input-group';
 import { useAutosave } from '@/hooks/use-autosave';
-import { MAX_STYLE_FIELD_LENGTH, STYLE_FIELDS, type Settings, type StyleField } from '@/lib/settings';
+import {
+  MAX_STYLE_FIELD_LENGTH,
+  STYLE_FIELDS,
+  type Settings,
+  type StyleField,
+} from '@/lib/settings';
 
 const SECTIONS: Record<StyleField, { label: string; description: string; placeholder: string }> = {
   persona: {
     label: 'Persona',
     description: 'Describe who you are and your main interests.',
-    placeholder: 'e.g. "Indie iOS developer. Ships small apps, talks pricing and building in public."',
+    placeholder:
+      'e.g. "Indie iOS developer. Ships small apps, talks pricing and building in public."',
   },
   audience: {
     label: 'Audience',
     description: "Describe the people you're speaking to and what resonates with them.",
-    placeholder: 'e.g. "Indie makers and developers. They trust numbers from real launches over hot takes."',
+    placeholder:
+      'e.g. "Indie makers and developers. They trust numbers from real launches over hot takes."',
   },
   voice: {
     label: 'Style & Vocabulary',
@@ -57,10 +64,14 @@ export function StyleTab({ settings }: { settings: Settings }) {
 
 function StyleSection({ field, settings }: { field: StyleField; settings: Settings }) {
   const { label, description, placeholder } = SECTIONS[field];
-  const { draft, status, onChange, flush } = useAutosave(settings, settings.style[field], (s, text) => ({
-    ...s,
-    style: { ...s.style, [field]: text },
-  }));
+  const { draft, status, onChange, flush } = useAutosave(
+    settings,
+    settings.style[field],
+    (s, text) => ({
+      ...s,
+      style: { ...s.style, [field]: text },
+    }),
+  );
 
   const id = `style-${field}`;
   return (

@@ -92,7 +92,9 @@ export async function fetchJson<T>(
     res = await fetch(url, { ...init, signal: AbortSignal.timeout(TIMEOUT_MS) });
     raw = await res.text();
   } catch (e) {
-    throw new Error(isTimeout(e) ? timeoutMessage : 'Network error. Check your connection.', { cause: e });
+    throw new Error(isTimeout(e) ? timeoutMessage : 'Network error. Check your connection.', {
+      cause: e,
+    });
   }
   let body: (T & ApiError) | null = null;
   try {
@@ -104,7 +106,10 @@ export async function fetchJson<T>(
   const message =
     typeof err === 'string' ? err : err ? (err.message ?? 'Unknown error') : body?.detail?.message;
   if (!res.ok) {
-    throw new HttpError(res.status, httpError(res.status, message || res.statusText || 'Request failed'));
+    throw new HttpError(
+      res.status,
+      httpError(res.status, message || res.statusText || 'Request failed'),
+    );
   }
   // OpenRouter can fail with HTTP 200 and a top-level error.
   if (message) throw new Error(message);
@@ -112,7 +117,11 @@ export async function fetchJson<T>(
   return body;
 }
 
-export function postJson(provider: ProviderId | 'typesafe', apiKey: string, body: object): RequestInit {
+export function postJson(
+  provider: ProviderId | 'typesafe',
+  apiKey: string,
+  body: object,
+): RequestInit {
   return {
     method: 'POST',
     headers: { ...authHeaders(provider, apiKey), 'content-type': 'application/json' },
@@ -166,7 +175,10 @@ async function send({ provider, apiKey, model }: LlmConfig, prompt: Prompt): Pro
             messages: [
               {
                 role: 'user',
-                content: userContent(prompt, (url) => ({ type: 'image', source: { type: 'url', url } })),
+                content: userContent(prompt, (url) => ({
+                  type: 'image',
+                  source: { type: 'url', url },
+                })),
               },
             ],
             ...(model.lowEffort && { output_config: { effort: 'low' } }),
@@ -180,7 +192,10 @@ async function send({ provider, apiKey, model }: LlmConfig, prompt: Prompt): Pro
             model: model.id,
             messages: [
               { role: 'system', content: prompt.system },
-              { role: 'user', content: userContent(prompt, (url) => ({ type: 'image_url', image_url: { url } })) },
+              {
+                role: 'user',
+                content: userContent(prompt, (url) => ({ type: 'image_url', image_url: { url } })),
+              },
             ],
             // Many OpenRouter models list only max_tokens, and DeepSeek ignores
             // max_completion_tokens; OpenAI and xAI deprecated max_tokens.

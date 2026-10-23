@@ -1,7 +1,7 @@
-import { useEffect, useId, useRef, useState } from 'react';
-import { flushSync } from 'react-dom';
 import { Button } from 'panelui-web/button';
 import { Input } from 'panelui-web/input';
+import { useEffect, useId, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { looksLikeKeyFor, PROVIDERS, type ProviderId } from '@/lib/providers';
 import { maskKey, NO_AUTOFILL } from './format';
 

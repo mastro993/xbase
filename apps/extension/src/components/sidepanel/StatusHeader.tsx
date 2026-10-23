@@ -12,7 +12,10 @@ export function StatusHeader({ status }: { status: Status }) {
         {/* Announced through the status line below instead. */}
         <Badge variant="outline" aria-hidden>
           <span
-            className={cn('size-2 rounded-full', status.ready ? 'bg-success' : 'bg-muted-foreground')}
+            className={cn(
+              'size-2 rounded-full',
+              status.ready ? 'bg-success' : 'bg-muted-foreground',
+            )}
           />
           {label}
         </Badge>

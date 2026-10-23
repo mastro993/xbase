@@ -30,7 +30,10 @@ const withImages = {
   ...prompt,
   images: [
     { label: 'Image 1', url: 'https://pbs.twimg.com/media/a?format=jpg&name=medium' },
-    { label: 'Video 2', url: 'https://pbs.twimg.com/amplify_video_thumb/1/img/k?format=jpg&name=medium' },
+    {
+      label: 'Video 2',
+      url: 'https://pbs.twimg.com/amplify_video_thumb/1/img/k?format=jpg&name=medium',
+    },
   ],
 };
 const chatOk = (content: string | null, finish_reason = 'stop') =>
@@ -56,7 +59,10 @@ describe('generateText request shape', () => {
     expect(req.headers).toEqual({
       authorization: 'Bearer k-123',
       'content-type': 'application/json',
-      ...(provider === 'openrouter' && { 'HTTP-Referer': httpsUrl, 'X-OpenRouter-Title': 'x-companion' }),
+      ...(provider === 'openrouter' && {
+        'HTTP-Referer': httpsUrl,
+        'X-OpenRouter-Title': 'x-companion',
+      }),
     });
     expect(req.body).toEqual({
       model: 'm-1',
@@ -100,33 +106,39 @@ describe('generateText request shape', () => {
     });
   });
 
-  it.each(['openai', 'anthropic'] as const)('%s omits effort when the model lacks low', async (p) => {
-    const fn = mockFetch(() =>
-      p === 'anthropic' ? json({ content: [{ type: 'text', text: 'ok' }] }) : chatOk('ok'),
-    );
-    await generateText(cfg(p, false), prompt);
-    const { body } = call(fn);
-    expect(body).not.toHaveProperty('reasoning_effort');
-    expect(body).not.toHaveProperty('output_config');
-    expect(body).not.toHaveProperty('temperature');
-  });
+  it.each(['openai', 'anthropic'] as const)(
+    '%s omits effort when the model lacks low',
+    async (p) => {
+      const fn = mockFetch(() =>
+        p === 'anthropic' ? json({ content: [{ type: 'text', text: 'ok' }] }) : chatOk('ok'),
+      );
+      await generateText(cfg(p, false), prompt);
+      const { body } = call(fn);
+      expect(body).not.toHaveProperty('reasoning_effort');
+      expect(body).not.toHaveProperty('output_config');
+      expect(body).not.toHaveProperty('temperature');
+    },
+  );
 });
 
 describe('generateText images', () => {
-  it.each(['openai', 'xai', 'deepseek', 'openrouter'] as const)('%s sends labelled image_url parts before the text', async (p) => {
-    const fn = mockFetch(() => chatOk('ok'));
-    await generateText(cfg(p), withImages);
-    expect(call(fn).body.messages[1]).toEqual({
-      role: 'user',
-      content: [
-        { type: 'text', text: 'Image 1:' },
-        { type: 'image_url', image_url: { url: withImages.images[0]!.url } },
-        { type: 'text', text: 'Video 2:' },
-        { type: 'image_url', image_url: { url: withImages.images[1]!.url } },
-        { type: 'text', text: 'USER' },
-      ],
-    });
-  });
+  it.each(['openai', 'xai', 'deepseek', 'openrouter'] as const)(
+    '%s sends labelled image_url parts before the text',
+    async (p) => {
+      const fn = mockFetch(() => chatOk('ok'));
+      await generateText(cfg(p), withImages);
+      expect(call(fn).body.messages[1]).toEqual({
+        role: 'user',
+        content: [
+          { type: 'text', text: 'Image 1:' },
+          { type: 'image_url', image_url: { url: withImages.images[0]!.url } },
+          { type: 'text', text: 'Video 2:' },
+          { type: 'image_url', image_url: { url: withImages.images[1]!.url } },
+          { type: 'text', text: 'USER' },
+        ],
+      });
+    },
+  );
 
   it('anthropic sends labelled URL image blocks before the text', async () => {
     const fn = mockFetch(() => json({ content: [{ type: 'text', text: 'ok' }] }));
@@ -146,12 +158,26 @@ describe('generateText images', () => {
   });
 
   it.each<[string, ProviderId, Response]>([
-    ['text-only DeepSeek model', 'deepseek', json({ error: { message: 'unknown variant `image_url`, expected `text`' } }, 400)],
-    ['OpenRouter without a vision endpoint', 'openrouter', json({ error: { message: 'No endpoints found that support image input', code: 404 } }, 404)],
-    ['image the provider could not fetch', 'openai', json({ error: { message: 'Timeout while downloading', code: 'invalid_image_url' } }, 400)],
+    [
+      'text-only DeepSeek model',
+      'deepseek',
+      json({ error: { message: 'unknown variant `image_url`, expected `text`' } }, 400),
+    ],
+    [
+      'OpenRouter without a vision endpoint',
+      'openrouter',
+      json({ error: { message: 'No endpoints found that support image input', code: 404 } }, 404),
+    ],
+    [
+      'image the provider could not fetch',
+      'openai',
+      json({ error: { message: 'Timeout while downloading', code: 'invalid_image_url' } }, 400),
+    ],
     ['xAI field error', 'xai', json({ error: 'invalid image' }, 422)],
   ])('retries once without images after a rejection: %s', async (_, provider, rejection) => {
-    const fn = mockFetch(() => (fn.mock.calls.length === 1 ? rejection : chatOk('Text-only reply')));
+    const fn = mockFetch(() =>
+      fn.mock.calls.length === 1 ? rejection : chatOk('Text-only reply'),
+    );
     await expect(generateText(cfg(provider), withImages)).resolves.toBe('Text-only reply');
     expect(fn).toHaveBeenCalledTimes(2);
     expect(call(fn, 1).body.messages[1]).toEqual({ role: 'user', content: 'USER' });
@@ -159,9 +185,21 @@ describe('generateText images', () => {
 
   it.each<[string, () => Response, string]>([
     ['bad key', () => json({ error: { message: 'Incorrect API key' } }, 401), 'Invalid API key'],
-    ['lack of credits', () => json({ error: { message: 'Insufficient credits' } }, 402), 'Out of credits'],
-    ['rate limit', () => json({ error: { message: 'slow down' } }, 429), 'Rate limit or quota reached'],
-    ['server error', () => new Response('<html>', { status: 502, statusText: 'Bad Gateway' }), '502: Bad Gateway'],
+    [
+      'lack of credits',
+      () => json({ error: { message: 'Insufficient credits' } }, 402),
+      'Out of credits',
+    ],
+    [
+      'rate limit',
+      () => json({ error: { message: 'slow down' } }, 429),
+      'Rate limit or quota reached',
+    ],
+    [
+      'server error',
+      () => new Response('<html>', { status: 502, statusText: 'Bad Gateway' }),
+      '502: Bad Gateway',
+    ],
   ])('does not retry a %s', async (_, res, message) => {
     const fn = mockFetch(res);
     await expect(generateText(cfg('openai'), withImages)).rejects.toThrow(message);
@@ -180,7 +218,12 @@ describe('generateText images', () => {
 
 describe('generateText errors', () => {
   it.each<[string, ProviderId, () => Response, string]>([
-    ['401', 'openai', () => json({ error: { message: 'Incorrect API key' } }, 401), 'Invalid API key'],
+    [
+      '401',
+      'openai',
+      () => json({ error: { message: 'Incorrect API key' } }, 401),
+      'Invalid API key',
+    ],
     [
       'xAI 400 bad key',
       'xai',
@@ -193,28 +236,72 @@ describe('generateText errors', () => {
       () => json({ code: 'invalid-argument', error: 'Model not found' }, 400),
       '400: Model not found',
     ],
-    ['402', 'openrouter', () => json({ error: { message: 'Insufficient credits', code: 402 } }, 402), 'Out of credits'],
-    ['429', 'anthropic', () => json({ type: 'error', error: { message: 'slow down' } }, 429), 'Rate limit'],
-    ['5xx non-JSON', 'openai', () => new Response('<html>', { status: 502, statusText: 'Bad Gateway' }), '502: Bad Gateway'],
-    ['200 with top-level error', 'openrouter', () => json({ error: { message: 'Upstream down', code: 502 } }), 'Upstream down'],
+    [
+      '402',
+      'openrouter',
+      () => json({ error: { message: 'Insufficient credits', code: 402 } }, 402),
+      'Out of credits',
+    ],
+    [
+      '429',
+      'anthropic',
+      () => json({ type: 'error', error: { message: 'slow down' } }, 429),
+      'Rate limit',
+    ],
+    [
+      '5xx non-JSON',
+      'openai',
+      () => new Response('<html>', { status: 502, statusText: 'Bad Gateway' }),
+      '502: Bad Gateway',
+    ],
+    [
+      '200 with top-level error',
+      'openrouter',
+      () => json({ error: { message: 'Upstream down', code: 502 } }),
+      'Upstream down',
+    ],
     [
       'OpenRouter 200 with choices[0].error and partial content',
       'openrouter',
       () =>
         json({
           choices: [
-            { finish_reason: 'error', error: { message: 'Provider disconnected' }, message: { content: 'Half a rep' } },
+            {
+              finish_reason: 'error',
+              error: { message: 'Provider disconnected' },
+              message: { content: 'Half a rep' },
+            },
           ],
         }),
       'Provider disconnected',
     ],
-    ['DeepSeek overloaded with partial content', 'deepseek', () => chatOk('Half a rep', 'insufficient_system_resource'), 'failed to generate'],
+    [
+      'DeepSeek overloaded with partial content',
+      'deepseek',
+      () => chatOk('Half a rep', 'insufficient_system_resource'),
+      'failed to generate',
+    ],
     ['DeepSeek aborted', 'deepseek', () => chatOk(null, 'aborted'), 'failed to generate'],
     ['content filter', 'deepseek', () => chatOk('Half a rep', 'content_filter'), 'declined'],
     ['chat truncation', 'xai', () => chatOk('Cut mid', 'length'), 'cut off'],
-    ['anthropic truncation', 'anthropic', () => json({ stop_reason: 'max_tokens', content: [{ type: 'text', text: 'Cut' }] }), 'cut off'],
-    ['openai refusal', 'openai', () => json({ choices: [{ message: { content: null, refusal: 'No.' } }] }), 'declined'],
-    ['anthropic refusal', 'anthropic', () => json({ stop_reason: 'refusal', content: [] }), 'declined'],
+    [
+      'anthropic truncation',
+      'anthropic',
+      () => json({ stop_reason: 'max_tokens', content: [{ type: 'text', text: 'Cut' }] }),
+      'cut off',
+    ],
+    [
+      'openai refusal',
+      'openai',
+      () => json({ choices: [{ message: { content: null, refusal: 'No.' } }] }),
+      'declined',
+    ],
+    [
+      'anthropic refusal',
+      'anthropic',
+      () => json({ stop_reason: 'refusal', content: [] }),
+      'declined',
+    ],
     ['empty content', 'openai', () => chatOk('  '), 'empty reply'],
   ])('%s', async (_, provider, res, message) => {
     mockFetch(res);
@@ -222,7 +309,10 @@ describe('generateText errors', () => {
   });
 
   it('maps a timeout to a friendly message', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new DOMException('timed out', 'TimeoutError')));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockRejectedValue(new DOMException('timed out', 'TimeoutError')),
+    );
     await expect(generateText(cfg('openai'), prompt)).rejects.toThrow(
       'The model took too long. Try a faster model.',
     );
@@ -236,8 +326,22 @@ describe('generateText errors', () => {
 
 describe('listModels', () => {
   it('openai keeps GPT-5+ text models, all low effort', async () => {
-    const ids = ['gpt-6-luna', 'gpt-4o', 'text-embedding-3-small', 'gpt-6-sol-2026-09-22', 'gpt-realtime-2', 'gpt-5-pro', 'gpt-image-2', 'gpt-5-mini', 'gpt-5-codex', 'gpt-5-chat-latest', 'gpt-6.1-sol'];
-    const fn = mockFetch(() => json({ object: 'list', data: ids.map((id) => ({ id, object: 'model' })) }));
+    const ids = [
+      'gpt-6-luna',
+      'gpt-4o',
+      'text-embedding-3-small',
+      'gpt-6-sol-2026-09-22',
+      'gpt-realtime-2',
+      'gpt-5-pro',
+      'gpt-image-2',
+      'gpt-5-mini',
+      'gpt-5-codex',
+      'gpt-5-chat-latest',
+      'gpt-6.1-sol',
+    ];
+    const fn = mockFetch(() =>
+      json({ object: 'list', data: ids.map((id) => ({ id, object: 'model' })) }),
+    );
     const models = await listModels('openai', 'k');
     expect(call(fn).url).toBe('https://api.openai.com/v1/models');
     expect(models.map((m) => m.id)).toEqual(['gpt-5-mini', 'gpt-6-luna', 'gpt-6.1-sol']);
@@ -248,10 +352,18 @@ describe('listModels', () => {
     const fn = mockFetch(() =>
       json({
         models: [
-          { id: 'grok-4.7', output_modalities: ['text'], capabilities: { reasoning_effort: ['low', 'high'] } },
+          {
+            id: 'grok-4.7',
+            output_modalities: ['text'],
+            capabilities: { reasoning_effort: ['low', 'high'] },
+          },
           { id: 'grok-4.3', output_modalities: ['text'] },
           { id: 'grok-4.20-0309-non-reasoning', output_modalities: ['text'] },
-          { id: 'grok-x-high-only', output_modalities: ['text'], capabilities: { reasoning_effort: ['high'] } },
+          {
+            id: 'grok-x-high-only',
+            output_modalities: ['text'],
+            capabilities: { reasoning_effort: ['high'] },
+          },
           { id: 'grok-4.20-multi-agent-0309', output_modalities: ['text'] },
         ],
       }),
@@ -261,7 +373,11 @@ describe('listModels', () => {
     expect(models).toEqual([
       { id: 'grok-4.3', label: 'grok-4.3', lowEffort: true },
       { id: 'grok-4.7', label: 'grok-4.7', lowEffort: true },
-      { id: 'grok-4.20-0309-non-reasoning', label: 'grok-4.20-0309-non-reasoning', lowEffort: false },
+      {
+        id: 'grok-4.20-0309-non-reasoning',
+        label: 'grok-4.20-0309-non-reasoning',
+        lowEffort: false,
+      },
       { id: 'grok-x-high-only', label: 'grok-x-high-only', lowEffort: false },
     ]);
   });
@@ -273,11 +389,35 @@ describe('listModels', () => {
         ? json({ data: { usage: 0, limit_remaining: null } })
         : json({
             data: [
-              { id: 'anthropic/claude-haiku-5.5', name: 'Anthropic: Claude Haiku 5.5', architecture: text, reasoning: { supported_efforts: ['high', 'low', 'none'] } },
-              { id: 'anthropic/claude-haiku-5.5:batch', name: 'Batch', architecture: text, reasoning: { supported_efforts: ['low'] } },
-              { id: 'google/image-gen', name: 'Image', architecture: { output_modalities: ['image', 'text'] } },
-              { id: 'mistralai/mistral-large-4-0', name: 'Mistral: Large 4', architecture: text, reasoning: { supported_efforts: ['high', 'none'] } },
-              { id: 'anthropic/claude-haiku-4.5', name: 'Anthropic: Claude Haiku 4.5', architecture: text, reasoning: { mandatory: false } },
+              {
+                id: 'anthropic/claude-haiku-5.5',
+                name: 'Anthropic: Claude Haiku 5.5',
+                architecture: text,
+                reasoning: { supported_efforts: ['high', 'low', 'none'] },
+              },
+              {
+                id: 'anthropic/claude-haiku-5.5:batch',
+                name: 'Batch',
+                architecture: text,
+                reasoning: { supported_efforts: ['low'] },
+              },
+              {
+                id: 'google/image-gen',
+                name: 'Image',
+                architecture: { output_modalities: ['image', 'text'] },
+              },
+              {
+                id: 'mistralai/mistral-large-4-0',
+                name: 'Mistral: Large 4',
+                architecture: text,
+                reasoning: { supported_efforts: ['high', 'none'] },
+              },
+              {
+                id: 'anthropic/claude-haiku-4.5',
+                name: 'Anthropic: Claude Haiku 4.5',
+                architecture: text,
+                reasoning: { mandatory: false },
+              },
             ],
           }),
     );
@@ -295,7 +435,9 @@ describe('listModels', () => {
 
   it('openrouter rejects a bad key even though /models is public', async () => {
     mockFetch((url) =>
-      url.endsWith('/key') ? json({ error: { message: 'User not found.', code: 401 } }, 401) : json({ data: [] }),
+      url.endsWith('/key')
+        ? json({ error: { message: 'User not found.', code: 401 } }, 401)
+        : json({ data: [] }),
     );
     await expect(listModels('openrouter', 'k')).rejects.toThrow('Invalid API key');
   });
@@ -305,8 +447,20 @@ describe('listModels', () => {
       json({
         object: 'list',
         data: [
-          { id: 'deepseek-v4-pro', object: 'model', owned_by: 'deepseek', name: 'DeepSeek-V4-Pro', effort: { supported_levels: ['low', 'high', 'max'], default_level: 'high' } },
-          { id: 'deepseek-flash', object: 'model', owned_by: 'deepseek', name: 'DeepSeek-V4.1-Flash', effort: { supported_levels: ['low', 'high', 'max'] } },
+          {
+            id: 'deepseek-v4-pro',
+            object: 'model',
+            owned_by: 'deepseek',
+            name: 'DeepSeek-V4-Pro',
+            effort: { supported_levels: ['low', 'high', 'max'], default_level: 'high' },
+          },
+          {
+            id: 'deepseek-flash',
+            object: 'model',
+            owned_by: 'deepseek',
+            name: 'DeepSeek-V4.1-Flash',
+            effort: { supported_levels: ['low', 'high', 'max'] },
+          },
           { id: 'deepseek-bare', object: 'model', owned_by: 'deepseek' },
         ],
       }),
@@ -325,8 +479,16 @@ describe('listModels', () => {
     const fn = mockFetch(() =>
       json({
         data: [
-          { id: 'claude-haiku-5-5', display_name: 'Claude Haiku 5.5', capabilities: { effort: { supported: true, low: { supported: true } } } },
-          { id: 'claude-haiku-4-5', display_name: 'Claude Haiku 4.5', capabilities: { effort: { supported: false, low: { supported: false } } } },
+          {
+            id: 'claude-haiku-5-5',
+            display_name: 'Claude Haiku 5.5',
+            capabilities: { effort: { supported: true, low: { supported: true } } },
+          },
+          {
+            id: 'claude-haiku-4-5',
+            display_name: 'Claude Haiku 4.5',
+            capabilities: { effort: { supported: false, low: { supported: false } } },
+          },
           { id: 'claude-legacy', display_name: 'Claude Legacy', capabilities: null },
         ],
         has_more: false,
