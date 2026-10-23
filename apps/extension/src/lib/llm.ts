@@ -92,7 +92,7 @@ export async function fetchJson<T>(
     res = await fetch(url, { ...init, signal: AbortSignal.timeout(TIMEOUT_MS) });
     raw = await res.text();
   } catch (e) {
-    throw new Error(isTimeout(e) ? timeoutMessage : 'Network error. Check your connection.');
+    throw new Error(isTimeout(e) ? timeoutMessage : 'Network error. Check your connection.', { cause: e });
   }
   let body: (T & ApiError) | null = null;
   try {
@@ -122,11 +122,11 @@ export function postJson(provider: ProviderId | 'typesafe', apiKey: string, body
 
 // Generation stopped midway, so content may hold a partial reply. OpenRouter: 'error' (the
 // upstream failed). DeepSeek: 'insufficient_system_resource' (overloaded) and 'aborted'.
-const INTERRUPTED = ['error', 'insufficient_system_resource', 'aborted'];
+const INTERRUPTED = new Set(['error', 'insufficient_system_resource', 'aborted']);
 
 function chatText(res: ChatResponse): string {
   const c = res.choices?.[0];
-  if (c?.error || INTERRUPTED.includes(c?.finish_reason ?? '')) {
+  if (c?.error || INTERRUPTED.has(c?.finish_reason ?? '')) {
     throw new Error(c?.error?.message ?? 'The provider failed to generate a reply.');
   }
   if (c?.message?.refusal || c?.finish_reason === 'content_filter') throw new Error(DECLINED);
@@ -196,7 +196,7 @@ async function send({ provider, apiKey, model }: LlmConfig, prompt: Prompt): Pro
 
 // How providers reject pictures: a text-only model (OpenRouter answers 404 "No endpoints found
 // that support image input"), or an image they couldn't fetch or read. 401, 402 and 429 aren't.
-const IMAGE_REJECTED = [400, 404, 422];
+const IMAGE_REJECTED = new Set([400, 404, 422]);
 
 /** Throws Error with a short user-facing message on any failure. */
 export async function generateText(cfg: LlmConfig, prompt: Prompt): Promise<string> {
@@ -206,7 +206,7 @@ export async function generateText(cfg: LlmConfig, prompt: Prompt): Promise<stri
   } catch (e) {
     // Not every model takes images, and a provider can fail to fetch one: retry once without
     // them. The [Image N] markers and alt text stay in the prompt.
-    if (!prompt.images.length || !(e instanceof HttpError && IMAGE_REJECTED.includes(e.status))) throw e;
+    if (!prompt.images.length || !(e instanceof HttpError && IMAGE_REJECTED.has(e.status))) throw e;
     text = await send(cfg, { ...prompt, images: [] });
   }
   if (!text.trim()) throw new Error(EMPTY);
@@ -309,7 +309,7 @@ async function fetchModels(provider: ProviderId, apiKey: string): Promise<ModelO
  * Error('Invalid API key') on auth failure. Sorted for display.
  */
 export async function listModels(provider: ProviderId, apiKey: string): Promise<ModelOption[]> {
-  return (await fetchModels(provider, apiKey)).sort((a, b) =>
+  return (await fetchModels(provider, apiKey)).toSorted((a, b) =>
     a.label.localeCompare(b.label, undefined, { numeric: true }),
   );
 }

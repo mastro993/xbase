@@ -116,8 +116,8 @@ function ProjectCard({
     description: useAutosave(settings, project.description, apply('description')),
     link: useAutosave(settings, project.link, apply('link')),
   };
-  const statuses = Object.values(fields).map((f) => f.status);
-  const saved = statuses.includes('saved') && !statuses.includes('editing');
+  const statuses = new Set(Object.values(fields).map((f) => f.status));
+  const saved = statuses.has('saved') && !statuses.has('editing');
   const label = fields.name.draft.trim() || `project ${position}`;
 
   const id = (field: ProjectField) => `project-${project.id}-${field}`;

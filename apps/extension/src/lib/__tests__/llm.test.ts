@@ -52,7 +52,12 @@ describe('generateText request shape', () => {
 
     const req = call(fn);
     expect(req.url).toBe(url);
-    expect(req.headers.authorization).toBe('Bearer k-123');
+    const httpsUrl = expect.stringMatching(/^https:\/\//);
+    expect(req.headers).toEqual({
+      authorization: 'Bearer k-123',
+      'content-type': 'application/json',
+      ...(provider === 'openrouter' && { 'HTTP-Referer': httpsUrl, 'X-OpenRouter-Title': 'x-companion' }),
+    });
     expect(req.body).toEqual({
       model: 'm-1',
       messages: [
@@ -64,10 +69,6 @@ describe('generateText request shape', () => {
       ...(provider === 'openai' && { store: false }),
     });
     expect(fn.mock.calls[0]![1]?.signal).toBeInstanceOf(AbortSignal);
-    if (provider === 'openrouter') {
-      expect(req.headers['X-OpenRouter-Title']).toBe('x-companion');
-      expect(req.headers['HTTP-Referer']).toMatch(/^https:\/\//);
-    }
   });
 
   it('anthropic uses Messages and joins only text blocks', async () => {
@@ -156,14 +157,14 @@ describe('generateText images', () => {
     expect(call(fn, 1).body.messages[1]).toEqual({ role: 'user', content: 'USER' });
   });
 
-  it.each<[string, () => Response]>([
-    ['bad key', () => json({ error: { message: 'Incorrect API key' } }, 401)],
-    ['lack of credits', () => json({ error: { message: 'Insufficient credits' } }, 402)],
-    ['rate limit', () => json({ error: { message: 'slow down' } }, 429)],
-    ['server error', () => new Response('<html>', { status: 502, statusText: 'Bad Gateway' })],
-  ])('does not retry a %s', async (_, res) => {
+  it.each<[string, () => Response, string]>([
+    ['bad key', () => json({ error: { message: 'Incorrect API key' } }, 401), 'Invalid API key'],
+    ['lack of credits', () => json({ error: { message: 'Insufficient credits' } }, 402), 'Out of credits'],
+    ['rate limit', () => json({ error: { message: 'slow down' } }, 429), 'Rate limit or quota reached'],
+    ['server error', () => new Response('<html>', { status: 502, statusText: 'Bad Gateway' }), '502: Bad Gateway'],
+  ])('does not retry a %s', async (_, res, message) => {
     const fn = mockFetch(res);
-    await expect(generateText(cfg('openai'), withImages)).rejects.toThrow();
+    await expect(generateText(cfg('openai'), withImages)).rejects.toThrow(message);
     expect(fn).toHaveBeenCalledTimes(1);
   });
 
@@ -281,7 +282,7 @@ describe('listModels', () => {
           }),
     );
     const models = await listModels('openrouter', 'k');
-    expect(fn.mock.calls.map(([u]) => u).sort()).toEqual([
+    expect(fn.mock.calls.map(([u]) => u).toSorted()).toEqual([
       'https://openrouter.ai/api/v1/key',
       'https://openrouter.ai/api/v1/models',
     ]);

@@ -28,7 +28,7 @@ import {
 } from '@/lib/x-dom';
 import './style.css';
 
-const send = <T>(msg: BackgroundRequest) => browser.runtime.sendMessage(msg) as Promise<T>;
+const send = <T>(msg: BackgroundRequest) => browser.runtime.sendMessage<BackgroundRequest, T>(msg);
 
 export default defineContentScript({
   matches: ['https://x.com/*'],
@@ -119,10 +119,10 @@ export default defineContentScript({
     }
 
     const onPush = (msg: ContentPush) => {
-      if (msg?.type === 'status') setReady(msg.ready === true);
+      if (msg?.type === 'status') setReady(msg.ready);
     };
     browser.runtime.onMessage.addListener(onPush);
-    send<StatusResponse>({ type: 'get-status' }).then((r) => setReady(r?.ready === true), () => {});
+    send<StatusResponse | undefined>({ type: 'get-status' }).then((r) => setReady(r?.ready === true), () => {});
 
     let queued = false;
     const scan = () => {

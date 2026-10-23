@@ -18,6 +18,7 @@ export function useAutosave(
   const pending = useRef<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const latest = useRef({ settings, apply });
+  // oxlint-disable-next-line react/refs -- latest-value ref, read only after render by flush and onPageHide
   latest.current = { settings, apply };
 
   const flush = useCallback(() => {
@@ -38,8 +39,8 @@ export function useAutosave(
       const text = pending.current;
       if (text === null) return;
       pending.current = null;
-      const { settings, apply } = latest.current;
-      void saveSettings(apply(settings, text), settings);
+      const last = latest.current;
+      void saveSettings(last.apply(last.settings, text), last.settings);
     };
     addEventListener('pagehide', onPageHide);
     return () => {

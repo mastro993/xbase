@@ -85,7 +85,7 @@ function block(tag: string, post: Post, label: Label): string {
 export function postBlock(post: TargetPost): { text: string; images: PromptImage[] } {
   // Pictures by priority: the post's, its quote's, then the thread's, nearest first.
   const sent = [post, ...post.earlier.toReversed(), ...post.later]
-    .flatMap((p) => [...p.images, ...(p.quoted?.images ?? [])])
+    .flatMap((p) => p.images.concat(p.quoted?.images ?? []))
     .slice(0, MAX_PROMPT_IMAGES);
   // Sent pictures are numbered; the rest keep a bare marker.
   const label: Label = (image) => {

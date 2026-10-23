@@ -64,6 +64,7 @@ async function runAction(req: RunRequest): Promise<string> {
     return text;
   } catch (e) {
     // Error text ends up in x.com's page, where X's own scripts can read it.
+    // oxlint-disable-next-line eslint/preserve-caught-error -- the original may hold the API key
     throw new Error(safeError(e instanceof Error ? e.message : String(e), apiKey));
   } finally {
     clearInterval(keepalive);

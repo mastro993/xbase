@@ -40,6 +40,8 @@ export function KeyRow({ provider, apiKey, onSave, active = false, invalid, desc
     if (!refocus.current) return;
     refocus.current = false;
     (editButton.current ?? input.current)?.focus();
+    // Not keyed on `editing`: Save closing the form would spend `refocus` before the key arrives.
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- deliberate, see above
   }, [apiKey]);
 
   function finish(newKey?: string) {

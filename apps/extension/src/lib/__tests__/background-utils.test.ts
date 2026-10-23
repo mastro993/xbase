@@ -100,7 +100,7 @@ describe('parseRequest', () => {
     const long = {
       author: 'a'.repeat(150),
       text: 't'.repeat(9000),
-      images: Array(6).fill({ ...image, alt: 'i'.repeat(600) }),
+      images: Array.from({ length: 6 }, () => ({ ...image, alt: 'i'.repeat(600) })),
       truncated: true,
       quoted: { ...quoted, text: 'q'.repeat(9000) },
     };

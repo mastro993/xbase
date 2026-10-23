@@ -33,7 +33,9 @@ function setup(savedKey = '') {
 function paste(input: HTMLInputElement, text: string) {
   const event = new Event('paste', { bubbles: true, cancelable: true });
   Object.defineProperty(event, 'clipboardData', { value: { getData: () => text } });
-  act(() => input.dispatchEvent(event));
+  act(() => {
+    input.dispatchEvent(event);
+  });
 }
 
 it('never puts the saved key in the DOM', () => {

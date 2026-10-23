@@ -1,0 +1,54 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["eslint", "typescript", "unicorn", "oxc", "import", "react", "jsx-a11y", "vitest"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn",
+    "perf": "warn"
+  },
+  "options": {
+    "typeAware": true,
+    "reportUnusedDisableDirectives": "warn"
+  },
+  "env": {
+    "builtin": true,
+    "browser": true
+  },
+  "rules": {
+    // In the pedantic category, so the categories above don't turn it on.
+    "react/rules-of-hooks": "error",
+    "react/exhaustive-deps": "warn",
+    "react/react-in-jsx-scope": "off",
+    // React Compiler rules that React's own preset leaves off; they repeat rules-of-hooks and
+    // exhaustive-deps.
+    "react/hooks": "off",
+    "react/exhaustive-effect-dependencies": "off",
+    "react/capitalized-calls": "off",
+    "react/memo-dependencies": "off",
+    "import/no-unassigned-import": ["warn", { "allow": ["**/*.css"] }],
+    // Base UI and shadcn parts set roles on purpose.
+    "jsx-a11y/prefer-tag-over-role": "off",
+    "unicorn/consistent-function-scoping": "off",
+    "typescript/no-unsafe-type-assertion": "off",
+    // tsc already rejects a missing return against the declared type, and unlike this rule it
+    // knows an exhaustive switch can't fall through.
+    "typescript/consistent-return": "off"
+  },
+  "overrides": [
+    {
+      "files": ["**/*.test.{ts,tsx}", "**/__tests__/**"],
+      "rules": {
+        // expect(obj.fn) is how mocks are asserted.
+        "typescript/unbound-method": "off",
+        "vitest/require-mock-type-parameters": "off"
+      }
+    },
+    {
+      // The side panel only autofocuses a control the user just opened (a new project, a key
+      // form, a removal's safe Cancel), never on load.
+      "files": ["apps/extension/src/components/sidepanel/**"],
+      "rules": { "jsx-a11y/no-autofocus": "off" }
+    }
+  ],
+  "ignorePatterns": ["**/routeTree.gen.ts"]
+}

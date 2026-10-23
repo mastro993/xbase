@@ -486,6 +486,7 @@ export async function setComposerText(ed: HTMLElement, text: string): Promise<bo
   const before = readEditor(ed);
   const done = () => norm(readEditor(ed)) === norm(text);
   const settle = async () => {
+    // oxlint-disable-next-line eslint/no-await-in-loop -- polling, sequential on purpose
     for (let t = 0; t < 1500 && !done(); t += 50) await sleep(50);
     return done();
   };

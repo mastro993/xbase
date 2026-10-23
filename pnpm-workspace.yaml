@@ -18,3 +18,8 @@ catalog:
   tailwindcss: ^4.3.3
   typescript: ^6.0.3
   vite: ^8.3.5
+
+allowBuilds:
+  # The root `prepare` script installs the git hooks instead: lefthook's own
+  # postinstall is skipped by pnpm's side-effects cache after a CI install.
+  lefthook: false

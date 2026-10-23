@@ -607,7 +607,7 @@ describe('setComposerText', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     exec.mockClear();
-    document.execCommand = exec as typeof document.execCommand;
+    document.execCommand = exec;
   });
   afterEach(() => vi.useRealTimers());
 
