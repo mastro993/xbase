@@ -1,0 +1,120 @@
+name: Release extension
+
+# Run by hand from the Actions tab, on main. Bumps the version in
+# apps/extension/package.json (WXT copies it into the manifest), builds the
+# extension zip, pushes the bump commit and its extension-v<version> tag to
+# main, then publishes a GitHub release with the zip attached and notes
+# generated from the pull requests merged since the last release.
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: Version bump
+        type: choice
+        options: [patch, minor, major]
+        default: patch
+
+permissions: {}
+
+jobs:
+  # Runs the dependencies' code, so it gets a read-only token, keeps no git
+  # credentials and restores no cache. The release job, which can write, runs
+  # none of it.
+  build:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read # check out the code
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Type check
+        run: pnpm --filter ./apps/extension typecheck
+
+      - name: Test
+        run: pnpm --filter ./apps/extension test
+
+      - name: Bump version
+        id: version
+        working-directory: apps/extension
+        env:
+          BUMP: ${{ inputs.bump }}
+        run: |
+          tag=$(npm version "$BUMP" --no-git-tag-version)
+          echo "version=${tag#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Build zip
+        run: pnpm --filter ./apps/extension zip
+
+      # WXT names the zip <package name>-<version>-chrome.zip.
+      - name: Upload zip
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: extension
+          path: apps/extension/.output/*-${{ steps.version.outputs.version }}-chrome.zip
+          if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write # push the bump commit and tag, create the release
+
+    steps:
+      # Checks out with the release deploy key and keeps it for the push below.
+      # The main ruleset blocks direct pushes but lets deploy keys bypass it;
+      # GITHUB_TOKEN can't bypass it. Without the RELEASE_DEPLOY_KEY secret,
+      # checkout falls back to GITHUB_TOKEN, which works only while no ruleset
+      # protects main.
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ssh-key: ${{ secrets.RELEASE_DEPLOY_KEY }}
+          persist-credentials: true
+
+      - name: Download zip
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: extension
+          path: release
+
+      # Atomic, so main and the tag move together or not at all. If main moved
+      # since the run started, including by another release, the push fails and
+      # nothing is released.
+      - name: Push version commit and tag
+        env:
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          npm --prefix apps/extension version "$VERSION" --no-git-tag-version
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m "chore(release): extension v$VERSION" apps/extension/package.json
+          git tag "extension-v$VERSION"
+          git push --atomic origin HEAD:main "extension-v$VERSION"
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          gh release create "extension-v$VERSION" release/*.zip \
+            --title "Extension v$VERSION" --generate-notes --verify-tag

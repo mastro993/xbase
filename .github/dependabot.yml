@@ -1,0 +1,32 @@
+version: 2
+
+updates:
+  # Pinned action SHAs and their version comments, in one weekly PR.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: ci
+      include: scope
+    groups:
+      github-actions:
+        patterns: ['*']
+
+  # The root directory covers every workspace package in pnpm-workspace.yaml
+  # and the single pnpm-lock.yaml. Minor and patch updates share one weekly PR;
+  # each major update gets its own.
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      npm-minor-patch:
+        update-types: [minor, patch]
