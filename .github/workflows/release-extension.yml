@@ -64,12 +64,13 @@ jobs:
       - name: Build zip
         run: pnpm --filter ./apps/extension zip
 
-      # WXT names the zip <package name>-<version>-chrome.zip.
+      # zip.name in wxt.config.ts names it x-companion-<version>-chrome.zip. A
+      # literal path: a wildcard under the hidden .output folder matches nothing.
       - name: Upload zip
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: extension
-          path: apps/extension/.output/*-${{ steps.version.outputs.version }}-chrome.zip
+          path: apps/extension/.output/x-companion-${{ steps.version.outputs.version }}-chrome.zip
           if-no-files-found: error
 
   release:

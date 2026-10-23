@@ -17,7 +17,7 @@ updates:
 
   # The root directory covers every workspace package in pnpm-workspace.yaml
   # and the single pnpm-lock.yaml. Minor and patch updates share one weekly PR;
-  # each major update gets its own.
+  # each major update, and each panelui-web update, gets its own.
   - package-ecosystem: npm
     directory: /
     schedule:
@@ -30,3 +30,5 @@ updates:
     groups:
       npm-minor-patch:
         update-types: [minor, patch]
+        # Pre-1.0, so a minor update can break: it always gets its own PR.
+        exclude-patterns: [panelui-web]
