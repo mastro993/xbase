@@ -1,0 +1,5 @@
+@import 'tailwindcss';
+@import '@xbase/ui/theme.css';
+
+/* Tailwind skips node_modules: scan the classes panelui-web ships. Relative to this file. */
+@source '../node_modules/panelui-web/dist';
