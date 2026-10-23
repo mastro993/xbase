@@ -14,6 +14,8 @@ corepack enable
 pnpm install
 ```
 
+Node 25 and later don't include Corepack: install it first with `npm install -g corepack`, or use Node 24 (`nvm use` reads `.nvmrc`).
+
 `pnpm install` also installs the git hooks (see [Git hooks](#git-hooks)).
 
 ## How the repository is organized
@@ -49,10 +51,10 @@ Both apps use [PanelUI web](https://panelui.dev/docs/web) components, from the `
 To copy a component's source into an app instead, so you can change it, use the shadcn CLI with the PanelUI registry, which each app's `components.json` registers. It writes to `src/components/panelui/`:
 
 ```sh
-pnpm dlx shadcn@latest add @panelui/rolling-number --cwd apps/web
+pnpm dlx shadcn@latest add @panelui/alert --cwd apps/web
 ```
 
-The CLI also adds `--success`, `--warning` and `--info` tokens and a `.dark` block to the app's stylesheet. Revert that part: the shared theme already defines these tokens, and there is no `.dark` class.
+For components that use colour tokens, such as alert, the CLI also edits the app's stylesheet: it adds `@custom-variant dark (&:is(.dark *));`, `:root` and `.dark` token blocks and an `@theme inline` block. Revert all of it. The shared theme already defines these tokens, and the custom variant would switch every `dark:` class to a `.dark` class that never exists, turning dark mode off.
 
 ## Run the checks
 
@@ -72,7 +74,7 @@ The website's build regenerates `apps/web/src/routeTree.gen.ts` from the files i
 
 ### Git hooks
 
-[Lefthook](https://github.com/evilmartians/lefthook) runs a pre-commit hook on the files you stage: `oxlint --fix`, then `oxfmt`, and it stages their fixes. A lint error stops the commit; warnings don't, but CI fails on them. To skip the hooks once, run `LEFTHOOK=0 git commit ...`.
+[Lefthook](https://github.com/evilmartians/lefthook) runs a pre-commit hook that lints the files you stage with oxlint and checks their formatting with oxfmt. A lint error or an unformatted file stops the commit; lint warnings don't, but CI fails on them. The hook only checks: run `pnpm format` or `pnpm lint:fix`, stage the result and commit again. To skip the hooks once, run `LEFTHOOK=0 git commit ...`.
 
 If the hooks don't run, reinstall them with `pnpm exec lefthook install`.
 

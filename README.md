@@ -15,7 +15,7 @@ Both apps are React 19 apps styled with Tailwind CSS v4 and built from [PanelUI 
 You need Node.js 22.12+ (`.nvmrc` pins 24) and pnpm 10, which [Corepack](https://nodejs.org/api/corepack.html) installs at the version in `package.json`:
 
 ```sh
-corepack enable
+corepack enable   # on Node 25+, first: npm install -g corepack
 pnpm install
 ```
 
