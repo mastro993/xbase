@@ -50,5 +50,6 @@
       "rules": { "jsx-a11y/no-autofocus": "off" }
     }
   ],
-  "ignorePatterns": ["**/routeTree.gen.ts"]
+  // Agent skills are vendored by `npx skills` and overwritten on update.
+  "ignorePatterns": ["**/routeTree.gen.ts", ".agents/**", ".claude/skills/**"]
 }
