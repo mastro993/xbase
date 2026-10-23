@@ -15,7 +15,7 @@ function Home() {
       </header>
       <Card>
         <Card.Header>
-          <Card.Title>x-companion</Card.Title>
+          <Card.Title as="h2">x-companion</Card.Title>
           <Card.Description>
             A Chromium extension that drafts replies and refines posts on X in your writing style,
             with your own AI key. It never posts for you.
