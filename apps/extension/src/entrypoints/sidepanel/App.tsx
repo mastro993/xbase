@@ -13,7 +13,7 @@ export default function App() {
   return (
     <div className="flex min-h-svh min-w-0 flex-col">
       <StatusHeader status={getStatus(settings)} />
-      <Tabs variant="underline" defaultValue="provider" className="p-4">
+      <Tabs variant="underline" defaultValue="provider" className="p-4 text-sm">
         <Tabs.List>
           <Tabs.Trigger value="provider" className="flex-1">
             Provider

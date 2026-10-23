@@ -3,5 +3,11 @@
 @import 'shadcn/tailwind.css';
 @import '@xbase/ui/theme.css';
 
+/* shadcn/tailwind.css narrows these two variants to its own attribute values, which PanelUI's
+   bare data-selected and data-active attributes don't match. Restore Tailwind's built-ins: the
+   shadcn components here don't use them. */
+@custom-variant data-selected (&[data-selected]);
+@custom-variant data-active (&[data-active]);
+
 /* Tailwind skips node_modules: scan the classes panelui-web ships. Relative to this file. */
 @source "../../node_modules/panelui-web/dist";

@@ -77,13 +77,16 @@ function InputGroupInput({ className, ...props }: React.ComponentProps<typeof In
   return <Input data-slot="input-group-control" className={cn('flex-1', className)} {...props} />;
 }
 
-// The ghost Textarea draws no box: the group draws it, with the ring.
+// The ghost Textarea draws no box: the group draws it, with the ring. It grows with its text in
+// CSS: PanelUI's JS resize loses to flex-1 in the group's column layout, and it doesn't refit when
+// the panel is resized.
 function InputGroupTextarea({ className, ...props }: React.ComponentProps<typeof Textarea>) {
   return (
     <Textarea
       data-slot="input-group-control"
       variant="ghost"
-      className={cn('flex-1 px-3 py-2', className)}
+      autoResize={false}
+      className={cn('field-sizing-content flex-1 resize-none px-3 py-2', className)}
       {...props}
     />
   );
