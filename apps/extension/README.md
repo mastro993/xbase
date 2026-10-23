@@ -85,16 +85,16 @@ Don't remove the extension or load the new version from another folder: either w
 
 ### Build from source
 
-To build x-companion yourself, you need Node.js 22.12+ and pnpm. These commands clone the repository and write a production build to `.output/chrome-mv3`:
+To build x-companion yourself, you need Node.js 22.12+ and pnpm. x-companion is developed in the XBase monorepo, in `apps/extension`. These commands clone it and write a production build to `apps/extension/.output/chrome-mv3`:
 
 ```sh
-git clone https://github.com/mastro993/x-companion.git
-cd x-companion
+git clone https://github.com/mastro993/xbase.git
+cd xbase
 pnpm install
-pnpm build
+pnpm --filter @xbase/extension build
 ```
 
-Load `.output/chrome-mv3` as in steps 3 to 6 of [Install](#install). To update, run `git pull`, `pnpm install` and `pnpm build`, then reload the extension and any open x.com tab.
+Load `apps/extension/.output/chrome-mv3` as in steps 3 to 6 of [Install](#install). To update, run `git pull`, `pnpm install` and `pnpm --filter @xbase/extension build`, then reload the extension and any open x.com tab.
 
 ## Set up and generate a reply
 
@@ -109,6 +109,7 @@ Setup takes one tab in the side panel, plus an optional style guide and project 
    - **Rules**: dos and don'ts the AI must always respect, such as "no hashtags" or "always reply in English".
 
    Only the sections you fill in are sent with each request. Changes save automatically.
+
 4. Optionally, add what you build on the **Projects** tab, up to 10 projects. Each one has a name, a description of up to 300 characters and a link. A fresh reply mentions a project only when it fits the post, and only with the facts you wrote. Projects without a name aren't sent. **Remove** asks you to confirm inline.
 5. When the header shows **Ready**, open a reply: the reply dialog, or the inline reply box on a post's page. On an empty box, click **Generate**. Once the box has text, whether a draft or your own, click **Rewrite** and pick **Polish**, **Punchier** or **Match style**, or click the **Refine** icon to delete it and generate a fresh reply. To polish a post of your own, write a draft in the home box or the **Post** dialog and click **Refine**. Review and edit the result before you post.
 

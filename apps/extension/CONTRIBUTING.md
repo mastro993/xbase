@@ -1,12 +1,14 @@
 # Contributing to x-companion
 
-This guide covers how to run x-companion locally, how the code is organized, the rules the code follows, and how to test a change before you open a pull request. For what the extension does and how to install it, see the [README](README.md).
+This guide covers how to run x-companion locally, how the code is organized, the rules the code follows, and how to test a change before you open a pull request. For what the extension does and how to install it, see the [README](README.md). For the repository-wide setup, checks and pull request rules, see the [XBase contributing guide](../../CONTRIBUTING.md).
+
+x-companion lives in `apps/extension` of the XBase monorepo. Run the commands in this guide from that folder, and read the paths in it as relative to it, unless the text says otherwise.
 
 x-companion is in early development, so expect parts of the code and this guide to change.
 
 ## Set up your environment
 
-You need Node.js 22.12+, pnpm and a Chromium browser, version 140 or newer. Install dependencies once:
+You need Node.js 22.12+, pnpm and a Chromium browser, version 140 or newer. Install dependencies once, from the repository root:
 
 ```sh
 pnpm install
@@ -16,7 +18,7 @@ The install also runs `wxt prepare`, which generates the TypeScript config in `.
 
 ## Run a development build
 
-This command builds into `.output/chrome-mv3-dev`, starts a dev server on `localhost:3000` and opens Chrome at x.com/home with the extension loaded:
+This command builds into `.output/chrome-mv3-dev`, starts a dev server on `localhost:3000` (or the next free port) and opens Chrome at x.com/home with the extension loaded:
 
 ```sh
 pnpm dev
@@ -33,7 +35,7 @@ How the dev session behaves:
 
 ### Use another browser or profile
 
-Personal overrides go in a `web-ext.config.ts` at the repo root. The file is gitignored, so it affects only your checkout.
+Personal overrides go in a `web-ext.config.ts` in `apps/extension`. The file is gitignored, so it affects only your checkout.
 
 To open Brave (or another Chromium browser) instead of Chrome, point the `chrome` binary at it. Give it its own profile, because Chromium refuses a profile that a newer browser version created:
 
@@ -75,15 +77,15 @@ To load the build, follow the steps in the README's [build from source section](
 
 ## Release a version
 
-The owner releases by hand with the **Release** workflow (`.github/workflows/release.yml`). On the repository's **Actions** tab, pick **Release**, click **Run workflow** on `main` and choose a bump:
+The owner releases by hand with the **Release extension** workflow (`.github/workflows/release-extension.yml`). On the repository's **Actions** tab, pick **Release extension**, click **Run workflow** on `main` and choose a bump:
 
 - **patch** for fixes, for example `0.1.0` to `0.1.1`
 - **minor** for new features, for example `0.1.0` to `0.2.0`
 - **major** for breaking changes, for example `0.1.0` to `1.0.0`
 
-The workflow type checks and tests the code, bumps the version in `package.json`, and builds the zip. It then pushes a `chore(release): v<version>` commit and a `v<version>` tag to `main`, and publishes a GitHub release with the zip attached. The release notes list the pull requests merged since the previous tag, by title, so write titles that read well in a changelog.
+The workflow type checks and tests the extension, bumps the version in `apps/extension/package.json`, and builds the zip. It then pushes a `chore(release): extension v<version>` commit and an `extension-v<version>` tag to `main`, and publishes a GitHub release with the zip attached. The release notes list the pull requests merged since the previous tag, by title, from the whole repository, so write titles that read well in a changelog and scope them to the app, such as `feat(extension): …`. Versions up to 0.1.4 were released from [mastro993/x-companion](https://github.com/mastro993/x-companion/releases).
 
-The `main` ruleset only accepts changes through pull requests, so the workflow pushes with a deploy key, which the ruleset lets bypass it. The key's private half is stored in the `RELEASE_DEPLOY_KEY` Actions secret, and its public half is a deploy key on the repository with write access.
+If a ruleset protects `main` so that it only accepts changes through pull requests, the workflow needs a deploy key that the ruleset lets bypass it. Store the key's private half in the `RELEASE_DEPLOY_KEY` Actions secret, and add its public half as a deploy key on the repository with write access. Without that secret, the workflow pushes with its own token, which works only while no ruleset protects `main`.
 
 If `main` moves while the workflow runs, for example because someone merged a pull request or another release finished first, the push fails and nothing is released. Start a new run with **Run workflow**: **Re-run jobs** on the failed run reuses its old commit and fails the same way.
 
@@ -106,7 +108,7 @@ x-companion has three parts that talk through extension messages, plus the provi
   - Reads the user's own @handle from the side navigation's profile link, so the prompt can say which posts are theirs.
   - Fills the Draft.js editor with a synthetic paste, then checks the result. A result is dropped if the box changed while the action ran.
 - **Side panel** (`src/entrypoints/sidepanel/`, `src/components/sidepanel/`):
-  - Built with React 19, shadcn/ui (Base UI) and Tailwind v4, in X's colour palette.
+  - Built with React 19, [PanelUI web](https://panelui.dev/docs/web) (`panelui-web`), the shadcn/ui (Base UI) components PanelUI lacks, and Tailwind v4, in X's colour palette from the shared `@xbase/ui` theme.
   - Follows the system light or dark theme.
   - Keeps all state in extension storage: the settings in one item, the API keys in another (`src/lib/settings.ts`). Both live in `storage.local`. Only changed parts are written, so a style edit never rewrites the keys.
   - Shows saved keys only masked: a key can be replaced or removed, never read back into the page.
@@ -138,7 +140,7 @@ src/
     sidepanel/             side panel page (index.html, main.tsx, App.tsx)
   components/
     sidepanel/             panel UI: status header, provider/key/model, style, projects
-    ui/                    shadcn/ui components
+    ui/                    shadcn/ui components PanelUI lacks (field, input-group, combobox, ...)
   hooks/                   useSettings (storage-backed), useModels, useAutosave
   lib/
     providers.ts           provider ids, labels, default models
@@ -149,7 +151,7 @@ src/
     prompts/               one prompt per action, shared prompt blocks
     background-utils.ts    URL check + untrusted message validation
     x-dom.ts               every X selector and DOM routine
-  assets/tailwind.css      theme tokens (side panel only)
+  assets/tailwind.css      Tailwind entry: shared @xbase/ui theme, panelui-web classes (side panel only)
 public/icon/               toolbar and store icons
 wxt.config.ts              manifest (permissions, hosts, minimum Chrome)
 ```
@@ -163,7 +165,7 @@ These rules keep the extension small and private, and they limit the work when X
 - **Treat messages as untrusted**: validate every message that reaches the background in `src/lib/background-utils.ts`, and cap the length of any new field.
 - **Clean text bound for x.com**: X's own scripts can read anything the content script shows. Pass error text through `safeError` in `src/lib/background-utils.ts`, which removes keys and account IDs.
 - **Call providers over plain HTTP**: the adapters use `fetch`, with no provider SDKs. To add a provider, extend `src/lib/providers.ts`, the matching request path in `src/lib/llm.ts` and the host list in `wxt.config.ts`.
-- **Reuse shadcn/ui components**: build side panel UI from the components in `src/components/ui/`. Add missing ones with the shadcn CLI rather than writing your own.
+- **Use PanelUI first**: build side panel UI from PanelUI web components, imported one per path (`import { Button } from 'panelui-web/button'`). For what PanelUI lacks, use the shadcn/ui components in `src/components/ui/`, and add missing ones with the shadcn CLI rather than writing your own.
 - **Don't add permissions lightly**: every permission and host in `wxt.config.ts` shows up in the install prompt. Explain any new one in your pull request.
 - **Update the docs with the code**: if a change affects behaviour described in the README or this guide, update that text in the same pull request.
 
@@ -173,13 +175,13 @@ Unit tests cover the logic, but they never call a real provider or load the real
 
 ### Run the automated checks
 
-Run `pnpm compile`, `pnpm test` and `pnpm build` before every commit. The CI workflow runs the same three checks on every pull request and every push to `main`:
+Run `pnpm typecheck`, `pnpm test` and `pnpm build` before every commit. The CI workflow runs them on every pull request and every push to `main`, together with the repository-wide lint and format checks (see the [XBase contributing guide](../../CONTRIBUTING.md#run-the-checks)):
 
 ```sh
 pnpm test                                          # all unit tests, once
 pnpm vitest                                        # watch mode
 pnpm vitest run src/lib/__tests__/x-dom.test.ts    # a single file
-pnpm compile                                       # TypeScript type check
+pnpm typecheck                                     # TypeScript type check
 pnpm build                                         # catches bundling and manifest errors
 ```
 
@@ -250,9 +252,8 @@ Each part of the extension has its own DevTools console:
 
 ## Open a pull request
 
-Branch from `main` and keep each pull request to one change:
+Follow the [XBase pull request rules](../../CONTRIBUTING.md#open-a-pull-request). For the extension, also:
 
-- **Commit messages** follow [Conventional Commits](https://www.conventionalcommits.org/), for example `feat: add Gemini provider` or `fix: detect the inline reply box`.
-- **Checks**: `pnpm compile`, `pnpm test` and `pnpm build` pass, and you ran the manual tests that your change touches.
-- **Description**: say what changed, why, and how you tested it. For side panel or composer control changes, add before and after screenshots with no API keys or personal data in them.
-- **Review**: automated Claude reviews run on the owner's pull requests. Other pull requests get one only after the owner adds the `claude-review` label.
+- **Scope** the title to the app, for example `feat(extension): add Gemini provider` or `fix(extension): detect the inline reply box`.
+- **Test by hand**: run the manual tests that your change touches.
+- **Screenshots**: for side panel or composer control changes, add before and after screenshots with no API keys or personal data in them.
