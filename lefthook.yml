@@ -1,13 +1,16 @@
 # Git hooks, installed by the root `prepare` script on `pnpm install`.
 # Skip them once with `LEFTHOOK=0 git commit ...`.
+#
+# Check only, never fix: rewriting a file that also has unstaged changes can put
+# those changes back in the wrong place.
 pre-commit:
-  piped: true # in order, stopping at the first failure: lint fixes first, then format
+  parallel: true
   jobs:
     # Warnings don't block a commit; CI fails on them.
     - name: lint
       glob: '*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}'
-      run: pnpm exec oxlint --fix --no-error-on-unmatched-pattern {staged_files}
-      stage_fixed: true
+      run: pnpm exec oxlint --no-error-on-unmatched-pattern {staged_files}
+      fail_text: Fix the errors above; `pnpm lint:fix` applies the safe fixes.
     - name: format
-      run: pnpm exec oxfmt --no-error-on-unmatched-pattern {staged_files}
-      stage_fixed: true
+      run: pnpm exec oxfmt --check --no-error-on-unmatched-pattern {staged_files}
+      fail_text: Run `pnpm format`, then stage the result.
