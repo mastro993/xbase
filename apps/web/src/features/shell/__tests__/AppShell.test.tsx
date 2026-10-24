@@ -104,6 +104,22 @@ it('opens the navigation in a drawer that closes when a link is followed', async
   expect(screen.getByRole('heading', { level: 1, name: 'Queue' })).toBeDefined();
 });
 
+it('positions every scroll box, so absolutely positioned content stays inside it', async () => {
+  renderAt('/drafts/abc');
+  await screen.findByText('Workbench');
+  // Without `relative`, sr-only status lines escape their scroll box and stretch the page itself,
+  // which then scrolls past its content. happy-dom has no layout, so this checks the class.
+  const scrollBoxes = [
+    screen.getByRole('main'),
+    screen.getByText('List').parentElement,
+    screen.getByText('Workbench').parentElement,
+  ];
+  for (const box of scrollBoxes) {
+    expect(box?.classList).toContain('overflow-y-auto');
+    expect(box?.classList).toContain('relative');
+  }
+});
+
 it('keeps the page heading focusable, with a way back from a detail page', async () => {
   renderAt('/drafts/abc');
   const heading = await screen.findByRole('heading', { level: 1, name: 'Drafts' });

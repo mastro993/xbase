@@ -24,6 +24,7 @@ type SplitViewProps = {
  * A list pane beside a workbench, each scrolling on its own. On wide screens the list pane floats
  * beside the rail like BoardUI's sidebar panel; below lg it's flat, and its header (with the h1)
  * stays when the workbench replaces the list.
+ * Each scroll box is `relative`, like AppShell's <main>, so sr-only content can't escape it.
  */
 export function SplitView({
   title,
@@ -64,13 +65,18 @@ export function SplitView({
           </h1>
           {action}
         </header>
-        <div className={cx('min-h-0 flex-1 overflow-y-auto lg:block', detail ? 'hidden' : 'block')}>
+        <div
+          className={cx(
+            'relative min-h-0 flex-1 overflow-y-auto lg:block',
+            detail ? 'hidden' : 'block',
+          )}
+        >
           {list}
         </div>
       </div>
       <div
         className={cx(
-          'min-h-0 min-w-0 flex-1 flex-col overflow-y-auto lg:flex',
+          'relative min-h-0 min-w-0 flex-1 flex-col overflow-y-auto lg:flex',
           detail ? 'flex' : 'hidden',
         )}
       >
