@@ -12,7 +12,7 @@ export const Route = createFileRoute('/_authed/drafts/$draftId')({
       getPostFn({ data: { id: params.draftId } }),
       getAiSettingsFn(),
     ]);
-    return { post, aiReady: ai !== null };
+    return { post, aiReady: ai.writing !== null };
   },
   component: DraftPage,
   notFoundComponent: DraftNotFound,

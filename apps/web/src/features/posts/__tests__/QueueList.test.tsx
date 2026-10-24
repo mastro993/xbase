@@ -21,6 +21,7 @@ const at = (days: number, hour: number) => {
 };
 const queued = (id: string, publishAt: string, extra: Partial<PostDto> = {}): PostDto => ({
   id,
+  account: 'xbase',
   status: 'scheduled',
   parts: [`Post ${id}`],
   publishAt,

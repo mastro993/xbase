@@ -66,7 +66,7 @@ pnpm doesn't run dependencies' install scripts unless `allowBuilds` in `pnpm-wor
 
 `apps/web` is a Node server, not a static site: TanStack Start renders every page on request, behind the sign-in, and [Nitro](https://nitro.build)'s `node-server` preset builds it into `apps/web/.output`. Nothing is prerendered.
 
-- **Give it a `.env` first**: the server doesn't start without `APP_PASSWORD`. Copy `apps/web/.env.example` to `apps/web/.env` (git ignores it) and set a password of 12 characters or more. [apps/web/README.md](apps/web/README.md#environment) lists every variable.
+- **Give it a `.env` first**: the server doesn't start without `X_CLIENT_ID` and `X_CLIENT_SECRET`, the OAuth 2.0 credentials of an X app of yours with `http://127.0.0.1:5173/auth/x/callback` as a callback URL. Copy `apps/web/.env.example` to `apps/web/.env` (git ignores it) and fill them in, then open the dev server at `127.0.0.1`, not `localhost`. [apps/web/README.md](apps/web/README.md#set-up-your-x-app) explains the X app and lists every variable.
 - **Keep server code in `*.server.ts` files**: TanStack Start fails the build when browser code imports one. The UI reaches the server through `createServerFn` wrappers in each feature's `*.functions.ts`.
 
 ### Change the database schema

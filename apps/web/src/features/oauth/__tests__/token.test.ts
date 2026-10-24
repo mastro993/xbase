@@ -15,7 +15,11 @@ import {
 } from './fixtures';
 
 vi.mock('@/server/env.server', () => ({
-  getEnv: () => ({ APP_PASSWORD: 'test-password-123', APP_URL: 'https://xbase.test' }),
+  getEnv: () => ({
+    APP_URL: 'https://xbase.test',
+    X_CLIENT_ID: 'test-client-id',
+    X_CLIENT_SECRET: 'test-client-secret',
+  }),
 }));
 
 const NOW = new Date('2026-10-23T12:00:00.000Z');

@@ -1,12 +1,13 @@
 import { isRedirect } from '@tanstack/react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { seedAccount } from '@/test/accounts';
 import { createTestDb } from '@/test/db';
 import { inRequest } from '@/test/request';
 import { isPublicPath, pageGuard, PUBLIC_SERVER_FNS, serverFnGuard } from '../guards';
 import { issueSession } from '../session.server';
 
 vi.mock('@/server/env.server', () => ({
-  getEnv: () => ({ APP_PASSWORD: 'correct horse battery', APP_URL: 'https://xbase.test' }),
+  getEnv: () => ({ APP_URL: 'https://xbase.test' }),
 }));
 
 beforeEach(() => {
@@ -16,6 +17,8 @@ beforeEach(() => {
 describe('isPublicPath', () => {
   it.each([
     ['/login', true],
+    ['/auth/x/start', true],
+    ['/auth/x/callback', true],
     ['/api/health', true],
     ['/api/v1/drafts', true],
     ['/mcp', true],
@@ -27,6 +30,7 @@ describe('isPublicPath', () => {
     ['/drafts', false],
     ['/oauth/authorize', false],
     ['/login/extra', false],
+    ['/auth/x', false],
     ['/api', false],
     ['/mcpx', false],
   ])('%s -> %s', (pathname, expected) => {
@@ -35,7 +39,10 @@ describe('isPublicPath', () => {
 });
 
 async function signedInCookie() {
-  const { response } = await inRequest(new Request('https://xbase.test/'), issueSession);
+  const account = seedAccount();
+  const { response } = await inRequest(new Request('https://xbase.test/'), () =>
+    issueSession(account),
+  );
   return response.headers.get('set-cookie')!.split(';')[0];
 }
 
@@ -110,14 +117,11 @@ describe('serverFnGuard', () => {
     return { call, next };
   };
 
-  it.each(['loginFn', 'getAuthStateFn', 'logoutFn'])(
-    'allows %s without a session',
-    async (name) => {
-      const { call, next } = run(name);
-      await call;
-      expect(next).toHaveBeenCalledOnce();
-    },
-  );
+  it.each(['getAuthStateFn', 'logoutFn'])('allows %s without a session', async (name) => {
+    const { call, next } = run(name);
+    await call;
+    expect(next).toHaveBeenCalledOnce();
+  });
 
   it('answers 401 for any other function without a session', async () => {
     const { call, next } = run('signOutEverywhereFn');

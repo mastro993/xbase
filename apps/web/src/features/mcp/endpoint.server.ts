@@ -12,7 +12,7 @@ import { verifyAccessToken } from '@/features/oauth/token.server';
 import { registerTools } from './tools.server';
 
 const INSTRUCTIONS =
-  'XBase is the owner’s personal X (Twitter) workspace. Draft posts and threads, schedule them and read saved searches. Times are ISO 8601 with a time zone. Nothing here publishes right away, and publishing to X isn’t connected yet.';
+  'XBase is a personal X (Twitter) workspace for one or more X accounts. Draft posts and threads, schedule them and read saved searches. Each post belongs to an account: lists cover every account unless `account` (an X username) narrows them, and create_draft needs `account` when several are linked. Times are ISO 8601 with a time zone. Nothing here publishes right away, and publishing to X isn’t connected yet.';
 
 /** A fresh server per request: the handler is stateless. */
 function buildMcpServer(): McpServer {

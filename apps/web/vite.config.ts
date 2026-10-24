@@ -6,6 +6,11 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
   resolve: { tsconfigPaths: true },
+  // The dev APP_URL (env.server.ts): X's sign-in only redirects back to 127.0.0.1, not localhost,
+  // and the sign-in cookie only comes back to the host that set it. Nitro would otherwise pick
+  // port 3000; strictPort stops `pnpm dev` when 5173 is taken instead of moving to a port X
+  // won't redirect to.
+  server: { host: '127.0.0.1', port: 5173, strictPort: true },
   plugins: [
     tailwindcss(),
     tanstackStart(),

@@ -27,6 +27,7 @@ const rome = (now: string, hour12?: boolean): Clock => ({
 function post(id: string, publishAt: string | null): PostDto {
   return {
     id,
+    account: 'xbase',
     status: 'scheduled',
     parts: [id],
     publishAt,

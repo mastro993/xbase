@@ -1,17 +1,25 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, getRouteApi } from '@tanstack/react-router';
+import { z } from 'zod';
+import { AccountsCard } from '@/features/accounts/AccountsCard';
 import { getAiSettingsFn, getVoiceFn } from '@/features/ai/ai.functions';
 import { AiProviderCard } from '@/features/ai/AiProviderCard';
+import { DecisionCard } from '@/features/ai/DecisionCard';
 import { VoiceCard } from '@/features/ai/VoiceCard';
 import { listApiKeysFn } from '@/features/api-keys/api-keys.functions';
 import { ApiKeysCard } from '@/features/api-keys/ApiKeysCard';
+import { SIGN_IN_ERRORS } from '@/features/auth/auth.schema';
 import { getMcpSettingsFn } from '@/features/mcp/mcp.functions';
 import { McpCard } from '@/features/settings/McpCard';
 import { SessionsCard } from '@/features/settings/SessionsCard';
 import { FullWidthPage } from '@/features/shell/FullWidthPage';
 
+const authed = getRouteApi('/_authed');
+
 // Mutations call their server function, then router.invalidate() so this loader reads the
-// stored result. Secrets never appear here: AI keys come back as a hint, API keys as a prefix.
+// stored result. Secrets never appear here: AI keys stay in the server's environment, API keys
+// come back as a prefix. ?accountError= is why adding an X account didn't work.
 export const Route = createFileRoute('/_authed/settings')({
+  validateSearch: z.object({ accountError: z.enum(SIGN_IN_ERRORS).optional().catch(undefined) }),
   head: () => ({ meta: [{ title: 'Settings · XBase' }] }),
   loader: async () => {
     const [ai, voice, apiKeys, mcp] = await Promise.all([
@@ -27,13 +35,18 @@ export const Route = createFileRoute('/_authed/settings')({
 
 function SettingsPage() {
   const { ai, voice, apiKeys, mcp } = Route.useLoaderData();
+  const { accountError } = Route.useSearch();
+  const accounts = authed.useLoaderData();
   return (
     <FullWidthPage
       title="Settings"
-      description="AI writing, access for other apps, and where you’re signed in."
+      description="Your X accounts, AI writing, access for other apps, and where you’re signed in."
     >
+      <AccountsCard data={accounts} error={accountError} />
       <AiProviderCard settings={ai} />
-      <VoiceCard voice={voice} />
+      {/* Keyed by account: switching accounts loads another voice into a fresh form. */}
+      <VoiceCard key={accounts.current.id} voice={voice} username={accounts.current.username} />
+      <DecisionCard model={ai.decision} />
       <ApiKeysCard keys={apiKeys} />
       <McpCard settings={mcp} />
       <SessionsCard />

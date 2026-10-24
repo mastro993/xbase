@@ -4,6 +4,7 @@ import { createApiKey } from '@/features/api-keys/api-keys.server';
 import type { PostDto } from '@/features/posts/posts.schema';
 import { createDraft } from '@/features/posts/posts.server';
 import { posts } from '@/server/db/schema';
+import { seedAccount } from '@/test/accounts';
 import { createTestDb } from '@/test/db';
 import { Route as DraftsRoute } from '../drafts';
 import { Route as DraftRoute } from '../drafts.$draftId';
@@ -17,8 +18,10 @@ type AnyRoute = { options: { server?: { handlers?: unknown } } };
 const BASE = 'https://xbase.test/api/v1';
 let key: string;
 let db: ReturnType<typeof createTestDb>;
+let accountId: string;
 beforeEach(() => {
   db = createTestDb();
+  accountId = seedAccount();
   key = createApiKey('test').key;
 });
 
@@ -121,7 +124,12 @@ describe('/api/v1/drafts', () => {
     const res = await call(DraftsRoute, 'POST', { body: { parts: ['Hello', 'World'] } });
     expect(res.status).toBe(201);
     const post: PostDto = await res.json();
-    expect(post).toMatchObject({ status: 'draft', parts: ['Hello', 'World'], origin: 'api' });
+    expect(post).toMatchObject({
+      account: 'user1001',
+      status: 'draft',
+      parts: ['Hello', 'World'],
+      origin: 'api',
+    });
 
     const list = await call(DraftsRoute, 'GET');
     expect(list.status).toBe(200);
@@ -131,7 +139,7 @@ describe('/api/v1/drafts', () => {
   it('honours ?limit= and rejects a bad one', async () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     for (const text of ['a', 'b', 'c']) {
-      createDraft({ parts: [text], origin: 'api' });
+      createDraft({ accountId, parts: [text], origin: 'api' });
       vi.advanceTimersByTime(1000);
     }
     vi.useRealTimers();
@@ -159,6 +167,58 @@ describe('/api/v1/drafts', () => {
       message: expect.stringContaining(message),
     });
     expect(db.select().from(posts).all()).toEqual([]);
+  });
+});
+
+describe('the account of /api/v1/drafts', () => {
+  const create = (body: Record<string, unknown>) => call(DraftsRoute, 'POST', { body });
+  const invalid = (message: string) => ({ error: 'invalid_request', message });
+
+  it('may be left out, or named with or without the @, while one account is linked', async () => {
+    const responses = await Promise.all(
+      [undefined, 'user1001', '@USER1001'].map((account) => create({ parts: ['x'], account })),
+    );
+    expect(responses.map(({ status }) => status)).toEqual([201, 201, 201]);
+    const bodies: PostDto[] = await Promise.all(responses.map((res) => res.json()));
+    expect(bodies.map((post) => post.account)).toEqual(['user1001', 'user1001', 'user1001']);
+  });
+
+  it('is required once several accounts are linked', async () => {
+    seedAccount({ id: '2002', username: 'other' });
+    const res = await create({ parts: ['x'] });
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual(invalid('Say which account: @user1001, @other.'));
+
+    const named = await create({ parts: ['x'], account: '@other' });
+    expect(named.status).toBe(201);
+    expect((await named.json()).account).toBe('other');
+  });
+
+  it('answers 400 for an account that isn’t linked or isn’t a username', async () => {
+    const unknown = await create({ parts: ['x'], account: '@nobody' });
+    expect(unknown.status).toBe(400);
+    expect(await unknown.json()).toEqual(
+      invalid('@nobody isn’t linked to XBase. Linked accounts: @user1001.'),
+    );
+    const malformed = await create({ parts: ['x'], account: 'not a username' });
+    expect(malformed.status).toBe(400);
+    expect(db.select().from(posts).all()).toEqual([]);
+  });
+
+  it('narrows the list with ?account=, which lists every account without it', async () => {
+    const other = seedAccount({ id: '2002', username: 'other' });
+    createDraft({ accountId, parts: ['mine'], origin: 'api' });
+    createDraft({ accountId: other, parts: ['theirs'], origin: 'api' });
+    const accounts = async (path: string) =>
+      (await (await call(DraftsRoute, 'GET', { path })).json()).items.map(
+        (post: PostDto) => post.account,
+      );
+
+    expect(await accounts('/drafts?account=other')).toEqual(['other']);
+    expect(await accounts('/drafts?account=%40user1001')).toEqual(['user1001']);
+    expect(new Set(await accounts('/drafts'))).toEqual(new Set(['other', 'user1001']));
+    const unknown = await call(DraftsRoute, 'GET', { path: '/drafts?account=nobody' });
+    expect(unknown.status).toBe(400);
   });
 });
 

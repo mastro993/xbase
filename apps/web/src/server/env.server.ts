@@ -1,7 +1,8 @@
 import { z } from 'zod';
 import { isLoopbackHost } from '../lib/loopback';
 
-const DEV_APP_URL = 'http://localhost:5173';
+// X refuses `localhost` callback URLs for OAuth, but takes 127.0.0.1 (vite.config.ts listens there).
+const DEV_APP_URL = 'http://127.0.0.1:5173';
 
 // An origin only: OAuth issuer, absolute links and the cookie's Secure flag come from it, never
 // from request.url or Host / X-Forwarded-* headers, which a proxy or a client controls.
@@ -26,11 +27,24 @@ const AppUrl = z
 
 const HOPS_ERROR = 'TRUST_PROXY_HOPS must be a whole number from 0 to 5';
 
+const required = (name: string) =>
+  z
+    .string({ error: `${name} is required` })
+    .trim()
+    .min(1);
+// An AI provider's key is optional: without one, that provider can't be picked in Settings.
+const optionalKey = z.string().trim().min(1).optional();
+
 const EnvSchema = z.object({
-  APP_PASSWORD: z
-    .string({ error: 'APP_PASSWORD is required' })
-    .min(12, 'APP_PASSWORD must be at least 12 characters'),
   APP_URL: AppUrl,
+  // The OAuth 2.0 client of the owner's X app: signing in and every X API call go through it.
+  X_CLIENT_ID: required('X_CLIENT_ID'),
+  X_CLIENT_SECRET: required('X_CLIENT_SECRET'),
+  OPENAI_API_KEY: optionalKey,
+  ANTHROPIC_API_KEY: optionalKey,
+  XAI_API_KEY: optionalKey,
+  OPENROUTER_API_KEY: optionalKey,
+  TYPESAFE_API_KEY: optionalKey,
   DATABASE_PATH: z.string().min(1).default('./data/xbase.db'),
   // How many reverse proxies in front of XBase add to X-Forwarded-For (see client-ip.server.ts).
   TRUST_PROXY_HOPS: z.coerce
@@ -41,12 +55,14 @@ const EnvSchema = z.object({
     .default(0),
 });
 
-type Env = z.infer<typeof EnvSchema>;
+export type Env = z.infer<typeof EnvSchema>;
 
 /** Validates an environment; throws one readable error listing every problem. */
 export function parseEnv(source: Record<string, string | undefined>, production: boolean): Env {
-  // Empty values from a copied .env.example count as unset.
-  const input = Object.fromEntries(Object.entries(source).filter(([, value]) => value !== ''));
+  // Empty (or blank) values from a copied .env.example count as unset.
+  const input = Object.fromEntries(
+    Object.entries(source).filter(([, value]) => value === undefined || value.trim() !== ''),
+  );
   if (!production) input.APP_URL ??= DEV_APP_URL;
   const parsed = EnvSchema.safeParse(input);
   if (!parsed.success) {

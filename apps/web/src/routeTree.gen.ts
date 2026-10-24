@@ -36,6 +36,8 @@ import { Route as AuthedQueueIndexRouteImport } from './routes/_authed/queue.ind
 import { Route as AuthedQueuePostIdRouteImport } from './routes/_authed/queue.$postId'
 import { Route as ApiV1DraftsRouteImport } from './routes/api/v1/drafts'
 import { Route as ApiV1MeRouteImport } from './routes/api/v1/me'
+import { Route as AuthXCallbackRouteImport } from './routes/auth/x/callback'
+import { Route as AuthXStartRouteImport } from './routes/auth/x/start'
 import { Route as ApiV1DraftsDraftIdRouteImport } from './routes/api/v1/drafts.$draftId'
 
 const AuthedRoute = AuthedRouteImport.update({
@@ -174,6 +176,16 @@ const ApiV1MeRoute = ApiV1MeRouteImport.update({
   path: '/api/v1/me',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthXCallbackRoute = AuthXCallbackRouteImport.update({
+  id: '/auth/x/callback',
+  path: '/auth/x/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthXStartRoute = AuthXStartRouteImport.update({
+  id: '/auth/x/start',
+  path: '/auth/x/start',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiV1DraftsDraftIdRoute = ApiV1DraftsDraftIdRouteImport.update({
   id: '/$draftId',
   path: '/$draftId',
@@ -204,6 +216,8 @@ export interface FileRoutesByFullPath {
   '/queue/$postId': typeof AuthedQueuePostIdRoute
   '/api/v1/drafts': typeof ApiV1DraftsRouteWithChildren
   '/api/v1/me': typeof ApiV1MeRoute
+  '/auth/x/callback': typeof AuthXCallbackRoute
+  '/auth/x/start': typeof AuthXStartRoute
   '/discover/': typeof AuthedDiscoverIndexRoute
   '/drafts/': typeof AuthedDraftsIndexRoute
   '/queue/': typeof AuthedQueueIndexRoute
@@ -230,6 +244,8 @@ export interface FileRoutesByTo {
   '/queue/$postId': typeof AuthedQueuePostIdRoute
   '/api/v1/drafts': typeof ApiV1DraftsRouteWithChildren
   '/api/v1/me': typeof ApiV1MeRoute
+  '/auth/x/callback': typeof AuthXCallbackRoute
+  '/auth/x/start': typeof AuthXStartRoute
   '/discover': typeof AuthedDiscoverIndexRoute
   '/drafts': typeof AuthedDraftsIndexRoute
   '/queue': typeof AuthedQueueIndexRoute
@@ -261,6 +277,8 @@ export interface FileRoutesById {
   '/_authed/queue/$postId': typeof AuthedQueuePostIdRoute
   '/api/v1/drafts': typeof ApiV1DraftsRouteWithChildren
   '/api/v1/me': typeof ApiV1MeRoute
+  '/auth/x/callback': typeof AuthXCallbackRoute
+  '/auth/x/start': typeof AuthXStartRoute
   '/_authed/discover/': typeof AuthedDiscoverIndexRoute
   '/_authed/drafts/': typeof AuthedDraftsIndexRoute
   '/_authed/queue/': typeof AuthedQueueIndexRoute
@@ -292,6 +310,8 @@ export interface FileRouteTypes {
     | '/queue/$postId'
     | '/api/v1/drafts'
     | '/api/v1/me'
+    | '/auth/x/callback'
+    | '/auth/x/start'
     | '/discover/'
     | '/drafts/'
     | '/queue/'
@@ -318,6 +338,8 @@ export interface FileRouteTypes {
     | '/queue/$postId'
     | '/api/v1/drafts'
     | '/api/v1/me'
+    | '/auth/x/callback'
+    | '/auth/x/start'
     | '/discover'
     | '/drafts'
     | '/queue'
@@ -348,6 +370,8 @@ export interface FileRouteTypes {
     | '/_authed/queue/$postId'
     | '/api/v1/drafts'
     | '/api/v1/me'
+    | '/auth/x/callback'
+    | '/auth/x/start'
     | '/_authed/discover/'
     | '/_authed/drafts/'
     | '/_authed/queue/'
@@ -369,6 +393,8 @@ export interface RootRouteChildren {
   DotwellKnownOauthProtectedResourceSplatRoute: typeof DotwellKnownOauthProtectedResourceSplatRoute
   ApiV1DraftsRoute: typeof ApiV1DraftsRouteWithChildren
   ApiV1MeRoute: typeof ApiV1MeRoute
+  AuthXCallbackRoute: typeof AuthXCallbackRoute
+  AuthXStartRoute: typeof AuthXStartRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -562,6 +588,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1MeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth/x/callback': {
+      id: '/auth/x/callback'
+      path: '/auth/x/callback'
+      fullPath: '/auth/x/callback'
+      preLoaderRoute: typeof AuthXCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/x/start': {
+      id: '/auth/x/start'
+      path: '/auth/x/start'
+      fullPath: '/auth/x/start'
+      preLoaderRoute: typeof AuthXStartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/v1/drafts/$draftId': {
       id: '/api/v1/drafts/$draftId'
       path: '/$draftId'
@@ -666,6 +706,8 @@ const rootRouteChildren: RootRouteChildren = {
     DotwellKnownOauthProtectedResourceSplatRoute,
   ApiV1DraftsRoute: ApiV1DraftsRouteWithChildren,
   ApiV1MeRoute: ApiV1MeRoute,
+  AuthXCallbackRoute: AuthXCallbackRoute,
+  AuthXStartRoute: AuthXStartRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

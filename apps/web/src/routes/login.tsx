@@ -1,9 +1,9 @@
 import { createFileRoute, redirect } from '@tanstack/react-router';
-import { useServerFn } from '@tanstack/react-start';
 import { AuthCard } from '@xbase/ui/components/application/auth/auth-card';
+import { SocialButton } from '@xbase/ui/components/base/social-button/social-button';
 import { Callout } from '@xbase/ui/components/xbase/callout';
-import { getAuthStateFn, loginFn } from '@/features/auth/auth.functions';
-import { type LoginError, LoginSearch, safeNext } from '@/features/auth/auth.schema';
+import { getAuthStateFn } from '@/features/auth/auth.functions';
+import { LoginSearch, type SignInError, safeNext } from '@/features/auth/auth.schema';
 import { AppMark } from '@/features/shell/AppMark';
 
 export const Route = createFileRoute('/login')({
@@ -15,42 +15,49 @@ export const Route = createFileRoute('/login')({
   component: LoginPage,
 });
 
-const ERRORS: Record<LoginError, { title: string; description: string }> = {
-  invalid: {
-    title: 'Wrong password',
-    description: 'Check APP_PASSWORD in your server’s .env, then try again.',
+const ERRORS: Record<SignInError, { title: string; description: string }> = {
+  denied: {
+    title: 'Sign-in cancelled',
+    description: 'X didn’t give XBase access. Try again and choose Authorize app.',
   },
-  rate_limited: {
-    title: 'Too many attempts',
-    description: 'Sign-in is paused for 15 minutes after 10 wrong passwords.',
+  not_linked: {
+    title: 'This X account isn’t linked',
+    description:
+      'Another X account owns this XBase. Sign in with a linked account, then add this one in Settings.',
+  },
+  expired: {
+    title: 'Sign-in expired',
+    description: 'It took longer than 10 minutes, or started in another browser. Try again.',
+  },
+  failed: {
+    title: 'X didn’t sign you in',
+    description:
+      'Check X_CLIENT_ID, X_CLIENT_SECRET and the callback URL of your X app, then try again.',
   },
 };
 
 function LoginPage() {
   const { next, error } = Route.useSearch();
-  const login = useServerFn(loginFn);
   const message = error ? ERRORS[error] : undefined;
+  const target = safeNext(next);
+  const start =
+    target === '/' ? '/auth/x/start' : `/auth/x/start?${new URLSearchParams({ next: target })}`;
   return (
     // min-h, not h: on a short or zoomed screen the page grows and scrolls instead of clipping.
     <main className="flex min-h-svh items-center justify-center p-6">
-      {/* Without JavaScript the form posts natively and the server redirects. With it, the same
-          FormData goes through useServerFn: a wrong password comes back as a client navigation to
-          /login?error=…, and success reloads the document at `next` (see loginFn). */}
+      {/* A plain link: the server route sends the browser on to X, with or without JavaScript. */}
       <AuthCard
         logo={<AppMark />}
         title="Sign in to XBase"
-        description="Use the password from your server’s .env."
-        method="post"
-        action={loginFn.url}
-        onSubmit={(data) => login({ data })}
-        isPasswordInvalid={error === 'invalid'}
+        description="Use your X account. The first one to sign in owns this XBase; add more in Settings."
       >
-        <input type="hidden" name="next" value={safeNext(next)} />
         {message && (
           <Callout tone="error" role="alert" title={message.title}>
             {message.description}
           </Callout>
         )}
+        {/* Outlined: X's mark turns white in dark mode, where a black fill would vanish. */}
+        <SocialButton brand="x" appearance="white" href={start} fullWidth />
       </AuthCard>
     </main>
   );

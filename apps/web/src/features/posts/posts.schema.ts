@@ -12,6 +12,8 @@ export const MIN_PUBLISH_LEAD_MS = 60_000;
 /** A post as every client sees it. Times are ISO 8601 strings in UTC. */
 export type PostDto = {
   id: string;
+  /** The username of the X account the post belongs to. */
+  account: string;
   status: PostStatus;
   /** One text per post; more than one is a thread. */
   parts: string[];
@@ -62,7 +64,18 @@ export const CreateDraftInput = z.object({ parts: DraftParts });
 export const UpdateDraftInput = z.object({ id: Id, parts: DraftParts });
 export const SchedulePostInput = z.object({ id: Id, publishAt: Time });
 
-/** REST: the body of POST /api/v1/drafts and PATCH /api/v1/drafts/:id. */
+/** An X username, with or without the @. REST and MCP name the account a call is for with it. */
+export const AccountName = z
+  .string()
+  .trim()
+  .regex(/^@?\w{1,15}$/, 'Use an X username, like @xbase');
+
+/** REST: the body of PATCH /api/v1/drafts/:id. */
 export const ApiDraftInput = z.object({ parts: NonEmptyParts });
+/** REST: the body of POST /api/v1/drafts. */
+export const ApiNewDraftInput = ApiDraftInput.extend({ account: AccountName.optional() });
 /** REST: the query of GET /api/v1/drafts. */
-export const ListDraftsQuery = z.object({ limit: z.coerce.number().pipe(Limit).optional() });
+export const ListDraftsQuery = z.object({
+  limit: z.coerce.number().pipe(Limit).optional(),
+  account: AccountName.optional(),
+});

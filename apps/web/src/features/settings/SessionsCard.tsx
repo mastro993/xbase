@@ -14,7 +14,7 @@ export function SessionsCard() {
       actions={
         <ConfirmButton
           title="Sign out everywhere?"
-          description="Every browser signed in to XBase is signed out, this one included. Sign in again with your password."
+          description="Every browser signed in to XBase is signed out, this one included. Sign in again with X."
           action="Sign out everywhere"
           errorTitle="Couldn’t sign out"
           onConfirm={async () => {

@@ -10,18 +10,27 @@ import {
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, expect, it, vi } from 'vitest';
+import type { AccountsDto } from '@/features/accounts/accounts.schema';
 import { AppShell } from '../AppShell';
 import { SplitView } from '../SplitView';
 
-// The server function's module needs the server; the shell only reads its URL.
+// Server function modules need the server; the shell only reads the logout URL.
 vi.mock('@/features/auth/auth.functions', () => ({ logoutFn: { url: '/_serverFn/logout' } }));
+vi.mock('@/features/accounts/accounts.functions', () => ({ switchAccountFn: vi.fn() }));
+vi.mock('@tanstack/react-start', () => ({ useServerFn: <T,>(fn: T) => fn }));
+
+const me = { id: '1001', username: 'xbase', name: 'XBase', avatarUrl: null };
+const accounts: AccountsDto = {
+  current: me,
+  accounts: [me, { id: '2002', username: 'other', name: 'Other', avatarUrl: null }],
+};
 
 afterEach(cleanup);
 
 function renderAt(path: string) {
   const rootRoute = createRootRoute({
     component: () => (
-      <AppShell>
+      <AppShell accounts={accounts}>
         <Outlet />
       </AppShell>
     ),
@@ -78,13 +87,28 @@ it('marks the current section in the rail, child pages included', async () => {
   }
 });
 
-it('signs out with a native POST', async () => {
+it('signs out from the account menu, with a native POST', async () => {
+  const user = userEvent.setup();
   renderAt('/queue');
+  expect(screen.queryByRole('button', { name: 'Sign out' })).toBeNull();
+  await user.click(
+    await screen.findByRole('button', { name: 'Working as @xbase. Switch account' }),
+  );
   const signOut = await screen.findByRole('button', { name: 'Sign out' });
   expect(signOut.getAttribute('type')).toBe('submit');
   const form = signOut.closest('form');
   expect(form?.getAttribute('method')).toBe('post');
   expect(form?.getAttribute('action')).toBe('/_serverFn/logout');
+});
+
+it('shows the account this browser works as, in the rail and the drawer', async () => {
+  const user = userEvent.setup();
+  renderAt('/queue');
+  const name = 'Working as @xbase. Switch account';
+  expect(await screen.findAllByRole('button', { name })).toHaveLength(1);
+  await user.click(screen.getByRole('button', { name: 'Open navigation' }));
+  const drawer = screen.getByRole('dialog', { name: 'Navigation' });
+  expect(within(drawer).getByRole('button', { name }).textContent).toContain('@xbase');
 });
 
 it('opens the navigation in a drawer that closes when a link is followed', async () => {

@@ -38,6 +38,7 @@ afterEach(cleanup);
 
 const post: PostDto = {
   id: 'p1',
+  account: 'xbase',
   status: 'draft',
   parts: ['Hello there'],
   publishAt: null,

@@ -1,4 +1,5 @@
 import { createFileRoute, Outlet, redirect } from '@tanstack/react-router';
+import { getAccountsFn } from '@/features/accounts/accounts.functions';
 import { getAuthStateFn } from '@/features/auth/auth.functions';
 import { AppShell } from '@/features/shell/AppShell';
 
@@ -10,12 +11,14 @@ export const Route = createFileRoute('/_authed')({
       throw redirect({ to: '/login', search: { next: location.href } });
     }
   },
+  // The linked accounts, for the shell's account menu; reloaded when the account changes.
+  loader: () => getAccountsFn(),
   component: AuthedLayout,
 });
 
 function AuthedLayout() {
   return (
-    <AppShell>
+    <AppShell accounts={Route.useLoaderData()}>
       <Outlet />
     </AppShell>
   );

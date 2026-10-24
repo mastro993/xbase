@@ -31,15 +31,36 @@ const updatedAt = () =>
 const oneOf = (column: AnySQLiteColumn, values: readonly string[]): SQL =>
   sql`${column} in (${sql.raw(values.map((value) => `'${value}'`).join(', '))})`;
 
+/**
+ * The X accounts linked to this XBase. The first to sign in claims it; more are added from
+ * Settings, and any of them can sign in. Tokens are X's own, kept to call the API as the account.
+ */
+export const xAccounts = snakeCase.table('x_accounts', {
+  id: text().primaryKey(), // X's user id: usernames can change
+  username: text().notNull(),
+  name: text().notNull(),
+  avatarUrl: text(),
+  accessToken: text().notNull(),
+  refreshToken: text(),
+  tokenExpiresAt: timestamp().notNull(),
+  scope: text().notNull(),
+  /** The account's style guide for AI writing; null until saved. */
+  voice: text({ mode: 'json' }).$type<unknown>(),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+});
+
 /** Browser sessions. The cookie holds a random token; only its sha256 is stored. */
 export const sessions = snakeCase.table('sessions', {
   id: text().primaryKey(), // sha256 hex of the cookie token
+  /** The account the browser works as; null once it's removed (see readSession). */
+  accountId: text().references(() => xAccounts.id, { onDelete: 'set null' }),
   createdAt: createdAt(),
   expiresAt: timestamp().notNull(),
   lastSeenAt: timestamp().notNull(),
 });
 
-/** App settings as JSON values, one row per key (`ai`, `voice`, …). */
+/** App settings as JSON values, one row per key (`ai`, `decision`, …). */
 export const settings = snakeCase.table('settings', {
   key: text().primaryKey(),
   value: text({ mode: 'json' }).$type<unknown>().notNull(),
@@ -127,11 +148,14 @@ export type PostOrigin = (typeof POST_ORIGINS)[number];
 /** One post of a thread; a single post has one part. */
 type PostPart = { text: string };
 
-/** The owner's own posts: drafts, then scheduled, then published on X. */
+/** Each account's own posts: drafts, then scheduled, then published on X. */
 export const posts = snakeCase.table(
   'posts',
   {
     id: id(),
+    accountId: text()
+      .notNull()
+      .references(() => xAccounts.id, { onDelete: 'cascade' }),
     status: text({ enum: POST_STATUSES }).notNull().default('draft'),
     parts: text({ mode: 'json' }).$type<PostPart[]>().notNull(),
     publishAt: timestamp(),
@@ -145,7 +169,7 @@ export const posts = snakeCase.table(
   (t) => [
     check('posts_status_ck', oneOf(t.status, POST_STATUSES)),
     check('posts_origin_ck', oneOf(t.origin, POST_ORIGINS)),
-    index('posts_status_publish_at_idx').on(t.status, t.publishAt),
+    index('posts_account_status_publish_at_idx').on(t.accountId, t.status, t.publishAt),
   ],
 );
 
@@ -163,3 +187,4 @@ export type OAuthClient = typeof oauthClients.$inferSelect;
 export type OAuthCode = typeof oauthCodes.$inferSelect;
 export type Post = typeof posts.$inferSelect;
 export type SavedSearch = typeof savedSearches.$inferSelect;
+export type XAccount = typeof xAccounts.$inferSelect;

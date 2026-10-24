@@ -16,7 +16,11 @@ import {
 } from './fixtures';
 
 vi.mock('@/server/env.server', () => ({
-  getEnv: () => ({ APP_PASSWORD: 'test-password-123', APP_URL: 'https://xbase.test' }),
+  getEnv: () => ({
+    APP_URL: 'https://xbase.test',
+    X_CLIENT_ID: 'test-client-id',
+    X_CLIENT_SECRET: 'test-client-secret',
+  }),
 }));
 
 let db: ReturnType<typeof createTestDb>;

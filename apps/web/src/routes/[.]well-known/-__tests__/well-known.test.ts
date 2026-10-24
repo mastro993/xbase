@@ -6,7 +6,11 @@ import { Route as ProtectedResource } from '../oauth-protected-resource/$';
 // This folder starts with "-" so the route generator skips it.
 
 vi.mock('@/server/env.server', () => ({
-  getEnv: () => ({ APP_PASSWORD: 'test-password-123', APP_URL: 'https://xbase.test' }),
+  getEnv: () => ({
+    APP_URL: 'https://xbase.test',
+    X_CLIENT_ID: 'test-client-id',
+    X_CLIENT_SECRET: 'test-client-secret',
+  }),
 }));
 
 type Handler = (ctx: { request: Request; pathname: string }) => Response | Promise<Response>;

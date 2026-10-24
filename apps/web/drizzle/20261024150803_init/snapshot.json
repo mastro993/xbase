@@ -1,7 +1,7 @@
 {
   "version": "7",
   "dialect": "sqlite",
-  "id": "63d9e4b4-6194-4e88-b306-23c1bda070f8",
+  "id": "42818b06-2770-4c4d-a08c-4257b7bc1c53",
   "prevIds": ["00000000-0000-0000-0000-000000000000"],
   "ddl": [
     {
@@ -38,6 +38,10 @@
     },
     {
       "name": "settings",
+      "entityType": "tables"
+    },
+    {
+      "name": "x_accounts",
       "entityType": "tables"
     },
     {
@@ -392,6 +396,16 @@
     },
     {
       "table": "posts",
+      "name": "account_id",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "posts",
       "name": "status",
       "type": "text",
       "notNull": true,
@@ -542,6 +556,16 @@
     },
     {
       "table": "sessions",
+      "name": "account_id",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "sessions",
       "name": "created_at",
       "type": "integer",
       "notNull": true,
@@ -601,6 +625,116 @@
       "entityType": "columns"
     },
     {
+      "table": "x_accounts",
+      "name": "id",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "x_accounts",
+      "name": "username",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "x_accounts",
+      "name": "name",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "x_accounts",
+      "name": "avatar_url",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "x_accounts",
+      "name": "access_token",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "x_accounts",
+      "name": "refresh_token",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "x_accounts",
+      "name": "token_expires_at",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "x_accounts",
+      "name": "scope",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "x_accounts",
+      "name": "voice",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "x_accounts",
+      "name": "created_at",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "x_accounts",
+      "name": "updated_at",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
       "table": "oauth_tokens",
       "name": "oauth_tokens_grant_id_idx",
       "columns": [
@@ -616,8 +750,12 @@
     },
     {
       "table": "posts",
-      "name": "posts_status_publish_at_idx",
+      "name": "posts_account_status_publish_at_idx",
       "columns": [
+        {
+          "value": "account_id",
+          "isExpression": false
+        },
         {
           "value": "status",
           "isExpression": false
@@ -651,6 +789,28 @@
       "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "entityType": "fks"
+    },
+    {
+      "table": "posts",
+      "name": "fk_posts_account_id_x_accounts_id_fk",
+      "columns": ["account_id"],
+      "tableTo": "x_accounts",
+      "columnsTo": ["id"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "entityType": "fks"
+    },
+    {
+      "table": "sessions",
+      "name": "fk_sessions_account_id_x_accounts_id_fk",
+      "columns": ["account_id"],
+      "tableTo": "x_accounts",
+      "columnsTo": ["id"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "SET NULL",
       "nameExplicit": false,
       "entityType": "fks"
     },
@@ -714,6 +874,13 @@
       "table": "settings",
       "name": "settings_pk",
       "columns": ["key"],
+      "nameExplicit": false,
+      "entityType": "pks"
+    },
+    {
+      "table": "x_accounts",
+      "name": "x_accounts_pk",
+      "columns": ["id"],
       "nameExplicit": false,
       "entityType": "pks"
     },

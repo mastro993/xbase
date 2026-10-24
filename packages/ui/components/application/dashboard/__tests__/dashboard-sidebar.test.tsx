@@ -1,14 +1,9 @@
-import { RiDraftLine, RiLogoutBoxRLine, RiSettings4Line } from '@remixicon/react';
+import { RiDraftLine, RiSettings4Line } from '@remixicon/react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { expect, it, vi } from 'vitest';
-import {
-  DashboardSidebar,
-  SidebarDrawer,
-  SidebarNavButton,
-  SidebarNavItem,
-} from '../dashboard-sidebar';
+import { DashboardSidebar, SidebarDrawer, SidebarNavItem } from '../dashboard-sidebar';
 
 function Rows() {
   return (
@@ -21,17 +16,15 @@ function Rows() {
 
 it('names its navigation and keeps hidden labels as the rows’ names', () => {
   render(
-    <DashboardSidebar
-      collapsed
-      footer={<SidebarNavButton icon={RiLogoutBoxRLine} label="Sign out" />}
-    >
+    <DashboardSidebar collapsed footer={<button type="button">Account</button>}>
       <Rows />
     </DashboardSidebar>,
   );
   const nav = screen.getByRole('navigation', { name: 'Main' });
   expect(nav.contains(screen.getByRole('link', { name: 'Drafts' }))).toBe(true);
   expect(screen.getByRole('link', { name: 'Drafts' }).getAttribute('aria-current')).toBe('page');
-  expect(screen.getByRole('button', { name: 'Sign out' }).getAttribute('type')).toBe('button');
+  // The footer sits outside the navigation landmark.
+  expect(nav.contains(screen.getByRole('button', { name: 'Account' }))).toBe(false);
 });
 
 it('shows a collapsed row’s label in a tooltip on keyboard focus', async () => {
