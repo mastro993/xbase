@@ -1,5 +1,5 @@
+import { formatDate, formatDateTime, formatStamp, formatTime } from '@xbase/core/posts/dates';
 import { useMemo } from 'react';
-import { formatDate, formatDateTime, formatStamp, formatTime } from './dates';
 import { useClock } from './use-clock';
 
 const FORMATS = {

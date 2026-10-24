@@ -1,4 +1,12 @@
 import { RiCalendarScheduleLine } from '@remixicon/react';
+import {
+  earliestPublishInput,
+  formatDateTime,
+  fromDateTimeInput,
+  suggestPublishTime,
+  toDateTimeInput,
+} from '@xbase/core/posts/dates';
+import { MIN_PUBLISH_LEAD_MS } from '@xbase/core/posts/schema';
 import { Button } from '@xbase/ui/components/base/buttons/button';
 import { HintText } from '@xbase/ui/components/base/input/hint-text';
 import { InputBase, TextField } from '@xbase/ui/components/base/input/input';
@@ -9,15 +17,7 @@ import { Modal } from '@xbase/ui/components/xbase/modal';
 import { Spinner } from '@xbase/ui/components/xbase/spinner';
 import { type FormEvent, type KeyboardEvent, useId, useState } from 'react';
 import { readableError } from '@/lib/readable-error';
-import {
-  earliestPublishInput,
-  formatDateTime,
-  fromDateTimeInput,
-  suggestPublishTime,
-  toDateTimeInput,
-} from './dates';
 import { isShortcut, useModifierLabel } from './keyboard';
-import { MIN_PUBLISH_LEAD_MS } from './posts.schema';
 import { useClock } from './use-clock';
 
 type ScheduleDialogProps = {

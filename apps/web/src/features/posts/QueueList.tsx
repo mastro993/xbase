@@ -1,12 +1,12 @@
 import { Link } from '@tanstack/react-router';
+import { formatTime, groupByDay } from '@xbase/core/posts/dates';
+import type { PostDto } from '@xbase/core/posts/schema';
+import { threadLabel } from '@xbase/core/posts/text';
 import { Callout } from '@xbase/ui/components/xbase/callout';
 import { cx } from '@xbase/ui/utils/cx';
 import { useId } from 'react';
 import { ROW_LINK, ROW_TEXT } from '@/features/shell/row-link';
-import { formatTime, groupByDay } from './dates';
-import { threadLabel } from './post-text';
 import { PostRowContent } from './PostRowContent';
-import type { PostDto } from './posts.schema';
 import { useClock } from './use-clock';
 
 /** The Queue list pane: scheduled and failed posts, soonest first, under their local day. */

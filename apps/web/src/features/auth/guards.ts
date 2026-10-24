@@ -1,6 +1,6 @@
 import { redirect } from '@tanstack/react-router';
 import { createMiddleware } from '@tanstack/react-start';
-import { jsonError } from '@/server/http';
+import { jsonError } from '@xbase/server/http';
 import { readSession } from './session.server';
 
 // Global middleware, registered in src/start.ts. This file is bundled for the client too: keep

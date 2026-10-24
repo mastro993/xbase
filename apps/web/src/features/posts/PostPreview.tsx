@@ -1,4 +1,4 @@
-import { MAX_WEIGHTED_LENGTH, weightedLength } from './weighted-length';
+import { MAX_WEIGHTED_LENGTH, weightedLength } from '@xbase/core/posts/weighted-length';
 
 /** A post or thread as it will read, one card per post. */
 export function PostPreview({ parts }: { parts: readonly string[] }) {

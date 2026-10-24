@@ -1,9 +1,10 @@
 // @vitest-environment happy-dom
 import { MAX_STYLE_FIELD_LENGTH } from '@xbase/ai/profile';
+import { DEFAULT_SETTINGS, type Settings } from '@xbase/companion/settings';
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { expect, it } from 'vitest';
-import { DEFAULT_SETTINGS, getSettings, saveSettings, type Settings } from '@/lib/settings';
+import { getSettings, saveSettings } from '@/lib/settings';
 import { StyleTab } from '../StyleTab';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;

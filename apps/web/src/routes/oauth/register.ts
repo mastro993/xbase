@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { handleRegister } from '@/features/oauth/clients.server';
-import { methodNotAllowed, preflight } from '@/features/oauth/http';
+import { handleRegister } from '@xbase/mcp/oauth/clients';
+import { methodNotAllowed, preflight } from '@xbase/mcp/oauth/http';
 import { clientIp } from '@/server/client-ip.server';
 
 export const Route = createFileRoute('/oauth/register')({

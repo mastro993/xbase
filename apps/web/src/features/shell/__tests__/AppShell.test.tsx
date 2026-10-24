@@ -9,8 +9,8 @@ import {
 } from '@tanstack/react-router';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import type { AccountsDto } from '@xbase/core/accounts';
 import { afterEach, expect, it, vi } from 'vitest';
-import type { AccountsDto } from '@/features/accounts/accounts.schema';
 import { AppShell } from '../AppShell';
 import { SplitView } from '../SplitView';
 

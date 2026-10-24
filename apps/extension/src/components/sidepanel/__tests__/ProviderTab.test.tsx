@@ -4,10 +4,11 @@ import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { listModels } from '@xbase/ai/llm';
 import { PROVIDERS } from '@xbase/ai/providers';
+import { DEFAULT_SETTINGS, type Settings } from '@xbase/companion/settings';
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { expect, it, vi } from 'vitest';
-import { DEFAULT_SETTINGS, getSettings, saveSettings, type Settings } from '@/lib/settings';
+import { getSettings, saveSettings } from '@/lib/settings';
 import { ProviderTab } from '../ProviderTab';
 
 vi.mock('@xbase/ai/llm', () => ({ listModels: vi.fn() }));

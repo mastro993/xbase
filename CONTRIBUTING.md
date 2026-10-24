@@ -27,6 +27,11 @@ apps/
 packages/
   ai/                  @xbase/ai: AI provider calls and prompts, shared by both apps
   ui/                  @xbase/ui: BoardUI components and styles, and each app's palette
+  core/                @xbase/core: the website's browser-safe schemas, DTOs and helpers
+  db/                  @xbase/db: the website's database schema, migrations and connection
+  server/              @xbase/server: the website's services (accounts, posts, AI, sign-in…)
+  mcp/                 @xbase/mcp: the website's MCP tools and OAuth authorization server
+  companion/           @xbase/companion: the extension's settings and message logic
 pnpm-workspace.yaml    workspace folders, shared dependency versions (catalog)
 .oxlintrc.json         lint rules for the whole repository
 .oxfmtrc.json          format settings for the whole repository
@@ -48,11 +53,22 @@ npx skills update --project
 
 ### Shared packages
 
-`packages/` holds code that both apps use. A package has no build step: it ships its TypeScript or CSS source, and an app imports it by subpath, such as `import { generateText } from '@xbase/ai/llm'` or `@import '@xbase/ui/styles/globals.css'`. The app's bundler and `tsc` then treat that source like the app's own code:
+`packages/` holds the logic; `apps/` holds presentation and wiring. An app's own files are its pages, components and hooks, and the glue that ties packages to its framework: TanStack Start's server functions, middleware, cookies and server routes on the website, WXT's storage, messaging and entrypoints in the extension. Anything else, a rule, a service or a check, goes in a package, with its tests. A package has no build step: it ships its TypeScript or CSS source, and an app imports it by subpath, such as `import { generateText } from '@xbase/ai/llm'` or `@import '@xbase/ui/styles/globals.css'`. The app's bundler and `tsc` then treat that source like the app's own code:
 
 - **Declare each subpath**: an app can import only the paths listed in the package's `exports` in its `package.json`. Add a new module there before you import it. `@xbase/ui` is the exception for its TypeScript: BoardUI imports files as `@xbase/ui/<folder>/<file>` without an extension, which `exports` can't map, so `tsconfig.json` `paths` resolve it (in `packages/ui` and in each app), and Vite, WXT and Vitest follow them with `resolve.tsconfigPaths`. Its stylesheets still go through `exports`.
 - **Pass both apps' type checks**: each app checks the package source with its own `tsconfig.json`. Each package's `tsconfig.json` combines the strictest options of both, so `pnpm --filter @xbase/ai typecheck` (or `@xbase/ui`) catches most problems first.
 - **Depend on a package** with `"@xbase/ai": "workspace:*"` in the app's `package.json`, then run `pnpm install`.
+
+The website's logic is layered: each package may import only the ones before it.
+
+1. `@xbase/core`: what the browser may load. Input schemas (zod), the DTOs server functions return, the service errors, X's weighted length and the date helpers. No Node or server imports.
+2. `@xbase/db`: the Drizzle schema, the SQL migrations in `packages/db/drizzle/`, and `connectDb` and `getDb`. The web app's `src/server.ts` opens the database at startup; `@xbase/db/testing` gives tests an in-memory one.
+3. `@xbase/server`: the services the UI, the REST API and the MCP tools share, plus the environment (`getEnv`), session storage and X's side of signing in. Plain functions and `Request`/`Response`: nothing from TanStack Start.
+4. `@xbase/mcp`: the `/mcp` endpoint, its tools, and the OAuth authorization server that guards it.
+
+`@xbase/db`, `@xbase/server` and `@xbase/mcp` are server-only. The website's `vite.config.ts` adds them to TanStack Start's import protection, so a build fails if browser code imports one; server functions and server routes may, since the compiler strips them from the client bundle. Each package's tests run with `pnpm --filter @xbase/<name> test`.
+
+`@xbase/companion` holds the extension's logic that needs no extension API: the settings model and its status check, and the messages between the content script and the background, with the checks the background runs on them. The extension wires it to `chrome.storage` and `chrome.runtime`.
 
 `@xbase/ai` holds the AI code: the provider list, the HTTP calls to each provider (`generateText`, and `listModels`, which also validates a key), the prompts, and `scrubSecrets`, which both apps run on provider error text before showing it. It calls providers with plain `fetch`, so it runs in the extension's service worker and on the website's server alike. Its tests run with `pnpm --filter @xbase/ai test`.
 
@@ -67,11 +83,11 @@ pnpm doesn't run dependencies' install scripts unless `allowBuilds` in `pnpm-wor
 `apps/web` is a Node server, not a static site: TanStack Start renders every page on request, behind the sign-in, and [Nitro](https://nitro.build)'s `node-server` preset builds it into `apps/web/.output`. Nothing is prerendered.
 
 - **Give it a `.env` first**: the server doesn't start without `X_CLIENT_ID` and `X_CLIENT_SECRET`, the OAuth 2.0 credentials of an X app of yours with `http://127.0.0.1:5173/auth/x/callback` as a callback URL. Copy `apps/web/.env.example` to `apps/web/.env` (git ignores it) and fill them in, then open the dev server at `127.0.0.1`, not `localhost`. [apps/web/README.md](apps/web/README.md#set-up-your-x-app) explains the X app and lists every variable.
-- **Keep server code in `*.server.ts` files**: TanStack Start fails the build when browser code imports one. The UI reaches the server through `createServerFn` wrappers in each feature's `*.functions.ts`.
+- **Put server logic in a package**: services in `@xbase/server`, MCP and OAuth in `@xbase/mcp`, schemas and DTOs the UI shares in `@xbase/core` (see [Shared packages](#shared-packages)). The UI reaches the server through `createServerFn` wrappers in each feature's `*.functions.ts`. The app's own server-only glue, such as reading the session cookie, goes in `*.server.ts` files: TanStack Start fails the build when browser code imports one, or one of the server-only packages.
 
 ### Change the database schema
 
-The tables live in `apps/web/src/server/db/schema.ts`, and the SQL migrations that create them in `apps/web/drizzle/`. The server applies pending migrations when it starts.
+The tables live in `packages/db/src/schema.ts`, and the SQL migrations that create them in `packages/db/drizzle/`. The server applies pending migrations when it starts.
 
 1. Edit `schema.ts`.
 2. Write a migration, named after the change:
@@ -80,9 +96,9 @@ The tables live in `apps/web/src/server/db/schema.ts`, and the SQL migrations th
    pnpm --filter @xbase/web db:generate --name <slug>   # e.g. --name add-post-media
    ```
 
-3. Commit the new folder in `apps/web/drizzle/` with your change.
+3. Commit the new folder in `packages/db/drizzle/` with your change.
 
-Never edit a migration that is already on `main`: databases that ran it won't run it again, so add a new one instead. `pnpm test` fails when `schema.ts` has a change without its migration: a test runs `drizzle-kit generate` against a copy of `apps/web/drizzle/` and expects it to write nothing.
+Never edit a migration that is already on `main`: databases that ran it won't run it again, so add a new one instead. `pnpm test` fails when `schema.ts` has a change without its migration: a test in `@xbase/db` runs `drizzle-kit generate` against a copy of `packages/db/drizzle/` and expects it to write nothing.
 
 ## Style the UI
 

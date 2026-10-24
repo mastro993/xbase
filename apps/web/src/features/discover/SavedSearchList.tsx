@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router';
+import type { SavedSearchDto } from '@xbase/core/discover';
 import { cx } from '@xbase/ui/utils/cx';
 import { ROW_LINK, ROW_LIST, ROW_TEXT } from '@/features/shell/row-link';
-import type { SavedSearchDto } from './discover.schema';
 
 /** The Discover list pane: saved searches, by name. */
 export function SavedSearchList({ searches }: { searches: SavedSearchDto[] }) {

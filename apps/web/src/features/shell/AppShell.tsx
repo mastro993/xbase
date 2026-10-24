@@ -7,6 +7,7 @@ import {
   RiSettings4Line,
 } from '@remixicon/react';
 import { createLink, Link } from '@tanstack/react-router';
+import type { AccountsDto } from '@xbase/core/accounts';
 import {
   DashboardSidebar,
   SidebarDrawer,
@@ -15,7 +16,6 @@ import {
 import { IconButton } from '@xbase/ui/components/base/buttons/icon-button';
 import { type ReactNode, useState } from 'react';
 import { AccountMenu } from '@/features/accounts/AccountMenu';
-import type { AccountsDto } from '@/features/accounts/accounts.schema';
 import { AppMark } from './AppMark';
 
 // A TanStack Link on the sidebar's row: the current section (child routes included) gets

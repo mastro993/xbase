@@ -1,0 +1,20 @@
+{
+  // TypeScript sources, no build step, like @xbase/ai: each app bundles them and type checks them
+  // with its own tsconfig. The extension's logic, free of the extension APIs that WXT wires it to.
+  "include": ["src", "vitest.config.ts"],
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "verbatimModuleSyntax": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true
+  }
+}

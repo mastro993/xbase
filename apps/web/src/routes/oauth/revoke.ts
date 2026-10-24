@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { methodNotAllowed, preflight } from '@/features/oauth/http';
-import { handleRevoke } from '@/features/oauth/revoke.server';
+import { methodNotAllowed, preflight } from '@xbase/mcp/oauth/http';
+import { handleRevoke } from '@xbase/mcp/oauth/revoke';
 
 export const Route = createFileRoute('/oauth/revoke')({
   server: {

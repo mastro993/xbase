@@ -10,10 +10,10 @@ import {
 } from '@tanstack/react-router';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { AI_NOT_CONFIGURED } from '@xbase/core/ai';
+import type { PostDto } from '@xbase/core/posts/schema';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { AI_NOT_CONFIGURED } from '@/features/ai/ai.schema';
 import { Composer } from '../Composer';
-import type { PostDto } from '../posts.schema';
 
 // Server functions need the server: the composer calls these stand-ins instead.
 const server = vi.hoisted(() => ({

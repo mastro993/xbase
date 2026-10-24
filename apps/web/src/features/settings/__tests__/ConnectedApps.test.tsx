@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { act, cleanup, render, screen } from '@testing-library/react';
+import type { ConnectedAppDto } from '@xbase/core/mcp';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import type { ConnectedAppDto } from '@/features/mcp/mcp.schema';
 import { ConnectedApps, WATCH_MS } from '../ConnectedApps';
 
 const mocks = vi.hoisted(() => ({

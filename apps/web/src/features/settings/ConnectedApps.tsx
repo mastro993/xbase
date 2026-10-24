@@ -1,9 +1,9 @@
 import { useRouter } from '@tanstack/react-router';
 import { useServerFn } from '@tanstack/react-start';
+import type { ConnectedAppDto } from '@xbase/core/mcp';
 import { Chip } from '@xbase/ui/components/base/badges/chip';
 import { useEffect, useRef, useState } from 'react';
 import { listConnectedAppsFn, revokeConnectedAppFn } from '@/features/mcp/mcp.functions';
-import type { ConnectedAppDto } from '@/features/mcp/mcp.schema';
 import { LocalTime } from '@/features/posts/LocalTime';
 import { ConfirmButton } from '@/features/shell/ConfirmButton';
 import { ITEM_DETAILS, ITEM_LIST, ITEM_META, ITEM_NAME, ITEM_ROW } from './item-list';

@@ -1,6 +1,6 @@
+import type { Status } from '@xbase/companion/settings';
 import { Chip } from '@xbase/ui/components/base/badges/chip';
 import { StatusDot } from '@xbase/ui/components/base/badges/status-dot';
-import type { Status } from '@/lib/settings';
 import { statusHint } from './format';
 
 export function StatusHeader({ status }: { status: Status }) {

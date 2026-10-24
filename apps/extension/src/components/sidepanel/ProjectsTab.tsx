@@ -5,13 +5,13 @@ import {
   type Project,
   type ProjectField,
 } from '@xbase/ai/profile';
+import type { Settings } from '@xbase/companion/settings';
 import { Button } from '@xbase/ui/components/base/buttons/button';
 import { Input } from '@xbase/ui/components/base/input/input';
 import { useId, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { useAutosave } from '@/hooks/use-autosave';
 import { updateSettings } from '@/hooks/use-settings';
-import type { Settings } from '@/lib/settings';
 import { TextareaField } from './TextareaField';
 
 export function ProjectsTab({ settings }: { settings: Settings }) {

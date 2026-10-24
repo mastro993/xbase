@@ -1,6 +1,6 @@
 import { PROVIDER_IDS } from '@xbase/ai/providers';
-import { setProviderKey, updateSettings } from '@/hooks/use-settings';
-import type { Settings } from '@/lib/settings';
+import { type Settings, setProviderKey } from '@xbase/companion/settings';
+import { updateSettings } from '@/hooks/use-settings';
 import { KeyRow } from './KeyRow';
 
 /** Keys for providers other than the active one. Never changes the active provider. */

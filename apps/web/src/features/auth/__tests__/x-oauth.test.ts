@@ -1,9 +1,8 @@
 import { createHash } from 'node:crypto';
+import { sessions, xAccounts } from '@xbase/db/schema';
+import { createTestDb, seedAccount } from '@xbase/db/testing';
+import { decryptToken } from '@xbase/server/token-crypto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { sessions, xAccounts } from '@/server/db/schema';
-import { decryptToken } from '@/server/token-crypto.server';
-import { seedAccount } from '@/test/accounts';
-import { createTestDb } from '@/test/db';
 import { inRequest } from '@/test/request';
 import { issueSession } from '../session.server';
 import { finishXSignIn, startXSignIn } from '../x-oauth.server';
@@ -14,7 +13,7 @@ const env = vi.hoisted(() => ({
   X_CLIENT_SECRET: 'client-secret',
   X_OWNER_USERNAME: undefined as string | undefined,
 }));
-vi.mock('@/server/env.server', () => ({ getEnv: () => env }));
+vi.mock('@xbase/server/env', () => ({ getEnv: () => env }));
 
 const ME = { id: '1001', username: 'owner', name: 'Owner', profile_image_url: 'https://pbs/a.jpg' };
 

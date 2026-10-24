@@ -1,5 +1,5 @@
 import { PROVIDERS } from '@xbase/ai/providers';
-import type { Status } from '@/lib/settings';
+import type { Status } from '@xbase/companion/settings';
 
 /** "sk-ant-…a1b2". Values too short to mask safely are hidden entirely. */
 export function maskKey(key: string): string {

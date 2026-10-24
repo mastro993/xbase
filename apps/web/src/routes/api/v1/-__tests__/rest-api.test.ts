@@ -1,11 +1,10 @@
+import type { PostDto } from '@xbase/core/posts/schema';
+import { posts } from '@xbase/db/schema';
+import { createTestDb, seedAccount } from '@xbase/db/testing';
+import { createApiKey } from '@xbase/server/api-keys';
+import { createDraft } from '@xbase/server/posts';
 import { eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createApiKey } from '@/features/api-keys/api-keys.server';
-import type { PostDto } from '@/features/posts/posts.schema';
-import { createDraft } from '@/features/posts/posts.server';
-import { posts } from '@/server/db/schema';
-import { seedAccount } from '@/test/accounts';
-import { createTestDb } from '@/test/db';
 import { Route as DraftsRoute } from '../drafts';
 import { Route as DraftRoute } from '../drafts.$draftId';
 import { Route as MeRoute } from '../me';

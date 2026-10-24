@@ -91,7 +91,7 @@ If `main` moves while the workflow runs, for example because someone merged a pu
 
 ## How the extension works
 
-x-companion has three parts that talk through extension messages, plus the provider adapters and prompts the background uses. Those two come from `@xbase/ai` (`packages/ai` in the repository root), which the website shares.
+x-companion has three parts that talk through extension messages, plus the provider adapters and prompts the background uses. Those two come from `@xbase/ai` (`packages/ai` in the repository root), which the website shares. The settings model and the messages, with the checks the background runs on them, come from `@xbase/companion` (`packages/companion`); this app wires them to the extension APIs.
 
 - **Background service worker** (`src/entrypoints/background.ts`):
   - Enables the side panel and toolbar icon per tab, on x.com only. The manifest has no global `side_panel` entry, so the panel never follows you to other sites.
@@ -110,7 +110,7 @@ x-companion has three parts that talk through extension messages, plus the provi
 - **Side panel** (`src/entrypoints/sidepanel/`, `src/components/sidepanel/`):
   - Built with React 19, Tailwind v4 and [BoardUI](https://www.boardui.com) components from the shared `@xbase/ui` package (`packages/ui`), in X's colour palette and Chirp-first font stack (`packages/ui/palettes/x.css`), so it matches x.com. The website uses another palette.
   - Follows the system light or dark theme: `public/color-scheme.js` (a link to `packages/ui/lib/color-scheme.js`) sets BoardUI's `dark` class before the first paint. It's a file, not an inline script, because Manifest V3 forbids inline scripts.
-  - Keeps all state in extension storage: the settings in one item, the API keys in another (`src/lib/settings.ts`). Both live in `storage.local`. Only changed parts are written, so a style edit never rewrites the keys.
+  - Keeps all state in extension storage: the settings in one item, the API keys in another (`src/lib/settings.ts`, which splits them with `@xbase/companion/settings`). Both live in `storage.local`. Only changed parts are written, so a style edit never rewrites the keys.
   - Shows saved keys only masked: a key can be replaced or removed, never read back into the page.
 - **Large language model (LLM) adapters** (`packages/ai/src/llm.ts`, imported from `@xbase/ai/llm`):
   - Two request paths: Chat Completions (OpenAI, xAI, DeepSeek, OpenRouter) and Anthropic Messages.
@@ -126,7 +126,7 @@ x-companion has three parts that talk through extension messages, plus the provi
 
 ## Project structure
 
-The source tree groups code by extension entrypoint, with shared logic in `src/lib/`:
+The source tree groups code by extension entrypoint, with the code that touches extension or page APIs in `src/lib/`:
 
 ```text
 src/
@@ -138,14 +138,20 @@ src/
     sidepanel/             panel UI: status header, provider/key/model, style, projects
   hooks/                   useSettings (storage-backed), useModels, useAutosave
   lib/
-    settings.ts            settings + key storage items, getStatus
-    messages.ts            content <-> background message types
-    background-utils.ts    URL check + untrusted message validation
+    settings.ts            settings + key storage items and their migrations
     x-dom.ts               every X selector and DOM routine
   assets/tailwind.css      Tailwind entry: BoardUI styles and the X palette from @xbase/ui (side panel only)
 public/icon/               toolbar and store icons
 public/color-scheme.js     sets the dark class before the side panel paints (link to @xbase/ui)
 wxt.config.ts              manifest (permissions, hosts, minimum Chrome)
+```
+
+Its logic without extension APIs lives in `@xbase/companion`, in `packages/companion/src/`:
+
+```text
+settings.ts                the settings shapes, getStatus, setProviderKey, splitting out the keys
+messages.ts                content <-> background message types
+requests.ts                URL check + untrusted message validation
 ```
 
 The code it shares with the website lives in `@xbase/ai`, in `packages/ai/src/` at the repository root:
@@ -165,7 +171,7 @@ These rules keep the extension small and private, and they limit the work when X
 
 - **Keep X selectors in one file**: every X selector and DOM routine lives in `src/lib/x-dom.ts`. When X changes its markup, that file is the only one to update.
 - **Keep the content script away from storage**: the content script runs on x.com and must never import settings or storage code. It asks the background for anything it needs.
-- **Treat messages as untrusted**: validate every message that reaches the background in `src/lib/background-utils.ts`, and cap the length of any new field.
+- **Treat messages as untrusted**: validate every message that reaches the background in `packages/companion/src/requests.ts`, and cap the length of any new field.
 - **Clean text bound for x.com**: X's own scripts can read anything the content script shows. Pass error text through `scrubSecrets` from `@xbase/ai/errors` (`packages/ai/src/errors.ts`), which removes keys and account IDs and shortens it. The website scrubs its provider errors with it too, so add new key shapes there.
 - **Call providers over plain HTTP**: the adapters use `fetch`, with no provider SDKs. To add a provider, extend `packages/ai/src/providers.ts`, the matching request path in `packages/ai/src/llm.ts` and the host list in `wxt.config.ts`.
 - **Use BoardUI first**: build side panel UI from the BoardUI components in `@xbase/ui` (`import { Button } from '@xbase/ui/components/base/buttons/button'`), with icons from `@remixicon/react`. Style only with BoardUI's semantic tokens and type utilities, so the X palette and dark mode apply. To add a component, run the BoardUI CLI from `packages/ui` (see "Style the UI" in the [XBase contributing guide](../../CONTRIBUTING.md#style-the-ui)) rather than writing your own.
@@ -178,7 +184,7 @@ Unit tests cover the logic, but they never call a real provider or load the real
 
 ### Run the automated checks
 
-Run `pnpm typecheck`, `pnpm test` and `pnpm build` before every commit, and the `@xbase/ai` tests too when you change the shared AI code. The CI workflow runs them on every pull request and every push to `main`, together with the repository-wide lint and format checks (see the [XBase contributing guide](../../CONTRIBUTING.md#run-the-checks)):
+Run `pnpm typecheck`, `pnpm test` and `pnpm build` before every commit, and the `@xbase/ai` or `@xbase/companion` tests too when you change that code. The CI workflow runs them on every pull request and every push to `main`, together with the repository-wide lint and format checks (see the [XBase contributing guide](../../CONTRIBUTING.md#run-the-checks)):
 
 ```sh
 pnpm test                                          # all unit tests, once
@@ -187,13 +193,14 @@ pnpm vitest run src/lib/__tests__/x-dom.test.ts    # a single file
 pnpm typecheck                                     # TypeScript type check
 pnpm build                                         # catches bundling and manifest errors
 pnpm --filter @xbase/ai test                       # provider, prompt and error-text tests (packages/ai)
+pnpm --filter @xbase/companion test                # settings status and message validation
 ```
 
 The unit tests use Vitest, and the DOM tests run in happy-dom. They cover:
 
 - provider request and response handling, with `fetch` stubbed, the prompts, and the error text cleanup before it reaches x.com, in `packages/ai`
-- message validation
-- settings status, the stored-settings migration and where the keys are stored
+- message validation and settings status, in `packages/companion`
+- the stored-settings migration and where the keys are stored
 - the side panel's key field, model search and reload, tabs, style guide saving and project list
 - the X DOM logic, against hand-written fixtures
 

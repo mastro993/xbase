@@ -51,19 +51,19 @@ Keys never reach the browser or the database. Changing one takes a restart.
 
 ## Environment
 
-| Variable                                                                   | Required      | Default                                        | What it does                                                                                                                                                           |
-| -------------------------------------------------------------------------- | ------------- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `X_CLIENT_ID`                                                              | Yes           | none                                           | Your X app's OAuth 2.0 Client ID (see [set up your X app](#set-up-your-x-app)). The server doesn't start without it.                                                   |
-| `X_CLIENT_SECRET`                                                          | Yes           | none                                           | Your X app's OAuth 2.0 Client Secret. The server doesn't start without it. It also encrypts the stored X tokens: changing it means signing in again.                   |
-| `X_OWNER_USERNAME`                                                         | No            | none                                           | The only X account that may claim an empty XBase, for example `@you`. Without it, the first account to sign in does.                                                   |
-| `APP_URL`                                                                  | In production | `http://127.0.0.1:5173` in `pnpm dev`          | The address you open XBase at, as an origin: `https://xbase.example.com`, no path. With `https`, cookies are `Secure`. MCP clients only connect over HTTPS.            |
-| `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `XAI_API_KEY`, `OPENROUTER_API_KEY` | No            | none                                           | API keys for Refine with AI; Settings offers each provider that has one. See [AI providers](#ai-providers).                                                            |
-| `TYPESAFE_API_KEY`                                                         | No            | none                                           | A TypeSafe key for the decision model.                                                                                                                                 |
-| `DATABASE_PATH`                                                            | No            | `./data/xbase.db` (`/data/xbase.db` in Docker) | The SQLite file. Its folder is created if missing.                                                                                                                     |
-| `PORT`, `HOST`                                                             | No            | `3000`, all interfaces                         | Where the production server listens. `pnpm dev` uses port 5173 and stops if it's taken.                                                                                |
-| `MIGRATIONS_DIR`                                                           | No            | `./drizzle` (`/app/drizzle` in Docker)         | The migrations folder, if the server runs from another working directory.                                                                                              |
-| `TRUST_PROXY_HOPS`                                                         | No            | `0`                                            | How many reverse proxies in front of XBase add the visitor's address to `X-Forwarded-For`, for the rate limits. See [behind a reverse proxy](#behind-a-reverse-proxy). |
-| `SERVER_SHUTDOWN_TIMEOUT`                                                  | No            | `5` (`25` in Docker)                           | Seconds the production server waits for requests to finish when it stops.                                                                                              |
+| Variable                                                                   | Required      | Default                                                | What it does                                                                                                                                                           |
+| -------------------------------------------------------------------------- | ------------- | ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `X_CLIENT_ID`                                                              | Yes           | none                                                   | Your X app's OAuth 2.0 Client ID (see [set up your X app](#set-up-your-x-app)). The server doesn't start without it.                                                   |
+| `X_CLIENT_SECRET`                                                          | Yes           | none                                                   | Your X app's OAuth 2.0 Client Secret. The server doesn't start without it. It also encrypts the stored X tokens: changing it means signing in again.                   |
+| `X_OWNER_USERNAME`                                                         | No            | none                                                   | The only X account that may claim an empty XBase, for example `@you`. Without it, the first account to sign in does.                                                   |
+| `APP_URL`                                                                  | In production | `http://127.0.0.1:5173` in `pnpm dev`                  | The address you open XBase at, as an origin: `https://xbase.example.com`, no path. With `https`, cookies are `Secure`. MCP clients only connect over HTTPS.            |
+| `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `XAI_API_KEY`, `OPENROUTER_API_KEY` | No            | none                                                   | API keys for Refine with AI; Settings offers each provider that has one. See [AI providers](#ai-providers).                                                            |
+| `TYPESAFE_API_KEY`                                                         | No            | none                                                   | A TypeSafe key for the decision model.                                                                                                                                 |
+| `DATABASE_PATH`                                                            | No            | `./data/xbase.db` (`/data/xbase.db` in Docker)         | The SQLite file. Its folder is created if missing.                                                                                                                     |
+| `PORT`, `HOST`                                                             | No            | `3000`, all interfaces                                 | Where the production server listens. `pnpm dev` uses port 5173 and stops if it's taken.                                                                                |
+| `MIGRATIONS_DIR`                                                           | No            | `../../packages/db/drizzle` (`/app/drizzle` in Docker) | The migrations folder, if the server runs from another working directory.                                                                                              |
+| `TRUST_PROXY_HOPS`                                                         | No            | `0`                                                    | How many reverse proxies in front of XBase add the visitor's address to `X-Forwarded-For`, for the rate limits. See [behind a reverse proxy](#behind-a-reverse-proxy). |
+| `SERVER_SHUTDOWN_TIMEOUT`                                                  | No            | `5` (`25` in Docker)                                   | Seconds the production server waits for requests to finish when it stops.                                                                                              |
 
 `pnpm dev` and `pnpm start` read `apps/web/.env`; start from [`.env.example`](.env.example). A production server never reads `.env` by itself: `pnpm start` passes it to Node, and Docker takes the variables from the container environment.
 
@@ -82,24 +82,25 @@ Open `http://127.0.0.1:5173`, not `localhost`: X only sends you back to the call
 
 In `apps/web`:
 
-| Command                          | What it does                                                                            |
-| -------------------------------- | --------------------------------------------------------------------------------------- |
-| `pnpm test`                      | Runs the unit tests (Vitest)                                                            |
-| `pnpm typecheck`                 | Type checks with `tsc`                                                                  |
-| `pnpm db:generate --name <name>` | Writes a migration to `drizzle/` after a change to `src/server/db/schema.ts`; commit it |
-| `pnpm db:migrate`                | Applies migrations to `DATABASE_PATH` (the server also does this when it starts)        |
-| `pnpm db:studio`                 | Opens Drizzle Studio on the database                                                    |
+| Command                          | What it does                                                                                          |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `pnpm test`                      | Runs the unit tests (Vitest)                                                                          |
+| `pnpm typecheck`                 | Type checks with `tsc`                                                                                |
+| `pnpm db:generate --name <name>` | Writes a migration to `packages/db/drizzle/` after a change to `packages/db/src/schema.ts`; commit it |
+| `pnpm db:migrate`                | Applies migrations to `DATABASE_PATH` (the server also does this when it starts)                      |
+| `pnpm db:studio`                 | Opens Drizzle Studio on the database                                                                  |
 
-Server code that must never reach the browser lives in `*.server.ts` files; TanStack Start fails the build if client code imports one.
+This app is the presentation and the wiring; the logic lives in packages (see [Shared packages](../../CONTRIBUTING.md#shared-packages)): `@xbase/core` for schemas and DTOs the browser shares, `@xbase/db` for the database, `@xbase/server` for the services and `@xbase/mcp` for the MCP server and its OAuth. Server-only code of the app's own lives in `*.server.ts` files; TanStack Start fails the build if client code imports one, or one of the server-only packages.
 
 The code in `src/`:
 
-| Folder                | What's in it                                                                                                                         |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `routes/`             | Pages and HTTP endpoints, one file per route; `routeTree.gen.ts` is generated from them                                              |
-| `features/<feature>/` | One folder per feature: `*.server.ts` services, `*.functions.ts` server functions for the UI, `*.schema.ts` shared types, components |
-| `server/`             | The database, environment, scheduler and housekeeping                                                                                |
-| `lib/`                | Small helpers shared by several features                                                                                             |
+| Folder                | What's in it                                                                                                                            |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `routes/`             | Pages and HTTP endpoints, one file per route; `routeTree.gen.ts` is generated from them                                                 |
+| `features/<feature>/` | One folder per feature: components, hooks, `*.functions.ts` server functions for the UI, and `*.server.ts` request glue (cookies, auth) |
+| `server/`             | The Nitro boot check, the request body limit and the client address for rate limits                                                     |
+| `server.ts`           | The server entry: opens the database and starts the background jobs                                                                     |
+| `lib/`                | Small UI helpers shared by several features                                                                                             |
 
 The UI is built from the BoardUI components in `packages/ui` (`@xbase/ui`); `features/shell/` composes them into the app shell, the list and workbench layout, section cards and empty states. See [Style the UI](../../CONTRIBUTING.md#style-the-ui) for the rules. Each page loads its data in its route's `loader` through server functions, and a change calls its server function, then `router.invalidate()` to reload.
 
@@ -113,7 +114,7 @@ cd apps/web
 pnpm start                       # node --env-file-if-exists=.env .output/server/index.mjs
 ```
 
-Set `APP_URL` in `.env` first, for example `APP_URL=http://localhost:3000`. `.output/` is self-contained: copy it with the `drizzle/` folder to run it elsewhere, and set `MIGRATIONS_DIR` if you start it from another folder.
+Set `APP_URL` in `.env` first, for example `APP_URL=http://localhost:3000`. `.output/` is self-contained: copy it with the `packages/db/drizzle/` folder to run it elsewhere, and set `MIGRATIONS_DIR` to that folder.
 
 The extension's dev server also uses port 3000; set `PORT` if both run on one machine.
 

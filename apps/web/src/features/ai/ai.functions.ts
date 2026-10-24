@@ -1,13 +1,12 @@
 import { createServerFn } from '@tanstack/react-start';
-import { requireSession } from '@/features/auth/session.server';
-import { validator } from '@/lib/validate';
 import {
   ListModelsInput,
   RefineDraftInput,
   SaveAiSettingsInput,
   SaveDecisionInput,
   VoiceInput,
-} from './ai.schema';
+} from '@xbase/core/ai';
+import { validator } from '@xbase/core/validate';
 import {
   getAiSettings,
   getVoice,
@@ -17,10 +16,11 @@ import {
   saveAiSettings,
   saveDecisionModel,
   saveVoice,
-} from './ai.server';
+} from '@xbase/server/ai';
+import { requireSession } from '@/features/auth/session.server';
 
-// The settings page's and the composer's entry points to ai.server.ts. Provider keys stay in the
-// server's environment; the voice is the account the browser works as.
+// The settings page's and the composer's entry points to @xbase/server/ai. Provider keys stay in
+// the server's environment; the voice is the account the browser works as.
 
 export const getAiSettingsFn = createServerFn().handler(() => getAiSettings());
 
@@ -47,7 +47,7 @@ export const saveVoiceFn = createServerFn({ method: 'POST' })
   .validator(validator(VoiceInput))
   .handler(({ data }) => saveVoice(requireSession().accountId, data));
 
-/** Throws AI_NOT_CONFIGURED (ai.schema.ts) when no provider has a key. */
+/** Throws AI_NOT_CONFIGURED (@xbase/core/ai) when no provider has a key. */
 export const refineDraftFn = createServerFn({ method: 'POST' })
   .validator(validator(RefineDraftInput))
   .handler(async ({ data }) => ({

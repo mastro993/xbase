@@ -1,10 +1,10 @@
 // @vitest-environment happy-dom
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import type { ApiKeyDto } from '@xbase/core/api-keys';
 import { useEffect, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { afterEach, expect, it, vi } from 'vitest';
-import type { ApiKeyDto } from '../api-keys.schema';
 import { ApiKeysCard } from '../ApiKeysCard';
 
 const mocks = vi.hoisted(() => ({ revokeApiKeyFn: vi.fn(async () => {}), reload: () => {} }));

@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { oauthError } from '@/features/oauth/http';
+import { oauthError } from '@xbase/mcp/oauth/http';
 
 // Clients probe other discovery paths (openid-configuration, path-aware variants): a JSON 404 lets
 // them move on. Without it they get the HTML page renderer, or a 406.

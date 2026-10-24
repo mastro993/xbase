@@ -1,8 +1,9 @@
 // @vitest-environment happy-dom
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { DEFAULT_SETTINGS } from '@xbase/companion/settings';
 import { afterEach, expect, it, vi } from 'vitest';
-import { DEFAULT_SETTINGS, saveSettings } from '@/lib/settings';
+import { saveSettings } from '@/lib/settings';
 import App from '../App';
 
 vi.mock('@xbase/ai/llm', () => ({ listModels: vi.fn() }));

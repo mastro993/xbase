@@ -30,7 +30,7 @@ ENV NODE_ENV=production \
 WORKDIR /app
 # .output is self-contained (Nitro bundles the dependencies); the migrations run at boot.
 COPY --from=build --chown=node:node /repo/apps/web/.output ./.output
-COPY --from=build --chown=node:node /repo/apps/web/drizzle ./drizzle
+COPY --from=build --chown=node:node /repo/packages/db/drizzle ./drizzle
 RUN mkdir -p /data && chown node:node /data
 VOLUME /data
 USER node

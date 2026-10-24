@@ -1,14 +1,14 @@
-import { Chip } from '@xbase/ui/components/base/badges/chip';
-import { Button } from '@xbase/ui/components/base/buttons/button';
-import { Callout } from '@xbase/ui/components/xbase/callout';
-import type { ReactNode } from 'react';
-import { ButtonRouterLink } from '@/features/shell/router-links';
 import {
   AUTHORIZE_ERRORS,
   type AuthorizeError,
   type ConsentView,
   SCOPE_DESCRIPTION,
-} from './consent.schema';
+} from '@xbase/core/consent';
+import { Chip } from '@xbase/ui/components/base/badges/chip';
+import { Button } from '@xbase/ui/components/base/buttons/button';
+import { Callout } from '@xbase/ui/components/xbase/callout';
+import type { ReactNode } from 'react';
+import { ButtonRouterLink } from '@/features/shell/router-links';
 
 // The page an MCP client sends the owner to. Its main defence is what it shows: who is asking
 // (verified host or a self-chosen name) and where the answer goes. It never approves by itself.

@@ -1,0 +1,38 @@
+{
+  "name": "@xbase/server",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./accounts": "./src/accounts.ts",
+    "./ai": "./src/ai.ts",
+    "./api-keys": "./src/api-keys.ts",
+    "./client-ip": "./src/client-ip.ts",
+    "./discover": "./src/discover.ts",
+    "./env": "./src/env.ts",
+    "./housekeeping": "./src/housekeeping.ts",
+    "./http": "./src/http.ts",
+    "./posts": "./src/posts.ts",
+    "./rest": "./src/rest.ts",
+    "./scheduler": "./src/scheduler.ts",
+    "./sessions": "./src/sessions.ts",
+    "./token-crypto": "./src/token-crypto.ts",
+    "./x-auth": "./src/x-auth.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@xbase/ai": "workspace:*",
+    "@xbase/core": "workspace:*",
+    "@xbase/db": "workspace:*",
+    "drizzle-orm": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

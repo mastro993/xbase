@@ -1,15 +1,14 @@
 import { notFound } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
-import { requireSession } from '@/features/auth/session.server';
-import { NotFoundError } from '@/lib/errors';
-import { validator } from '@/lib/validate';
+import { NotFoundError } from '@xbase/core/errors';
 import {
   CreateDraftInput,
   ListDraftsInput,
   PostIdInput,
   SchedulePostInput,
   UpdateDraftInput,
-} from './posts.schema';
+} from '@xbase/core/posts/schema';
+import { validator } from '@xbase/core/validate';
 import {
   createDraft,
   deletePost,
@@ -19,10 +18,11 @@ import {
   schedulePost,
   unschedulePost,
   updateDraft,
-} from './posts.server';
+} from '@xbase/server/posts';
+import { requireSession } from '@/features/auth/session.server';
 
-// The UI's entry points to posts.server.ts. Lists and new drafts are the account the browser works
-// as. Errors reach the caller with their message.
+// The UI's entry points to @xbase/server/posts. Lists and new drafts are the account the browser
+// works as. Errors reach the caller with their message.
 
 export const listDraftsFn = createServerFn()
   .validator(validator(ListDraftsInput))

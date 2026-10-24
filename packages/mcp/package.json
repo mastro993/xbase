@@ -1,0 +1,36 @@
+{
+  "name": "@xbase/mcp",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./connected-apps": "./src/connected-apps.ts",
+    "./endpoint": "./src/endpoint.ts",
+    "./oauth/authorize": "./src/oauth/authorize.ts",
+    "./oauth/clients": "./src/oauth/clients.ts",
+    "./oauth/config": "./src/oauth/config.ts",
+    "./oauth/consent": "./src/oauth/consent.ts",
+    "./oauth/http": "./src/oauth/http.ts",
+    "./oauth/metadata": "./src/oauth/metadata.ts",
+    "./oauth/revoke": "./src/oauth/revoke.ts",
+    "./oauth/token": "./src/oauth/token.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/core": "^2.3.1",
+    "@modelcontextprotocol/server": "^2.3.1",
+    "@xbase/core": "workspace:*",
+    "@xbase/db": "workspace:*",
+    "@xbase/server": "workspace:*",
+    "drizzle-orm": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

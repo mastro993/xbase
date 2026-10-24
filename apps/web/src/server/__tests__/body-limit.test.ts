@@ -1,5 +1,5 @@
+import { MAX_PART_LENGTH, MAX_PARTS } from '@xbase/core/posts/schema';
 import { describe, expect, it, vi } from 'vitest';
-import { MAX_PART_LENGTH, MAX_PARTS } from '@/features/posts/posts.schema';
 import { MAX_SERVER_FN_BODY, serverFnBodyLimit } from '../body-limit';
 
 function run(

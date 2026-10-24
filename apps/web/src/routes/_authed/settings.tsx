@@ -1,4 +1,5 @@
 import { createFileRoute, getRouteApi } from '@tanstack/react-router';
+import { SIGN_IN_ERRORS } from '@xbase/core/auth';
 import { z } from 'zod';
 import { AccountsCard } from '@/features/accounts/AccountsCard';
 import { getAiSettingsFn, getVoiceFn } from '@/features/ai/ai.functions';
@@ -7,7 +8,6 @@ import { DecisionCard } from '@/features/ai/DecisionCard';
 import { VoiceCard } from '@/features/ai/VoiceCard';
 import { listApiKeysFn } from '@/features/api-keys/api-keys.functions';
 import { ApiKeysCard } from '@/features/api-keys/ApiKeysCard';
-import { SIGN_IN_ERRORS } from '@/features/auth/auth.schema';
 import { getMcpSettingsFn } from '@/features/mcp/mcp.functions';
 import { McpCard } from '@/features/settings/McpCard';
 import { SessionsCard } from '@/features/settings/SessionsCard';

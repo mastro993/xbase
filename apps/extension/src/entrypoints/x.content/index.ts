@@ -1,12 +1,12 @@
-import { browser } from 'wxt/browser';
-import { defineContentScript } from 'wxt/utils/define-content-script';
 import {
   type ActionResponse,
   type BackgroundRequest,
   type ContentPush,
   MAX_TEXT,
   type StatusResponse,
-} from '@/lib/messages';
+} from '@xbase/companion/messages';
+import { browser } from 'wxt/browser';
+import { defineContentScript } from 'wxt/utils/define-content-script';
 import {
   closeMenu,
   composerOf,

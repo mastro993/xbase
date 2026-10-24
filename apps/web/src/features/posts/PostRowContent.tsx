@@ -1,7 +1,7 @@
+import { firstLine } from '@xbase/core/posts/text';
 import { cx } from '@xbase/ui/utils/cx';
 import { Fragment, type ReactNode } from 'react';
 import { ROW_TEXT } from '@/features/shell/row-link';
-import { firstLine } from './post-text';
 
 type PostRowContentProps = {
   parts: readonly string[];

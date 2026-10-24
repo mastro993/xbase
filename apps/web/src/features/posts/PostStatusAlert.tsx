@@ -1,7 +1,7 @@
+import type { PostDto } from '@xbase/core/posts/schema';
 import { Callout } from '@xbase/ui/components/xbase/callout';
 import { ButtonRouterLink } from '@/features/shell/router-links';
 import { LocalTime } from './LocalTime';
-import type { PostDto } from './posts.schema';
 
 type PostStatusAlertProps = {
   post: PostDto;

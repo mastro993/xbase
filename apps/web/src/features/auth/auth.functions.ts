@@ -1,6 +1,7 @@
 import { redirect } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
-import { readSession, revokeAllSessions, revokeSession } from './session.server';
+import { deleteAllSessions } from '@xbase/server/sessions';
+import { readSession, revokeSession } from './session.server';
 
 // Signing in happens in the /auth/x server routes (x-oauth.server.ts). Redirects use 303 so a
 // browser follows a native form POST with a GET.
@@ -19,6 +20,6 @@ export const logoutFn = createServerFn({ method: 'POST' }).handler(() => {
 /** Ends every session, this one included. */
 export const signOutEverywhereFn = createServerFn({ method: 'POST' }).handler(() => {
   revokeSession();
-  revokeAllSessions();
+  deleteAllSessions();
   throw redirect({ to: '/login', statusCode: 303 });
 });

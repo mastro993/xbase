@@ -1,5 +1,6 @@
 import { useRouter } from '@tanstack/react-router';
 import { useServerFn } from '@tanstack/react-start';
+import type { ApiKeyDto } from '@xbase/core/api-keys';
 import { useRef, useState } from 'react';
 import { LocalTime } from '@/features/posts/LocalTime';
 import {
@@ -12,7 +13,6 @@ import {
 import { ConfirmButton } from '@/features/shell/ConfirmButton';
 import { SectionCard } from '@/features/shell/SectionCard';
 import { revokeApiKeyFn } from './api-keys.functions';
-import type { ApiKeyDto } from './api-keys.schema';
 import { NewApiKeyDialog } from './NewApiKeyDialog';
 
 /** Keys for the REST API: a list with Revoke, and a dialog that creates one. */
