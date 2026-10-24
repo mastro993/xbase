@@ -64,7 +64,7 @@ describe('migrations', () => {
     expect(db.get<{ timeout: number }>(sql`pragma busy_timeout`)).toEqual({ timeout: 5000 });
   });
 
-  // It holds the X accounts' tokens in plain text.
+  // It holds drafts, settings and the X accounts' (encrypted) tokens.
   it.skipIf(process.platform === 'win32')(
     'create the folder and the file readable only by the server’s user',
     () => {
@@ -90,6 +90,37 @@ describe('migrations', () => {
     expect(reopened.select({ parts: posts.parts, status: posts.status }).from(posts).all()).toEqual(
       [{ parts: [{ text: 'hello' }], status: 'draft' }],
     );
+  });
+
+  // A database from before X sign-in: its password sessions would work again once someone claims
+  // XBase, and its posts belong to no account, so the X accounts migration clears both.
+  it('upgrade a password-era database, signing everyone out', () => {
+    dir = mkdtempSync(join(tmpdir(), 'xbase-db-'));
+    const initOnly = join(dir, 'drizzle');
+    cpSync(MIGRATIONS, initOnly, { recursive: true });
+    for (const entry of readdirSync(initOnly).filter((folder) => !folder.endsWith('_init'))) {
+      rmSync(join(initOnly, entry), { recursive: true });
+    }
+    const path = join(dir, 'xbase.db');
+    const old = openDb(path, initOnly);
+    old.run(
+      sql`insert into sessions (id, created_at, expires_at, last_seen_at) values ('s', 1, 2, 1)`,
+    );
+    old.run(
+      sql`insert into posts (id, parts, origin, created_at, updated_at) values ('p', '[]', 'web', 1, 1)`,
+    );
+    const upgraded = openDb(path, MIGRATIONS);
+    expect(tableNames(upgraded)).toEqual(TABLES);
+    expect(upgraded.all(sql`select id from sessions`)).toEqual([]);
+    expect(upgraded.all(sql`select id from posts`)).toEqual([]);
+    insertAccount(upgraded);
+    upgraded
+      .insert(posts)
+      .values({ accountId: ACCOUNT_ID, parts: [{ text: 'hello' }], origin: 'web' })
+      .run();
+    expect(upgraded.select({ accountId: posts.accountId }).from(posts).all()).toEqual([
+      { accountId: ACCOUNT_ID },
+    ]);
   });
 
   // Catches any schema.ts change committed without its migration: tables, columns, types, CHECK
