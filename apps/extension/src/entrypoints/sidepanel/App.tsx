@@ -1,4 +1,4 @@
-import { Tabs } from 'panelui-web/tabs';
+import { Tab, TabList, TabPanel, Tabs } from '@xbase/ui/components/base/tabs/tabs';
 import { ProjectsTab } from '@/components/sidepanel/ProjectsTab';
 import { ProviderTab } from '@/components/sidepanel/ProviderTab';
 import { StatusHeader } from '@/components/sidepanel/StatusHeader';
@@ -13,29 +13,30 @@ export default function App() {
   return (
     <div className="flex min-h-svh min-w-0 flex-col">
       <StatusHeader status={getStatus(settings)} />
-      <Tabs variant="underline" defaultValue="provider" className="p-4 text-sm">
-        <Tabs.List>
-          <Tabs.Trigger value="provider" className="flex-1">
+      <Tabs defaultSelectedKey="provider" className="p-4">
+        <TabList aria-label="Settings">
+          <Tab id="provider" className="flex-1 justify-center">
             Provider
-          </Tabs.Trigger>
-          <Tabs.Trigger value="style" className="flex-1">
+          </Tab>
+          <Tab id="style" className="flex-1 justify-center">
             Style
-          </Tabs.Trigger>
-          <Tabs.Trigger value="projects" className="flex-1">
+          </Tab>
+          <Tab id="projects" className="flex-1 justify-center">
             Projects
-          </Tabs.Trigger>
-        </Tabs.List>
-        {/* Stays mounted so the model list and open key forms survive tab switches.
-            Style and Projects unmount on purpose: that flushes their pending edits. */}
-        <Tabs.Content value="provider" keepMounted>
+          </Tab>
+        </TabList>
+        {/* Stays mounted so the model list and open key forms survive tab switches. React Aria
+            only makes it inert while another tab is open, so hide it too. Style and Projects
+            unmount on purpose: that flushes their pending edits. */}
+        <TabPanel id="provider" shouldForceMount className="data-inert:hidden">
           <ProviderTab settings={settings} />
-        </Tabs.Content>
-        <Tabs.Content value="style">
+        </TabPanel>
+        <TabPanel id="style">
           <StyleTab settings={settings} />
-        </Tabs.Content>
-        <Tabs.Content value="projects">
+        </TabPanel>
+        <TabPanel id="projects">
           <ProjectsTab settings={settings} />
-        </Tabs.Content>
+        </TabPanel>
       </Tabs>
     </div>
   );

@@ -1,6 +1,6 @@
+import { PROVIDERS } from '@xbase/ai/providers';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fakeBrowser } from 'wxt/testing/fake-browser';
-import { PROVIDERS } from '../providers';
 import {
   getSettings,
   getStatus,

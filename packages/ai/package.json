@@ -1,0 +1,22 @@
+{
+  "name": "@xbase/ai",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./errors": "./src/errors.ts",
+    "./llm": "./src/llm.ts",
+    "./post": "./src/post.ts",
+    "./profile": "./src/profile.ts",
+    "./prompts": "./src/prompts/index.ts",
+    "./providers": "./src/providers.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

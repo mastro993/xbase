@@ -16,6 +16,12 @@ dist-ssr
 stats.html
 stats-*.json
 
+# Local SQLite databases: the web app's default DATABASE_PATH is apps/web/data/xbase.db
+apps/web/data/
+*.db
+*.db-wal
+*.db-shm
+
 # Environment and personal overrides
 .env
 .env.*

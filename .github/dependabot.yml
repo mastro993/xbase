@@ -16,8 +16,8 @@ updates:
         patterns: ['*']
 
   # The root directory covers every workspace package in pnpm-workspace.yaml
-  # and the single pnpm-lock.yaml. Minor and patch updates share one weekly PR;
-  # each major update, and each panelui-web update, gets its own.
+  # and the single pnpm-lock.yaml. Minor and patch updates share one weekly PR,
+  # except the UI stack's, which get a second one; each major update gets its own.
   - package-ecosystem: npm
     directory: /
     schedule:
@@ -28,7 +28,16 @@ updates:
       prefix: chore
       include: scope
     groups:
+      # What the BoardUI components in packages/ui build on. An update can change how
+      # both apps look and behave, so check that PR in the browser, in light and dark.
+      ui:
+        update-types: [minor, patch]
+        patterns:
+          - react-aria-components
+          - '@remixicon/react'
+          - tailwind-merge
+          - tailwindcss
+          - '@tailwindcss/*'
+          - '@fontsource-variable/*'
       npm-minor-patch:
         update-types: [minor, patch]
-        # Pre-1.0, so a minor update can break: it always gets its own PR.
-        exclude-patterns: [panelui-web]

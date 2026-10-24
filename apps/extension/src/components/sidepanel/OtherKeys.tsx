@@ -1,6 +1,5 @@
-import { FieldLegend, FieldSet } from '@/components/ui/field';
+import { PROVIDER_IDS } from '@xbase/ai/providers';
 import { setProviderKey, updateSettings } from '@/hooks/use-settings';
-import { PROVIDER_IDS } from '@/lib/providers';
 import type { Settings } from '@/lib/settings';
 import { KeyRow } from './KeyRow';
 
@@ -9,11 +8,11 @@ export function OtherKeys({ settings }: { settings: Settings }) {
   const others = PROVIDER_IDS.filter((id) => id !== settings.activeProvider);
   return (
     // min-w-0: a fieldset defaults to min-content width, which overflows narrow panels.
-    <FieldSet className="min-w-0 gap-0">
-      <FieldLegend variant="label">
+    <fieldset className="min-w-0">
+      <legend className="text-body-medium text-text-primary">
         {settings.activeProvider ? 'Other saved keys' : 'Saved keys'}
-      </FieldLegend>
-      <ul className="divide-y">
+      </legend>
+      <ul className="divide-y divide-separator-border">
         {others.map((id) => (
           <li key={id} className="py-2">
             <KeyRow
@@ -24,6 +23,6 @@ export function OtherKeys({ settings }: { settings: Settings }) {
           </li>
         ))}
       </ul>
-    </FieldSet>
+    </fieldset>
   );
 }

@@ -17,7 +17,8 @@ export default defineConfig({
   srcDir: 'src',
   imports: false,
   modules: ['@wxt-dev/module-react'],
-  vite: () => ({ plugins: [tailwindcss()] }),
+  // tsconfigPaths resolves @xbase/ui's BoardUI sources, which import each other by that alias.
+  vite: () => ({ plugins: [tailwindcss()], resolve: { tsconfigPaths: true } }),
   manifest: {
     name: NAME,
     // storage.local.setAccessLevel for all areas.
@@ -33,8 +34,6 @@ export default defineConfig({
       'https://api.x.ai/*',
       'https://api.deepseek.com/*',
       'https://openrouter.ai/*',
-      // Jev with a TypeSafe key (src/lib/jev.ts). TypeSafe's CORS rejects extension origins.
-      'https://api.typesafe.ai/*',
     ],
   },
   // .output/x-companion-<version>-chrome.zip

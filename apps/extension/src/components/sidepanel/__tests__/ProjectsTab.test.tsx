@@ -1,14 +1,11 @@
 // @vitest-environment happy-dom
+
+import userEvent from '@testing-library/user-event';
+import { MAX_PROJECTS } from '@xbase/ai/profile';
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
-import { expect, it } from 'vitest';
-import {
-  DEFAULT_SETTINGS,
-  getSettings,
-  MAX_PROJECTS,
-  saveSettings,
-  type Settings,
-} from '@/lib/settings';
+import { expect, it, vi } from 'vitest';
+import { DEFAULT_SETTINGS, getSettings, saveSettings, type Settings } from '@/lib/settings';
 import { ProjectsTab } from '../ProjectsTab';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -71,5 +68,25 @@ it('keeps Add project focusable at the limit, so removing a project focuses it',
   await act(async () => button(container, 'Remove P0').click());
   await act(async () => button(container, 'Remove').click());
   expect(document.activeElement).toBe(add);
+  await act(async () => root.unmount());
+});
+
+it('takes a link without a scheme without marking it invalid', async () => {
+  const project = { id: 'acme', name: 'Acme', description: '', link: '' };
+  await saveSettings({ ...DEFAULT_SETTINGS, projects: [project] });
+  const container = document.body.appendChild(document.createElement('div'));
+  const root = createRoot(container);
+  await act(async () =>
+    root.render(<ProjectsTab settings={{ ...DEFAULT_SETTINGS, projects: [project] }} />),
+  );
+  const user = userEvent.setup();
+  const link = container.querySelector<HTMLInputElement>('#project-acme-link')!;
+  expect(link.type).toBe('url');
+  await user.type(link, 'acme.app');
+  // Blurring commits the browser's validity in React Aria's native mode: a scheme-less URL would
+  // turn the field red with no message, although it's saved and used.
+  await user.tab();
+  expect(link.getAttribute('aria-invalid')).toBeNull();
+  await vi.waitFor(async () => expect((await getSettings()).projects[0]!.link).toBe('acme.app'));
   await act(async () => root.unmount());
 });

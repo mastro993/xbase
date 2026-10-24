@@ -1,17 +1,9 @@
-import { RefreshCwIcon } from 'lucide-react';
-import { Button } from 'panelui-web/button';
-import {
-  Combobox,
-  ComboboxContent,
-  ComboboxEmpty,
-  ComboboxInput,
-  ComboboxItem,
-  ComboboxList,
-} from '@/components/ui/combobox';
-import { Field, FieldLabel } from '@/components/ui/field';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Spinner } from '@/components/ui/spinner';
-import type { ModelOption } from '@/lib/providers';
+import { RiRefreshLine } from '@remixicon/react';
+import type { ModelOption } from '@xbase/ai/providers';
+import { Button } from '@xbase/ui/components/base/buttons/button';
+import { Combobox, ComboboxItem } from '@xbase/ui/components/xbase/combobox';
+import { Spinner } from '@xbase/ui/components/xbase/spinner';
+import { useState } from 'react';
 
 interface Props {
   hasKey: boolean;
@@ -28,77 +20,63 @@ const matches = (m: ModelOption, query: string) =>
   `${m.label} ${m.id}`.toLowerCase().includes(query.toLowerCase());
 
 export function ModelPicker({ hasKey, value, models, loading, onChange, onRefresh }: Props) {
-  // Prefer the listed entry so the input and the ticked item show the same label.
+  // What the user typed. Until then the field shows the selected model, and the list shows them all.
+  const [query, setQuery] = useState('');
+  // Prefer the listed entry so the input and the highlighted item show the same label.
   const selected = hasKey ? (models?.find((m) => m.id === value?.id) ?? value) : null;
   // Selected first: it stays selectable before the list loads, if the list no longer has it,
   // and when it sorts past the display limit.
   const items = selected
     ? [selected, ...(models ?? []).filter((m) => m.id !== selected.id)]
     : (models ?? []);
+  const search = query === selected?.label ? '' : query.trim();
+  const found = search ? items.filter((m) => matches(m, search)) : items;
+  const shown = found.slice(0, LIMIT);
   const refreshDisabled = !hasKey || loading;
+  const loadingNote = (
+    <span className="inline-flex items-center gap-2">
+      <Spinner className="size-4" />
+      Loading models…
+    </span>
+  );
 
   return (
-    <Field data-disabled={!hasKey || undefined}>
-      <div className="flex items-center justify-between gap-2">
-        <FieldLabel htmlFor="model">Model</FieldLabel>
+    <Combobox
+      label="Model"
+      labelAction={
         <Button
-          variant="ghost"
-          size="icon-sm"
+          variant="secondary"
+          size="xs"
+          iconOnly
+          leadingIcon={loading ? Spinner : RiRefreshLine}
           aria-label="Refresh models"
           // aria-disabled, not disabled: the button keeps focus while the list reloads.
           aria-disabled={refreshDisabled || undefined}
-          className="size-6 aria-disabled:pointer-events-none aria-disabled:opacity-50"
           onClick={() => !refreshDisabled && onRefresh()}
-        >
-          {loading ? <Spinner aria-hidden /> : <RefreshCwIcon />}
-        </Button>
-      </div>
-      <Combobox
-        items={items}
-        value={selected}
-        onValueChange={(m) => m && onChange(m)}
-        itemToStringLabel={(m) => m.label}
-        itemToStringValue={(m) => m.id}
-        isItemEqualToValue={(a, b) => a.id === b.id}
-        filter={matches}
-        limit={LIMIT}
-        disabled={!hasKey}
-      >
-        <ComboboxInput
-          id="model"
-          className="w-full"
-          placeholder={hasKey ? 'Search models…' : 'Add a key to load models'}
-          disabled={!hasKey}
-          triggerLabel="Show models"
         />
-        <ComboboxContent>
-          {loading ? (
-            <div className="flex flex-col gap-1 p-1" aria-busy="true" aria-label="Loading models">
-              <Skeleton className="h-7" />
-              <Skeleton className="h-7" />
-              <Skeleton className="h-7" />
-            </div>
-          ) : (
-            <>
-              <ComboboxEmpty>No models found</ComboboxEmpty>
-              <ComboboxList>
-                {(m: ModelOption) => (
-                  <ComboboxItem key={m.id} value={m}>
-                    <span className="truncate">{m.label}</span>
-                  </ComboboxItem>
-                )}
-              </ComboboxList>
-              {/* ponytail: also shown while a query narrows the list; switch to
-                  useFilteredItems() if that confuses anyone. */}
-              {items.length > LIMIT && (
-                <div className="border-t px-2 py-1.5 text-xs text-muted-foreground group-data-empty/combobox-content:hidden">
-                  Showing {LIMIT} of {items.length}. Type to search.
-                </div>
-              )}
-            </>
-          )}
-        </ComboboxContent>
-      </Combobox>
-    </Field>
+      }
+      placeholder={hasKey ? 'Search models…' : 'Add a key to load models'}
+      isDisabled={!hasKey}
+      items={shown}
+      selectedKey={selected?.id ?? null}
+      onSelectionChange={(id) => {
+        const model = items.find((m) => m.id === id);
+        if (model) onChange(model);
+      }}
+      onInputChange={setQuery}
+      emptyText={loading ? loadingNote : 'No models found'}
+      footer={
+        shown.length > 0 &&
+        (loading
+          ? loadingNote
+          : found.length > LIMIT && `Showing ${LIMIT} of ${found.length}. Type to search.`)
+      }
+    >
+      {(m) => (
+        <ComboboxItem id={m.id} textValue={m.label}>
+          <span className="min-w-0 truncate">{m.label}</span>
+        </ComboboxItem>
+      )}
+    </Combobox>
   );
 }

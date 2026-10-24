@@ -7,7 +7,7 @@ import { ApiKeyField } from '../ApiKeyField';
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 afterEach(() => (document.body.innerHTML = ''));
 
-function setup(savedKey = '') {
+function setup(savedKey = '', error = '') {
   const onCommit = vi.fn();
   const container = document.body.appendChild(document.createElement('div'));
   const root = createRoot(container);
@@ -18,7 +18,7 @@ function setup(savedKey = '') {
           provider="openai"
           savedKey={key}
           checking={false}
-          error=""
+          error={error}
           modelCount={null}
           onCommit={onCommit}
         />,
@@ -86,4 +86,47 @@ it('an empty paste neither saves nor clears the draft', () => {
   paste(input()!, '');
   expect(input()!.value).toBe('sk-');
   expect(onCommit).not.toHaveBeenCalled();
+});
+
+it('keeps password managers off the key input', () => {
+  const input = setup().input()!;
+  expect(input.type).toBe('password');
+  expect(input.getAttribute('autocomplete')).toBe('off');
+  expect(input.getAttribute('spellcheck')).toBe('false');
+  expect(input.hasAttribute('data-1p-ignore')).toBe(true);
+  expect(input.getAttribute('data-lpignore')).toBe('true');
+});
+
+it('Escape closes the form and returns focus to Replace', () => {
+  const { input, button } = setup('sk-old-1234567890');
+  act(() => button('Replace').click());
+  expect(document.activeElement).toBe(input());
+  act(() => {
+    input()!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  });
+  expect(input()).toBeNull();
+  expect(document.activeElement).toBe(button('Replace'));
+});
+
+it('saves a typed replacement while the old key is marked invalid', () => {
+  const { input, button, onCommit } = setup('sk-old-1234567890', 'Invalid API key');
+  act(() => button('Replace').click());
+  const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!;
+  act(() => {
+    setValue.call(input(), 'sk-proj-new-1234567890');
+    input()!.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  // The row reports the error itself: the browser's validation must not block Save.
+  expect(input()!.getAttribute('aria-invalid')).toBe('true');
+  expect(input()!.validity.valid).toBe(true);
+  act(() => button('Save').click());
+  expect(onCommit).toHaveBeenCalledExactlyOnceWith('sk-proj-new-1234567890');
+});
+
+it('marks a rejected key invalid and describes the input with the error', () => {
+  const { container, input } = setup('', 'Invalid API key');
+  expect(input()!.getAttribute('aria-invalid')).toBe('true');
+  const described = input()!.getAttribute('aria-describedby')!.split(' ');
+  expect(described).toContain('api-key-error');
+  expect(container.querySelector('[role="alert"]')!.textContent).toBe('Invalid API key');
 });

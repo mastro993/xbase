@@ -1,4 +1,4 @@
-import { PROVIDERS } from '@/lib/providers';
+import { PROVIDERS } from '@xbase/ai/providers';
 import type { Status } from '@/lib/settings';
 
 /** "sk-ant-…a1b2". Values too short to mask safely are hidden entirely. */

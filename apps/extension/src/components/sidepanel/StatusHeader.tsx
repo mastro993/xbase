@@ -1,26 +1,21 @@
-import { cn } from 'cn';
-import { Badge } from '@/components/ui/badge';
+import { Chip } from '@xbase/ui/components/base/badges/chip';
+import { StatusDot } from '@xbase/ui/components/base/badges/status-dot';
 import type { Status } from '@/lib/settings';
 import { statusHint } from './format';
 
 export function StatusHeader({ status }: { status: Status }) {
   const label = status.ready ? 'Ready' : 'Setup needed';
   return (
-    <header className="flex flex-col gap-1 border-b px-4 py-3">
+    <header className="flex flex-col gap-1 border-b border-separator-border px-4 py-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="font-heading text-lg font-bold">x-companion</h1>
+        <h1 className="text-title-3-bold text-text-primary">x-companion</h1>
         {/* Announced through the status line below instead. */}
-        <Badge variant="outline" aria-hidden>
-          <span
-            className={cn(
-              'size-2 rounded-full',
-              status.ready ? 'bg-success' : 'bg-muted-foreground',
-            )}
-          />
+        <Chip variant="caption" color="soft" className="gap-1.5" aria-hidden>
+          <StatusDot color={status.ready ? 'green' : 'yellow'} />
           {label}
-        </Badge>
+        </Chip>
       </div>
-      <p role="status" className="text-sm text-muted-foreground">
+      <p role="status" className="text-body-regular text-text-secondary">
         <span className="sr-only">{label}: </span>
         {statusHint(status)}
       </p>

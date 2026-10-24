@@ -37,12 +37,6 @@
       "skillPath": "packages/start-client-core/skills/start-core/middleware/SKILL.md",
       "computedHash": "65b75b01a637eb85675bccb64c9c41cac03eb2d7b810da7b4b386fd11553bf9c"
     },
-    "panelui-web": {
-      "source": "panel-ui/PanelUI",
-      "sourceType": "github",
-      "skillPath": "skills/panelui-web/SKILL.md",
-      "computedHash": "4c6233b6ce231ee74ae2a6141a688fc9a6710fb97944f86535191e6e8a04520d"
-    },
     "react-start": {
       "source": "tanstack/router",
       "sourceType": "github",

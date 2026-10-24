@@ -1,13 +1,11 @@
-@import 'tailwindcss';
-@import 'tw-animate-css';
-@import 'shadcn/tailwind.css';
-@import '@xbase/ui/theme.css';
+/* BoardUI's Tailwind entry (tokens, type scale, base styles). */
+@import '@xbase/ui/styles/globals.css';
+/* X's palette, so the side panel matches x.com. The website uses Petrol. */
+@import '@xbase/ui/palettes/x.css';
 
-/* shadcn/tailwind.css narrows these two variants to its own attribute values, which PanelUI's
-   bare data-selected and data-active attributes don't match. Restore Tailwind's built-ins: the
-   shadcn components here don't use them. */
-@custom-variant data-selected (&[data-selected]);
-@custom-variant data-active (&[data-active]);
-
-/* Tailwind skips node_modules: scan the classes panelui-web ships. Relative to this file. */
-@source "../../node_modules/panelui-web/dist";
+/* Tailwind skips files outside this app: scan the @xbase/ui components the side panel can use.
+   Not application/, BoardUI's page-level blocks (sidebar, auth card…), which only the website
+   uses. Relative to this file. */
+@source '../../../../packages/ui/components/base';
+@source '../../../../packages/ui/components/foundations';
+@source '../../../../packages/ui/components/xbase';
