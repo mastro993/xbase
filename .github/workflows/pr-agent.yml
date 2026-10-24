@@ -38,6 +38,10 @@ jobs:
           ANTHROPIC.KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           config.model: anthropic/claude-opus-5-5
           config.fallback_models: '["anthropic/claude-sonnet-5"]'
+          # PR-Agent caps every model at 32k tokens per call by default, which left most files of a
+          # large PR out of `/improve`. Both models take 1M; 200k keeps each call's cost bounded.
+          config.max_model_tokens: '200000'
+          pr_code_suggestions.max_number_of_calls: '5'
           github_action_config.auto_review: 'true'
           github_action_config.auto_improve: 'true'
           # PR bodies are written by hand, so the agent must not rewrite them.
