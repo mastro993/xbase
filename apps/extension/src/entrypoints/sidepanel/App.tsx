@@ -1,10 +1,10 @@
-import { getStatus } from '@xbase/companion/settings';
 import { Tab, TabList, TabPanel, Tabs } from '@xbase/ui/components/base/tabs/tabs';
 import { ProjectsTab } from '@/components/sidepanel/ProjectsTab';
 import { ProviderTab } from '@/components/sidepanel/ProviderTab';
 import { StatusHeader } from '@/components/sidepanel/StatusHeader';
 import { StyleTab } from '@/components/sidepanel/StyleTab';
 import { useSettings } from '@/hooks/use-settings';
+import { getStatus } from '@/lib/settings';
 
 export default function App() {
   const settings = useSettings();

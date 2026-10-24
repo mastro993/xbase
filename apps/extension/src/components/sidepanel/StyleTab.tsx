@@ -1,6 +1,6 @@
 import { MAX_STYLE_FIELD_LENGTH, STYLE_FIELDS, type StyleField } from '@xbase/ai/profile';
-import type { Settings } from '@xbase/companion/settings';
 import { useAutosave } from '@/hooks/use-autosave';
+import type { Settings } from '@/lib/settings';
 import { TextareaField } from './TextareaField';
 
 const SECTIONS: Record<StyleField, { label: string; description: string; placeholder: string }> = {

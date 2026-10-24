@@ -15,7 +15,6 @@
   "dependencies": {
     "@remixicon/react": "catalog:",
     "@xbase/ai": "workspace:*",
-    "@xbase/companion": "workspace:*",
     "@xbase/ui": "workspace:*",
     "react": "catalog:",
     "react-dom": "catalog:"

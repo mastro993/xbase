@@ -1,8 +1,14 @@
 import { PROVIDERS } from '@xbase/ai/providers';
-import type { Settings } from '@xbase/companion/settings';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fakeBrowser } from 'wxt/testing/fake-browser';
-import { getSettings, saveSettings, settingsItem, watchReady } from '../settings';
+import {
+  getSettings,
+  getStatus,
+  saveSettings,
+  settingsItem,
+  type Settings,
+  watchReady,
+} from '../settings';
 
 const model = PROVIDERS.openai.defaultModel;
 const style = { persona: '', audience: '', voice: '', rules: '' };
@@ -14,6 +20,29 @@ const complete: Settings = {
 };
 // What storage holds for `complete`.
 const stored = { ...complete, providers: { openai: { model } } };
+
+describe('getStatus', () => {
+  it.each<[string, Settings, ReturnType<typeof getStatus>]>([
+    [
+      'no provider beats every other gap',
+      { ...complete, activeProvider: null, providers: {} },
+      { ready: false, reason: 'no-provider', provider: null },
+    ],
+    [
+      'active provider without saved settings',
+      { ...complete, providers: { anthropic: { apiKey: 'k', model } } },
+      { ready: false, reason: 'no-key', provider: 'openai' },
+    ],
+    [
+      'whitespace-only key',
+      { ...complete, providers: { openai: { apiKey: '  ', model } } },
+      { ready: false, reason: 'no-key', provider: 'openai' },
+    ],
+    ['key set, style guide optional', complete, { ready: true, provider: 'openai', model }],
+  ])('%s', (_, settings, expected) => {
+    expect(getStatus(settings)).toEqual(expected);
+  });
+});
 
 describe('settingsItem', () => {
   beforeEach(() => fakeBrowser.reset());

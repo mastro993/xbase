@@ -1,12 +1,12 @@
 import { RiArrowRightUpLine, RiShieldKeyholeFill } from '@remixicon/react';
 import { PROVIDER_IDS, PROVIDERS, type ProviderId } from '@xbase/ai/providers';
-import { type ProviderSettings, type Settings, setProviderKey } from '@xbase/companion/settings';
 import { LinkButton } from '@xbase/ui/components/base/buttons/link-button';
 import { Select, SelectItem } from '@xbase/ui/components/base/select/select';
 import { Callout } from '@xbase/ui/components/xbase/callout';
 import { useEffect } from 'react';
 import { useModels } from '@/hooks/use-models';
-import { updateSettings } from '@/hooks/use-settings';
+import { setProviderKey, updateSettings } from '@/hooks/use-settings';
+import type { ProviderSettings, Settings } from '@/lib/settings';
 import { ApiKeyField } from './ApiKeyField';
 import { ModelPicker } from './ModelPicker';
 import { OtherKeys } from './OtherKeys';

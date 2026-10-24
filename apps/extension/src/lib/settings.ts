@@ -1,16 +1,31 @@
 import { EMPTY_STYLE, type Project, type StyleGuide } from '@xbase/ai/profile';
-import {
-  type ApiKeys,
-  DEFAULT_SETTINGS,
-  getStatus,
-  mergeSettings,
-  type Settings,
-  splitSettings,
-  type StoredSettings,
-} from '@xbase/companion/settings';
+import { type ModelOption, PROVIDER_IDS, PROVIDERS, type ProviderId } from '@xbase/ai/providers';
 import { storage } from 'wxt/utils/storage';
 
-// Settings in chrome.storage.local; the model and its rules are @xbase/companion/settings.
+export interface ProviderSettings {
+  apiKey: string;
+  model: ModelOption;
+}
+
+/** What the app works with. Storage keeps the API keys apart, see getSettings. */
+export interface Settings {
+  activeProvider: ProviderId | null;
+  providers: Partial<Record<ProviderId, ProviderSettings>>;
+  style: StyleGuide;
+  projects: Project[];
+}
+
+type StoredSettings = Omit<Settings, 'providers'> & {
+  providers: Partial<Record<ProviderId, { model: ModelOption }>>;
+};
+type ApiKeys = Partial<Record<ProviderId, string>>;
+
+export const DEFAULT_SETTINGS: Settings = {
+  activeProvider: null,
+  providers: {},
+  style: EMPTY_STYLE,
+  projects: [],
+};
 
 // The background restricts storage.local to TRUSTED_CONTEXTS, so content scripts can't read it.
 const keysItem = storage.defineItem<ApiKeys>('local:apiKeys', { fallback: {} });
@@ -33,7 +48,7 @@ export const settingsItem = storage.defineItem<StoredSettings>('local:settings',
     // Moves the keys into their own item, so style and project saves stop rewriting them. Same
     // caveat, and the service worker and the panel can run this at once: both write the same keys.
     4: async (v3: Settings) => {
-      const [stored, keys] = splitSettings(v3);
+      const [stored, keys] = split(v3);
       if (Object.keys(keys).length) {
         await keysItem.setValue({ ...keys, ...(await keysItem.getValue()) });
       }
@@ -42,10 +57,34 @@ export const settingsItem = storage.defineItem<StoredSettings>('local:settings',
   },
 });
 
+function split({ providers, ...rest }: Settings): [StoredSettings, ApiKeys] {
+  const models: StoredSettings['providers'] = {};
+  const keys: ApiKeys = {};
+  for (const id of PROVIDER_IDS) {
+    const p = providers[id];
+    if (!p) continue;
+    models[id] = { model: p.model };
+    if (p.apiKey) keys[id] = p.apiKey;
+  }
+  return [{ ...rest, providers: models }, keys];
+}
+
+function merge(stored: StoredSettings, keys: ApiKeys): Settings {
+  const providers: Settings['providers'] = {};
+  for (const id of PROVIDER_IDS) {
+    const model = stored.providers[id]?.model;
+    const apiKey = keys[id];
+    if (model || apiKey) {
+      providers[id] = { apiKey: apiKey ?? '', model: model ?? PROVIDERS[id].defaultModel };
+    }
+  }
+  return { ...stored, providers };
+}
+
 export async function getSettings(): Promise<Settings> {
   // Settings first: its migration may still be moving keys into keysItem.
   const stored = await settingsItem.getValue();
-  return mergeSettings(stored, await keysItem.getValue());
+  return merge(stored, await keysItem.getValue());
 }
 
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
@@ -55,8 +94,8 @@ const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b)
  * edit never rewrites the keys.
  */
 export async function saveSettings(next: Settings, prev?: Settings): Promise<void> {
-  const [stored, keys] = splitSettings(next);
-  const [prevStored, prevKeys] = prev ? splitSettings(prev) : [];
+  const [stored, keys] = split(next);
+  const [prevStored, prevKeys] = prev ? split(prev) : [];
   if (!same(keys, prevKeys)) await keysItem.setValue(keys);
   if (!same(stored, prevStored)) await settingsItem.setValue(stored);
 }
@@ -84,4 +123,17 @@ export function watchReady(onReady: (ready: boolean) => void): () => void {
       return ready;
     });
   });
+}
+
+export type Status =
+  | { ready: true; provider: ProviderId; model: ModelOption }
+  | { ready: false; reason: 'no-provider' | 'no-key'; provider: ProviderId | null };
+
+/** Pure. Order of checks: provider, key (trimmed). Every saved key has a model. */
+export function getStatus(s: Settings): Status {
+  const provider = s.activeProvider;
+  if (!provider) return { ready: false, reason: 'no-provider', provider: null };
+  const p = s.providers[provider];
+  if (!p?.apiKey.trim()) return { ready: false, reason: 'no-key', provider };
+  return { ready: true, provider, model: p.model };
 }

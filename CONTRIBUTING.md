@@ -31,7 +31,6 @@ packages/
   db/                  @xbase/db: the website's database schema, migrations and connection
   server/              @xbase/server: the website's services (accounts, posts, AI, sign-in…)
   mcp/                 @xbase/mcp: the website's MCP tools and OAuth authorization server
-  companion/           @xbase/companion: the extension's settings and message logic
 pnpm-workspace.yaml    workspace folders, shared dependency versions (catalog)
 .oxlintrc.json         lint rules for the whole repository
 .oxfmtrc.json          format settings for the whole repository
@@ -53,7 +52,7 @@ npx skills update --project
 
 ### Shared packages
 
-`packages/` holds the logic; `apps/` holds presentation and wiring. An app's own files are its pages, components and hooks, and the glue that ties packages to its framework: TanStack Start's server functions, middleware, cookies and server routes on the website, WXT's storage, messaging and entrypoints in the extension. Anything else, a rule, a service or a check, goes in a package, with its tests. A package has no build step: it ships its TypeScript or CSS source, and an app imports it by subpath, such as `import { generateText } from '@xbase/ai/llm'` or `@import '@xbase/ui/styles/globals.css'`. The app's bundler and `tsc` then treat that source like the app's own code:
+`packages/` holds the logic; `apps/web` holds presentation and wiring. The website's own files are its pages, components and hooks, and the glue that ties packages to TanStack Start: server functions, middleware, cookies and server routes. Anything else, a rule, a service or a check, goes in a package, with its tests. The extension still keeps its logic in `src/lib/`, until it moves to calling the website's API. A package has no build step: it ships its TypeScript or CSS source, and an app imports it by subpath, such as `import { generateText } from '@xbase/ai/llm'` or `@import '@xbase/ui/styles/globals.css'`. The app's bundler and `tsc` then treat that source like the app's own code:
 
 - **Declare each subpath**: an app can import only the paths listed in the package's `exports` in its `package.json`. Add a new module there before you import it. `@xbase/ui` is the exception for its TypeScript: BoardUI imports files as `@xbase/ui/<folder>/<file>` without an extension, which `exports` can't map, so `tsconfig.json` `paths` resolve it (in `packages/ui` and in each app), and Vite, WXT and Vitest follow them with `resolve.tsconfigPaths`. Its stylesheets still go through `exports`.
 - **Pass both apps' type checks**: each app checks the package source with its own `tsconfig.json`. Each package's `tsconfig.json` combines the strictest options of both, so `pnpm --filter @xbase/ai typecheck` (or `@xbase/ui`) catches most problems first.
@@ -67,8 +66,6 @@ The website's logic is layered: each package may import only the ones before it.
 4. `@xbase/mcp`: the `/mcp` endpoint, its tools, and the OAuth authorization server that guards it.
 
 `@xbase/db`, `@xbase/server` and `@xbase/mcp` are server-only. The website's `vite.config.ts` adds them to TanStack Start's import protection, so a build fails if browser code imports one; server functions and server routes may, since the compiler strips them from the client bundle. Each package's tests run with `pnpm --filter @xbase/<name> test`.
-
-`@xbase/companion` holds the extension's logic that needs no extension API: the settings model and its status check, and the messages between the content script and the background, with the checks the background runs on them. The extension wires it to `chrome.storage` and `chrome.runtime`.
 
 `@xbase/ai` holds the AI code: the provider list, the HTTP calls to each provider (`generateText`, and `listModels`, which also validates a key), the prompts, and `scrubSecrets`, which both apps run on provider error text before showing it. It calls providers with plain `fetch`, so it runs in the extension's service worker and on the website's server alike. Its tests run with `pnpm --filter @xbase/ai test`.
 

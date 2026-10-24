@@ -2,17 +2,16 @@ import { scrubSecrets } from '@xbase/ai/errors';
 import { generateText } from '@xbase/ai/llm';
 import type { Profile } from '@xbase/ai/profile';
 import { cleanReply, PROMPTS, type Prompt, refinePostPrompt } from '@xbase/ai/prompts';
+import { browser } from 'wxt/browser';
+import { defineBackground } from 'wxt/utils/define-background';
+import { isXUrl, parseRequest } from '@/lib/background-utils';
 import type {
   ActionResponse,
   BackgroundRequest,
   ContentPush,
   StatusResponse,
-} from '@xbase/companion/messages';
-import { isXUrl, parseRequest } from '@xbase/companion/requests';
-import { getStatus } from '@xbase/companion/settings';
-import { browser } from 'wxt/browser';
-import { defineBackground } from 'wxt/utils/define-background';
-import { getSettings, watchReady } from '@/lib/settings';
+} from '@/lib/messages';
+import { getSettings, getStatus, watchReady } from '@/lib/settings';
 
 // Tab-specific panel only (the manifest has no side_panel). setOptions is idempotent:
 // it doesn't reload an open panel, so syncing on every tab update is fine.

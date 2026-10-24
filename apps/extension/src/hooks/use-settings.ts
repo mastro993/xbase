@@ -1,6 +1,6 @@
-import type { Settings } from '@xbase/companion/settings';
+import { PROVIDERS, type ProviderId } from '@xbase/ai/providers';
 import { useEffect, useState } from 'react';
-import { getSettings, saveSettings, watchSettings } from '@/lib/settings';
+import { getSettings, saveSettings, type Settings, watchSettings } from '@/lib/settings';
 
 /** Live view of stored settings; null until the first read resolves. */
 export function useSettings(): Settings | null {
@@ -33,4 +33,10 @@ export function updateSettings(update: (s: Settings) => Settings): Promise<void>
   });
   queue = run.catch(() => {});
   return run;
+}
+
+/** Stores a key for `provider`, keeping its model or falling back to the provider default. */
+export function setProviderKey(s: Settings, provider: ProviderId, apiKey: string): Settings {
+  const model = s.providers[provider]?.model ?? PROVIDERS[provider].defaultModel;
+  return { ...s, providers: { ...s.providers, [provider]: { apiKey, model } } };
 }

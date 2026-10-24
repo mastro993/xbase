@@ -1,6 +1,5 @@
-import type { Settings } from '@xbase/companion/settings';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { saveSettings } from '@/lib/settings';
+import { saveSettings, type Settings } from '@/lib/settings';
 import { updateSettings } from './use-settings';
 
 const SAVE_DELAY_MS = 400;
