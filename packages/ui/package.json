@@ -4,6 +4,33 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./theme.css": "./theme.css"
+    "./styles/*": "./styles/*",
+    "./palettes/*": "./palettes/*"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@remixicon/react": "catalog:",
+    "react-aria-components": "catalog:",
+    "tailwind-merge": "^3.7.0"
+  },
+  "devDependencies": {
+    "@testing-library/dom": "catalog:",
+    "@testing-library/react": "catalog:",
+    "@testing-library/user-event": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "happy-dom": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "peerDependencies": {
+    "react": "catalog:",
+    "react-dom": "catalog:"
   }
 }

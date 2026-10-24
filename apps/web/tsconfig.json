@@ -1,14 +1,16 @@
 {
-  "include": ["src", "vite.config.ts"],
+  "include": ["src", "vite.config.ts", "vitest.config.ts", "drizzle.config.ts"],
   "compilerOptions": {
     "target": "ES2022",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "moduleResolution": "bundler",
     "jsx": "react-jsx",
-    "types": ["vite/client"],
+    "types": ["vite/client", "node"],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      // @xbase/ui's BoardUI sources import each other through this alias (see packages/ui).
+      "@xbase/ui/*": ["../../packages/ui/*"]
     },
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,

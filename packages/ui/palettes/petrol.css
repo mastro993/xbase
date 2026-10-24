@@ -1,0 +1,130 @@
+/*
+ * Petrol: XBase's own palette, for the website. It overrides BoardUI's tokens, so import it right
+ * after @xbase/ui/styles/globals.css.
+ * OKLCH: the neutrals and the accent share the brand hue 205, so contrast is tuned on L alone.
+ * Every value sits inside sRGB. Every text pair meets WCAG AA (4.5:1) on the page, card, tray and
+ * input surfaces; the focus ring and the input's focus ring meet 3:1. Resting control borders are
+ * BoardUI's hairlines and aren't gated. Re-check after any change (see CONTRIBUTING.md, "Style the
+ * UI").
+ */
+
+/* Primitives, both modes. Tailwind's neutral ramp tinted with the brand hue, and the accent ramp
+   every CTA, link, selection and focus ring follows. From 400 up, an accent step carries white
+   text: the primary button's gradient and the selected sidebar row. */
+@theme {
+  --color-neutral-50: oklch(0.975 0.004 205);
+  --color-neutral-100: oklch(0.968 0.005 205);
+  --color-neutral-200: oklch(0.935 0.007 205);
+  --color-neutral-300: oklch(0.87 0.01 205);
+  --color-neutral-400: oklch(0.71 0.014 205);
+  --color-neutral-500: oklch(0.555 0.018 205);
+  --color-neutral-600: oklch(0.44 0.017 205);
+  --color-neutral-700: oklch(0.37 0.015 205);
+  --color-neutral-800: oklch(0.27 0.012 205);
+  --color-neutral-900: oklch(0.205 0.01 205);
+  --color-neutral-925: oklch(0.175 0.009 205);
+  --color-neutral-950: oklch(0.16 0.013 205);
+
+  --color-accent-50: oklch(0.975 0.012 200);
+  --color-accent-100: oklch(0.945 0.028 200);
+  --color-accent-200: oklch(0.895 0.05 200);
+  --color-accent-300: oklch(0.82 0.08 200);
+  --color-accent-400: oklch(0.545 0.095 202);
+  --color-accent-500: oklch(0.505 0.09 203);
+  --color-accent-600: oklch(0.46 0.08 205);
+  --color-accent-700: oklch(0.41 0.07 206);
+  --color-accent-800: oklch(0.355 0.06 207);
+  --color-accent-900: oklch(0.3 0.05 208);
+  --color-accent-950: oklch(0.225 0.04 210);
+}
+
+/* BoardUI's typography font (Inter, self-hosted by the app), and the system monospace. */
+:root {
+  --font-inter: 'Inter Variable';
+  --font-mono-source: ui-monospace;
+
+  /* Destructive buttons: BoardUI's red-500 carries white text at 3.8:1 only. */
+  --gradient-button-danger-default: linear-gradient(
+    180deg,
+    oklch(0.555 0.2 27) 0%,
+    oklch(0.515 0.195 27) 100%
+  );
+  --gradient-button-danger-hover: linear-gradient(
+    180deg,
+    oklch(0.575 0.2 27) 0%,
+    oklch(0.555 0.2 27) 100%
+  );
+  --gradient-button-danger-active: linear-gradient(
+    180deg,
+    oklch(0.515 0.195 27) 0%,
+    oklch(0.475 0.18 27) 100%
+  );
+}
+
+/* Light. Scoped with :not(.dark) so none of it reaches dark mode, where BoardUI's .dark block
+   would otherwise lose to this later rule of the same specificity. */
+:root:not(.dark) {
+  /* BoardUI's grey text and its input placeholder fall below 4.5:1 on the tray and input fills. */
+  --color-text-secondary: oklch(0.47 0.02 205);
+  --color-text-tertiary: oklch(0.51 0.018 205);
+  --color-text-placeholder: var(--color-text-tertiary);
+  --color-kbd-background: var(--color-neutral-200);
+  --color-kbd-foreground: var(--color-text-secondary);
+
+  /* Errors: BoardUI's red-500 reads at 3.2–3.8:1. */
+  --color-text-error-primary: oklch(0.525 0.2 27);
+  --color-text-error-placeholder: var(--color-text-error-primary);
+  --color-foreground-icon-error: var(--color-text-error-primary);
+  --color-border-error-default: var(--color-text-error-primary);
+
+  /* The input's focus ring, at 3:1 against the field and the card. */
+  --color-border-button-active: oklch(0.56 0.018 205);
+
+  --color-notification-success-foreground: var(--color-lime-700);
+
+  /* Series colours, brand teal first, ordered to keep neighbours apart under colour-vision
+     deficiency; each is 3:1 on the card. -active is the hover step. */
+  --color-chart-1: oklch(0.59 0.102 188);
+  --color-chart-1-active: oklch(0.52 0.095 188);
+  --color-chart-2: oklch(0.6 0.17 45);
+  --color-chart-2-active: oklch(0.53 0.16 45);
+  --color-chart-3: oklch(0.5 0.17 265);
+  --color-chart-3-active: oklch(0.43 0.16 265);
+  --color-chart-4: oklch(0.53 0.2 350);
+  --color-chart-4-active: oklch(0.46 0.19 350);
+  --color-chart-5: oklch(0.62 0.125 95);
+  --color-chart-5-active: oklch(0.55 0.115 95);
+}
+
+.dark {
+  /* BoardUI keeps light mode's grey text in dark mode, at 3.2:1 on the card. */
+  --color-text-secondary: oklch(0.78 0.012 205);
+  --color-text-tertiary: oklch(0.7 0.012 205);
+  --color-text-placeholder: var(--color-text-tertiary);
+  --color-kbd-foreground: var(--color-text-secondary);
+
+  /* The input fill sits one step above the card, so a field on a card keeps its edge. */
+  --color-background-tertiary-default: oklch(0.32 0.013 205);
+
+  --color-text-error-primary: oklch(0.74 0.15 25);
+  --color-text-error-placeholder: var(--color-text-error-primary);
+  --color-foreground-icon-error: var(--color-text-error-primary);
+  --color-border-error-default: var(--color-text-error-primary);
+
+  /* accent-500 is a fill under white text, too dark to ring a control on these surfaces. */
+  --color-border-focus-ring: var(--color-accent-300);
+  --color-border-button-active: var(--color-neutral-400);
+
+  --color-status-rose-text: var(--color-rose-400);
+
+  --color-chart-1: oklch(0.66 0.11 192);
+  --color-chart-1-active: oklch(0.73 0.11 192);
+  --color-chart-2: oklch(0.66 0.15 48);
+  --color-chart-2-active: oklch(0.73 0.14 48);
+  --color-chart-3: oklch(0.62 0.15 265);
+  --color-chart-3-active: oklch(0.69 0.14 265);
+  --color-chart-4: oklch(0.64 0.18 350);
+  --color-chart-4-active: oklch(0.71 0.17 350);
+  --color-chart-5: oklch(0.67 0.13 95);
+  --color-chart-5-active: oklch(0.74 0.13 95);
+}

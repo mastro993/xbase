@@ -1,6 +1,6 @@
+import { listModels } from '@xbase/ai/llm';
+import type { ModelOption, ProviderId } from '@xbase/ai/providers';
 import { useCallback, useRef, useState } from 'react';
-import { listModels } from '@/lib/llm';
-import type { ModelOption, ProviderId } from '@/lib/providers';
 
 /** Model list for one provider. `load` doubles as key validation. Only the latest call wins. */
 export function useModels(provider: ProviderId) {

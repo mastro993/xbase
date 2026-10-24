@@ -1,0 +1,125 @@
+/*
+ * X: the extension's side panel palette, light and "Lights out" dark, so it blends with x.com. It
+ * overrides BoardUI's tokens, so import it right after @xbase/ui/styles/globals.css.
+ * X's own greys and blue where they meet WCAG AA, darker steps where they don't: every text pair
+ * reaches 4.5:1 on the page, card, tray and input surfaces; the focus ring and the input's focus
+ * ring reach 3:1. Resting control borders are BoardUI's hairlines and aren't gated. Re-check after
+ * any change (see CONTRIBUTING.md, "Style the UI").
+ */
+
+/* Primitives, both modes. BoardUI's neutral ramp mapped onto X's greys, and an accent ramp around
+   X's blue (#1d9bf0). From 400 up, an accent step carries white text, so those steps are deeper
+   than X's blue, which only reaches 3:1 under white. */
+@theme {
+  --font-sans:
+    'TwitterChirp', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial,
+    sans-serif;
+
+  --color-neutral-50: #e7e9ea;
+  --color-neutral-100: #f7f9f9;
+  --color-neutral-200: #eff3f4;
+  --color-neutral-300: #cfd9de;
+  --color-neutral-400: #8b98a5;
+  --color-neutral-500: #536471;
+  --color-neutral-600: #71767b;
+  --color-neutral-700: #2f3336;
+  --color-neutral-800: #202327;
+  --color-neutral-900: #16181c;
+  --color-neutral-925: #000000;
+  --color-neutral-950: #0f1419;
+
+  --color-accent-50: #e8f5fe;
+  --color-accent-100: #d1ebfc;
+  --color-accent-200: #b0dcfa;
+  --color-accent-300: #8ecdf8;
+  --color-accent-400: oklch(0.555 0.14 245);
+  --color-accent-500: oklch(0.52 0.135 246);
+  --color-accent-600: oklch(0.48 0.125 247);
+  --color-accent-700: oklch(0.43 0.11 248);
+  --color-accent-800: oklch(0.37 0.095 249);
+  --color-accent-900: oklch(0.31 0.08 250);
+  --color-accent-950: oklch(0.24 0.06 252);
+}
+
+/* Chrome sets system-ui on an extension page's body, which would hide the stack above. */
+body {
+  font-family: inherit;
+}
+
+/* BoardUI sets fields to 16px below 640px so iOS Safari doesn't zoom on focus. The side panel is
+   always that narrow and never on iOS, so its fields keep the type scale. */
+@media (max-width: 639px) {
+  input,
+  select,
+  textarea {
+    font-size: revert-layer;
+  }
+}
+
+:root {
+  --font-mono-source: ui-monospace;
+
+  /* Destructive buttons: X's red (#f4212e) carries white text at 4.1:1 only. */
+  --gradient-button-danger-default: linear-gradient(
+    180deg,
+    oklch(0.555 0.21 25) 0%,
+    oklch(0.515 0.2 25) 100%
+  );
+  --gradient-button-danger-hover: linear-gradient(
+    180deg,
+    oklch(0.575 0.21 25) 0%,
+    oklch(0.555 0.21 25) 100%
+  );
+  --gradient-button-danger-active: linear-gradient(
+    180deg,
+    oklch(0.515 0.2 25) 0%,
+    oklch(0.475 0.185 25) 100%
+  );
+}
+
+/* Light. Scoped with :not(.dark) so none of it reaches dark mode, where BoardUI's .dark block
+   would otherwise lose to this later rule of the same specificity. */
+:root:not(.dark) {
+  /* X's secondary grey for supporting text; a step lighter for hints and placeholders, still
+     4.5:1 on the input fill. */
+  --color-text-secondary: var(--color-neutral-500);
+  --color-text-tertiary: #5b6a76;
+  --color-text-placeholder: var(--color-text-tertiary);
+  --color-kbd-background: var(--color-neutral-200);
+  --color-kbd-foreground: var(--color-text-secondary);
+
+  /* X's red reads at 4.1:1 on white. */
+  --color-text-error-primary: oklch(0.54 0.21 25);
+  --color-text-error-placeholder: var(--color-text-error-primary);
+  --color-foreground-icon-error: var(--color-text-error-primary);
+  --color-border-error-default: var(--color-text-error-primary);
+
+  /* The input's focus ring, at 3:1 against the field and the card. */
+  --color-border-button-active: #6b7884;
+
+  --color-notification-success-foreground: var(--color-lime-700);
+}
+
+.dark {
+  /* Lights out: cards and menus are X's #16181c on the black page, inputs X's #202327. */
+  --color-background-primary-default: var(--color-neutral-900);
+
+  /* X's #71767b reads at 3.9:1 on #16181c: lighter greys of the same family. */
+  --color-text-secondary: #9ba0a5;
+  --color-text-tertiary: #898e93;
+  --color-text-placeholder: var(--color-text-tertiary);
+  --color-kbd-foreground: var(--color-text-secondary);
+
+  /* X's blue, which reads on these surfaces, for links, selected tabs and the focus ring. */
+  --color-text-accent: #1d9bf0;
+  --color-border-focus-ring: #1d9bf0;
+
+  --color-text-error-primary: oklch(0.7 0.18 22);
+  --color-text-error-placeholder: var(--color-text-error-primary);
+  --color-foreground-icon-error: var(--color-text-error-primary);
+  --color-border-error-default: var(--color-text-error-primary);
+
+  --color-border-button-active: var(--color-neutral-400);
+
+  --color-status-rose-text: var(--color-rose-400);
+}

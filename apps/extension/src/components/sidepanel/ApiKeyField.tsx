@@ -1,6 +1,6 @@
-import { CheckIcon } from 'lucide-react';
-import { Field, FieldDescription, FieldError } from '@/components/ui/field';
-import { PROVIDERS, type ProviderId } from '@/lib/providers';
+import { RiArrowRightUpLine, RiCheckLine } from '@remixicon/react';
+import { PROVIDERS, type ProviderId } from '@xbase/ai/providers';
+import { LinkButton } from '@xbase/ui/components/base/buttons/link-button';
 import { KeyRow } from './KeyRow';
 
 interface Props {
@@ -19,7 +19,7 @@ export function ApiKeyField({ provider, savedKey, checking, error, modelCount, o
   const invalid = error === 'Invalid API key' || undefined;
 
   return (
-    <Field data-invalid={invalid}>
+    <div className="flex flex-col gap-2">
       <KeyRow
         active
         provider={provider}
@@ -28,23 +28,40 @@ export function ApiKeyField({ provider, savedKey, checking, error, modelCount, o
         invalid={invalid}
         describedBy={error ? 'api-key-error' : undefined}
       />
-      <FieldDescription className="flex flex-wrap justify-between gap-x-3">
-        <a href={keysUrl} target="_blank" rel="noreferrer">
-          Get your {label} key ↗
-        </a>
-        <span role="status" className="inline-flex items-center gap-1">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+        <LinkButton
+          href={keysUrl}
+          target="_blank"
+          rel="noreferrer"
+          size="xs"
+          trailingIcon={RiArrowRightUpLine}
+        >
+          Get your {label} key
+        </LinkButton>
+        <span
+          role="status"
+          className="inline-flex items-center gap-1 text-caption-1-medium text-text-secondary"
+        >
           {checking
             ? 'Checking key…'
             : !error &&
               modelCount !== null && (
                 <>
-                  <CheckIcon className="size-4 text-success" aria-hidden />
+                  <RiCheckLine className="size-4 text-status-lime-text" aria-hidden />
                   Key verified · {modelCount} {modelCount === 1 ? 'model' : 'models'}
                 </>
               )}
         </span>
-      </FieldDescription>
-      <FieldError id="api-key-error">{error}</FieldError>
-    </Field>
+      </div>
+      {error && (
+        <p
+          id="api-key-error"
+          role="alert"
+          className="text-caption-1-medium text-text-error-primary"
+        >
+          {error}
+        </p>
+      )}
+    </div>
   );
 }

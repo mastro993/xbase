@@ -2,7 +2,8 @@
   "extends": "./.wxt/tsconfig.json",
   "compilerOptions": {
     "jsx": "react-jsx",
-    // Re-declared relative to the root so the shadcn CLI writes into src/, not ../src/.
-    "paths": { "@/*": ["./src/*"] }
+    // `paths` replaces WXT's generated aliases, so @/* is declared again. @xbase/ui's BoardUI
+    // sources import each other through their alias (see packages/ui).
+    "paths": { "@/*": ["./src/*"], "@xbase/ui/*": ["../../packages/ui/*"] }
   }
 }

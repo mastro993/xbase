@@ -1,5 +1,5 @@
 // Every X-coupled selector and DOM trick lives here, so X markup changes are fixed in one file.
-import { ACTIONS, type ActionId, type Post, type PostImage, type TargetPost } from './messages';
+import { ACTIONS, type ActionId, type Post, type PostImage, type TargetPost } from '@xbase/ai/post';
 
 // Draft.js contenteditable (thread parts are _1.._n), plus the narrow-layout textarea.
 const EDITOR =

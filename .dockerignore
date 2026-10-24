@@ -1,0 +1,17 @@
+# Build context for apps/web/Dockerfile (the repository root). Keep it small, and keep local
+# secrets and databases out of the image.
+.git
+**/node_modules
+**/.output
+**/.nitro
+**/.tanstack
+**/.wxt
+**/dist
+**/.env
+**/.env.*
+!**/.env.example
+# Local SQLite databases (DATABASE_PATH defaults to apps/web/data/xbase.db)
+apps/web/data
+**/*.db
+**/*.db-wal
+**/*.db-shm

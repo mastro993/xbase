@@ -1,24 +1,11 @@
+import { EMPTY_STYLE, type Project, type StyleGuide } from '@xbase/ai/profile';
+import { type ModelOption, PROVIDER_IDS, PROVIDERS, type ProviderId } from '@xbase/ai/providers';
 import { storage } from 'wxt/utils/storage';
-import { type ModelOption, PROVIDER_IDS, PROVIDERS, type ProviderId } from './providers';
 
 export interface ProviderSettings {
   apiKey: string;
   model: ModelOption;
 }
-
-/** Style guide sections, in panel and prompt order. Every section is optional. */
-export const STYLE_FIELDS = ['persona', 'audience', 'voice', 'rules'] as const;
-export type StyleField = (typeof STYLE_FIELDS)[number];
-export type StyleGuide = Record<StyleField, string>;
-
-/** Something the user built, which the AI may mention. `id` only keys the panel's list. */
-export interface Project {
-  id: string;
-  name: string;
-  description: string;
-  link: string;
-}
-export type ProjectField = Exclude<keyof Project, 'id'>;
 
 /** What the app works with. Storage keeps the API keys apart, see getSettings. */
 export interface Settings {
@@ -32,16 +19,6 @@ type StoredSettings = Omit<Settings, 'providers'> & {
   providers: Partial<Record<ProviderId, { model: ModelOption }>>;
 };
 type ApiKeys = Partial<Record<ProviderId, string>>;
-
-export const MAX_STYLE_FIELD_LENGTH = 1000;
-export const MAX_PROJECTS = 10;
-export const MAX_PROJECT_FIELD_LENGTH: Record<ProjectField, number> = {
-  name: 60,
-  description: 300,
-  link: 200,
-};
-
-const EMPTY_STYLE: StyleGuide = { persona: '', audience: '', voice: '', rules: '' };
 
 export const DEFAULT_SETTINGS: Settings = {
   activeProvider: null,

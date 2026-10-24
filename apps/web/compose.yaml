@@ -1,0 +1,27 @@
+# An example for running XBase with Docker Compose, from this folder:
+#   cp .env.example .env    # then set APP_PASSWORD and APP_URL
+#   docker compose up -d --build
+services:
+  xbase:
+    build:
+      context: ../..
+      dockerfile: apps/web/Dockerfile
+    image: xbase
+    restart: unless-stopped
+    # APP_PASSWORD and APP_URL (and TRUST_PROXY_HOPS behind a reverse proxy). The two below win
+    # over a local-dev value in the same file.
+    env_file: .env
+    environment:
+      DATABASE_PATH: /data/xbase.db
+      PORT: 3000
+    ports:
+      - '3000:3000'
+    volumes:
+      # The SQLite database: drafts, settings, API keys and AI provider keys. Back it up.
+      - xbase-data:/data
+    # The server waits SERVER_SHUTDOWN_TIMEOUT seconds (25, set in the image) for requests to
+    # finish on shutdown; Docker's default stop timeout is 10 s.
+    stop_grace_period: 30s
+
+volumes:
+  xbase-data:

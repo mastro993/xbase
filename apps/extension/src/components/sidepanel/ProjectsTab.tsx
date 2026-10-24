@@ -1,31 +1,18 @@
-import { PlusIcon } from 'lucide-react';
-import { Button } from 'panelui-web/button';
-import { Input } from 'panelui-web/input';
-import { useId, useRef, useState } from 'react';
-import { flushSync } from 'react-dom';
-import {
-  Field,
-  FieldDescription,
-  FieldGroup,
-  FieldLabel,
-  FieldLegend,
-  FieldSet,
-} from '@/components/ui/field';
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupText,
-  InputGroupTextarea,
-} from '@/components/ui/input-group';
-import { useAutosave } from '@/hooks/use-autosave';
-import { updateSettings } from '@/hooks/use-settings';
+import { RiAddLine } from '@remixicon/react';
 import {
   MAX_PROJECT_FIELD_LENGTH,
   MAX_PROJECTS,
   type Project,
   type ProjectField,
-  type Settings,
-} from '@/lib/settings';
+} from '@xbase/ai/profile';
+import { Button } from '@xbase/ui/components/base/buttons/button';
+import { Input } from '@xbase/ui/components/base/input/input';
+import { useId, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
+import { useAutosave } from '@/hooks/use-autosave';
+import { updateSettings } from '@/hooks/use-settings';
+import type { Settings } from '@/lib/settings';
+import { TextareaField } from './TextareaField';
 
 export function ProjectsTab({ settings }: { settings: Settings }) {
   const { projects } = settings;
@@ -49,12 +36,12 @@ export function ProjectsTab({ settings }: { settings: Settings }) {
 
   return (
     // min-w-0: a fieldset defaults to min-content width, which overflows narrow panels.
-    <FieldSet className="min-w-0">
-      <FieldLegend>Projects</FieldLegend>
-      <FieldDescription>
+    <fieldset className="flex min-w-0 flex-col gap-4">
+      <legend className="mb-1 text-headline-medium text-text-primary">Projects</legend>
+      <p className="text-body-regular text-text-secondary">
         Add what you build, up to {MAX_PROJECTS}. The AI mentions a project only when it fits, using
         only what you write here. Projects without a name are skipped.
-      </FieldDescription>
+      </p>
       {projects.length > 0 && (
         <ul className="flex flex-col gap-4">
           {projects.map((p, i) => (
@@ -72,15 +59,15 @@ export function ProjectsTab({ settings }: { settings: Settings }) {
       {/* aria-disabled, not disabled: remove() moves focus here, even at the limit. */}
       <Button
         ref={addButton}
-        variant="outline"
-        className="self-start aria-disabled:pointer-events-none aria-disabled:opacity-50"
+        variant="secondary"
+        leadingIcon={RiAddLine}
+        className="self-start"
         aria-disabled={full || undefined}
         onClick={() => !full && add()}
       >
-        <PlusIcon />
         Add project
       </Button>
-    </FieldSet>
+    </fieldset>
   );
 }
 
@@ -121,58 +108,40 @@ function ProjectCard({
   const saved = statuses.has('saved') && !statuses.has('editing');
   const label = fields.name.draft.trim() || `project ${position}`;
 
-  const id = (field: ProjectField) => `project-${project.id}-${field}`;
   const control = (field: ProjectField) => ({
-    id: id(field),
+    id: `project-${project.id}-${field}`,
     value: fields[field].draft,
     maxLength: MAX_PROJECT_FIELD_LENGTH[field],
     placeholder: PLACEHOLDERS[field],
-    onChange: (e: { target: { value: string } }) => fields[field].onChange(e.target.value),
+    onChange: fields[field].onChange,
     onBlur: fields[field].flush,
   });
 
   return (
-    <li className="rounded-lg border p-3">
+    <li className="rounded-3xl border border-border-button-default bg-background-primary-default p-4">
       {/* min-w-0: a fieldset defaults to min-content width, which overflows narrow panels. */}
-      <FieldSet className="min-w-0 gap-3">
-        <FieldLegend className="sr-only">Project {position}</FieldLegend>
-        <FieldGroup className="gap-3">
-          <Field>
-            <FieldLabel htmlFor={id('name')}>Name</FieldLabel>
-            <Input {...control('name')} autoFocus={autoFocus} />
-          </Field>
-          <Field>
-            <FieldLabel htmlFor={id('description')}>Description</FieldLabel>
-            <InputGroup>
-              <InputGroupTextarea
-                {...control('description')}
-                className="min-h-16"
-                aria-describedby={`${id('description')}-count`}
-              />
-              <InputGroupAddon align="block-end" className="justify-end">
-                <InputGroupText id={`${id('description')}-count`} className="text-xs tabular-nums">
-                  {fields.description.draft.length}/{MAX_PROJECT_FIELD_LENGTH.description}
-                </InputGroupText>
-              </InputGroupAddon>
-            </InputGroup>
-          </Field>
-          <Field>
-            <FieldLabel htmlFor={id('link')}>Link</FieldLabel>
-            <Input {...control('link')} type="url" />
-          </Field>
-        </FieldGroup>
+      <fieldset className="flex min-w-0 flex-col gap-3">
+        <legend className="sr-only">Project {position}</legend>
+        <Input label="Name" {...control('name')} autoFocus={autoFocus} />
+        <TextareaField label="Description" {...control('description')} className="min-h-12" />
+        {/* Any link is kept, with or without a scheme: native validation would mark one without
+            it invalid, with no message. */}
+        <Input label="Link" {...control('link')} type="url" validationBehavior="aria" />
         {confirming ? (
           <div role="group" aria-labelledby={confirmId} className="flex items-center gap-2">
-            <span id={confirmId} className="min-w-0 flex-1 truncate">
+            <span
+              id={confirmId}
+              className="min-w-0 flex-1 truncate text-body-regular text-text-primary"
+            >
               Remove {label}?
             </span>
-            <Button size="sm" variant="destructive" onClick={onRemove}>
+            <Button size="small" variant="danger" onClick={onRemove}>
               Remove
             </Button>
             {/* The safe choice gets focus, so a repeated Enter doesn't remove the project. */}
             <Button
-              size="sm"
-              variant="ghost"
+              size="small"
+              variant="secondary"
               autoFocus
               onClick={() => {
                 flushSync(() => setConfirming(false));
@@ -184,13 +153,13 @@ function ProjectCard({
           </div>
         ) : (
           <div className="flex items-center justify-between gap-2">
-            <span role="status" className="text-xs text-muted-foreground">
+            <span role="status" className="text-caption-1-medium text-text-secondary">
               {saved && 'Saved'}
             </span>
             <Button
               ref={removeButton}
-              size="sm"
-              variant="ghost"
+              size="small"
+              variant="secondary"
               onClick={() => setConfirming(true)}
             >
               Remove
@@ -198,7 +167,7 @@ function ProjectCard({
             </Button>
           </div>
         )}
-      </FieldSet>
+      </fieldset>
     </li>
   );
 }

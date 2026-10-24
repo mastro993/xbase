@@ -1,17 +1,16 @@
+import { scrubSecrets } from '@xbase/ai/errors';
+import { generateText } from '@xbase/ai/llm';
+import type { Profile } from '@xbase/ai/profile';
+import { cleanReply, PROMPTS, type Prompt, refinePostPrompt } from '@xbase/ai/prompts';
 import { browser } from 'wxt/browser';
 import { defineBackground } from 'wxt/utils/define-background';
-import { isXUrl, parseRequest, safeError } from '@/lib/background-utils';
-import { generateText } from '@/lib/llm';
+import { isXUrl, parseRequest } from '@/lib/background-utils';
 import type {
   ActionResponse,
   BackgroundRequest,
   ContentPush,
   StatusResponse,
 } from '@/lib/messages';
-import { PROMPTS } from '@/lib/prompts';
-import { refinePostPrompt } from '@/lib/prompts/refine-post';
-import { cleanReply } from '@/lib/prompts/shared';
-import type { Profile, Prompt } from '@/lib/prompts/types';
 import { getSettings, getStatus, watchReady } from '@/lib/settings';
 
 // Tab-specific panel only (the manifest has no side_panel). setOptions is idempotent:
@@ -44,6 +43,8 @@ async function pushStatus(ready: boolean): Promise<void> {
 
 type RunRequest = Extract<BackgroundRequest, { type: 'run-action' | 'refine-post' }>;
 
+const MAX_ERROR = 200;
+
 function promptFor(req: RunRequest, profile: Profile): Prompt {
   if (req.type === 'refine-post') return refinePostPrompt({ draft: req.draft, ...profile });
   const { action, post, draft, me } = req;
@@ -68,9 +69,9 @@ async function runAction(req: RunRequest): Promise<string> {
     if (!text) throw new Error('The model returned an empty reply. Try again.');
     return text;
   } catch (e) {
-    // Error text ends up in x.com's page, where X's own scripts can read it.
+    // Error text ends up in x.com's page, where X's own scripts can read it: no keys, kept short.
     // oxlint-disable-next-line eslint/preserve-caught-error -- the original may hold the API key
-    throw new Error(safeError(e instanceof Error ? e.message : String(e), apiKey));
+    throw new Error(scrubSecrets(e instanceof Error ? e.message : String(e), apiKey, MAX_ERROR));
   } finally {
     clearInterval(keepalive);
   }

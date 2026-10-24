@@ -1,8 +1,8 @@
-import { Button } from 'panelui-web/button';
-import { Input } from 'panelui-web/input';
+import { looksLikeKeyFor, PROVIDERS, type ProviderId } from '@xbase/ai/providers';
+import { Button } from '@xbase/ui/components/base/buttons/button';
+import { InputBase, TextField } from '@xbase/ui/components/base/input/input';
 import { useEffect, useId, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
-import { looksLikeKeyFor, PROVIDERS, type ProviderId } from '@/lib/providers';
 import { maskKey, NO_AUTOFILL } from './format';
 
 interface Props {
@@ -61,20 +61,27 @@ export function KeyRow({ provider, apiKey, onSave, active = false, invalid, desc
       <div className="flex items-center gap-2">
         {/* Stacked so the whole mask, including the identifying last 4, fits at 320px. */}
         <div className="flex min-w-0 flex-1 flex-col">
-          <span className="font-medium">{active ? `${label} API key` : label}</span>
-          <span className="font-mono text-xs text-muted-foreground">
+          <span className="text-body-medium text-text-primary">
+            {active ? `${label} API key` : label}
+          </span>
+          <span className="font-mono text-caption-1-medium text-text-secondary">
             <span className="sr-only">{apiKey ? 'Key ' : 'No key'}</span>
             <span aria-hidden={!apiKey || undefined}>{maskKey(apiKey)}</span>
           </span>
         </div>
         {!showForm && !confirming && (
           <>
-            <Button ref={editButton} size="sm" variant="outline" onClick={() => setEditing(true)}>
+            <Button
+              ref={editButton}
+              size="small"
+              variant="secondary"
+              onClick={() => setEditing(true)}
+            >
               {apiKey ? 'Replace' : 'Add'}
               <span className="sr-only"> {label} key</span>
             </Button>
             {apiKey && (
-              <Button size="sm" variant="ghost" onClick={() => setConfirming(true)}>
+              <Button size="small" variant="secondary" onClick={() => setConfirming(true)}>
                 Remove
                 <span className="sr-only"> {label} key</span>
               </Button>
@@ -84,14 +91,14 @@ export function KeyRow({ provider, apiKey, onSave, active = false, invalid, desc
       </div>
       {confirming && (
         <div role="group" aria-labelledby={confirmId} className="flex items-center gap-2">
-          <span id={confirmId} className="min-w-0 flex-1">
+          <span id={confirmId} className="min-w-0 flex-1 text-body-regular text-text-primary">
             Remove {label} key?
           </span>
-          <Button size="sm" variant="destructive" onClick={() => finish('')}>
+          <Button size="small" variant="danger" onClick={() => finish('')}>
             Remove
           </Button>
           {/* The safe choice gets focus, so a repeated Enter doesn't remove the key. */}
-          <Button size="sm" variant="ghost" autoFocus onClick={() => finish()}>
+          <Button size="small" variant="secondary" autoFocus onClick={() => finish()}>
             Cancel
           </Button>
         </div>
@@ -105,40 +112,52 @@ export function KeyRow({ provider, apiKey, onSave, active = false, invalid, desc
               if (key) finish(key);
             }}
           >
-            <Input
-              ref={input}
+            <TextField
               type="password"
               aria-label={`${label} API key`}
-              aria-invalid={invalid}
+              isInvalid={invalid}
+              // The row reports errors itself: native validation would block Save while the key
+              // is marked invalid.
+              validationBehavior="aria"
               aria-describedby={describedBy ? `${warningId} ${describedBy}` : warningId}
-              placeholder={`${keyPrefix}…`}
               value={draft}
-              autoFocus={editing}
-              {...NO_AUTOFILL}
-              // A paste replaces the whole draft. It saves right away only if it looks like this
-              // provider's key: anything else (a password, most other providers' keys) waits for
-              // Save. OpenAI and DeepSeek keys share sk-, so they pass for each other.
-              onPaste={(e) => {
-                const v = e.clipboardData.getData('text').trim();
-                if (!v) return;
-                e.preventDefault();
-                if (looksLikeKeyFor(provider, v)) finish(v);
-                else setDraft(v);
-              }}
-              onChange={(e) => setDraft(e.target.value)}
-              onKeyDown={(e) => e.key === 'Escape' && finish()}
-            />
+              onChange={setDraft}
+              className="min-w-0 flex-1"
+            >
+              <InputBase
+                ref={input}
+                placeholder={`${keyPrefix}…`}
+                autoFocus={editing}
+                // On the <input>: TextField puts data attributes on its wrapper.
+                {...NO_AUTOFILL}
+                // A paste replaces the whole draft. It saves right away only if it looks like this
+                // provider's key: anything else (a password, most other providers' keys) waits for
+                // Save. OpenAI and DeepSeek keys share sk-, so they pass for each other.
+                onPaste={(e) => {
+                  const v = e.clipboardData.getData('text').trim();
+                  if (!v) return;
+                  e.preventDefault();
+                  if (looksLikeKeyFor(provider, v)) finish(v);
+                  else setDraft(v);
+                }}
+                onKeyDown={(e) => e.key === 'Escape' && finish()}
+              />
+            </TextField>
             <Button type="submit" disabled={!key}>
               Save
             </Button>
             {editing && (
-              <Button type="button" variant="ghost" onClick={() => finish()}>
+              <Button variant="secondary" onClick={() => finish()}>
                 Cancel
               </Button>
             )}
           </form>
           {/* Mounted with the form, so screen readers announce the warning when it appears. */}
-          <p id={warningId} role="status" className="text-sm text-muted-foreground not-empty:mt-2">
+          <p
+            id={warningId}
+            role="status"
+            className="text-caption-1-medium text-text-secondary not-empty:mt-2"
+          >
             {suspicious &&
               `This doesn't look like a key for ${label}. Check that you copied the right key, then click Save.`}
           </p>

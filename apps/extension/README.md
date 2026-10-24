@@ -36,7 +36,7 @@ x-companion has no backend. It talks only to x.com and the provider you pick:
 - **Saved keys aren't encrypted**: like all extension storage, they sit unencrypted in your browser profile, where backups and malware that copies files can reach them, and anyone using your unlocked computer can read them. The **Provider** tab reminds you of this. So give each key a spending limit, as described in [Limit what a key can spend](#limit-what-a-key-can-spend). **Remove** doesn't erase copies already on disk right away, so if you think a key leaked, revoke it with your provider. Full-disk encryption, such as FileVault or BitLocker, protects a lost or stolen laptop.
 - **Post content goes only to your provider**: when you run an action, the extension sends the provider you selected the author handle and text of the post, of any post it quotes and of the conversation around it. It also sends the links to their photos and video thumbnails, with their alt text, and your own @handle, so the model knows which posts are yours. Your style guide, your projects and, for a rewrite, the text in the reply box go along too. The provider downloads the pictures from X's image server (`pbs.twimg.com`) itself, so the extension needs no extra permission for them. There's no analytics or telemetry. OpenAI requests are sent with `store: false`.
 - **It never posts**: the extension only replaces the text in the reply box. Nothing reaches X until you click **Reply**.
-- **Minimal permissions**: `storage` and `sidePanel`, plus host access to x.com, the five provider APIs and TypeSafe's API, which nothing uses yet. It doesn't request the `tabs` permission.
+- **Minimal permissions**: `storage` and `sidePanel`, plus host access to x.com and the five provider APIs. It doesn't request the `tabs` permission.
 - **The page can't drive it**: the content script acts only on real (trusted) user clicks. The background checks that each message comes from an x.com tab, validates its shape and caps field lengths. It accepts image links only to X's image server, so the page can't make your provider fetch other addresses. The prompt wraps post text and your draft in delimiters and tells the model to treat them as material, not instructions.
 - **Errors give nothing away**: before an error message reaches x.com, the background removes your key and anything shaped like a key or an account ID, and shortens the message.
 
@@ -85,7 +85,7 @@ Don't remove the extension or load the new version from another folder: either w
 
 ### Build from source
 
-To build x-companion yourself, you need Node.js 22.12+ and pnpm. x-companion is developed in the XBase monorepo, in `apps/extension`. These commands clone it and write a production build to `apps/extension/.output/chrome-mv3`:
+To build x-companion yourself, you need Node.js 24+ and pnpm. x-companion is developed in the XBase monorepo, in `apps/extension`. These commands clone it and write a production build to `apps/extension/.output/chrome-mv3`:
 
 ```sh
 git clone https://github.com/mastro993/xbase.git

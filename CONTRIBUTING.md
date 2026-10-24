@@ -1,13 +1,13 @@
 # Contributing to XBase
 
-This guide covers what is shared across the monorepo: the tooling, the checks, styling with PanelUI and pull requests. Each app has its own guide for running and testing it:
+This guide covers what is shared across the monorepo: the tooling, the checks, styling with BoardUI and pull requests. Each app has its own guide for running and testing it:
 
-- [Website](apps/web): run `pnpm dev` in `apps/web`.
+- [Website](apps/web/README.md): set up `apps/web/.env`, then run `pnpm dev` in `apps/web` (see [Work on the website](#work-on-the-website)).
 - [Extension](apps/extension/CONTRIBUTING.md): development builds, the dev browser profile, manual tests and releases.
 
 ## Set up your environment
 
-You need Node.js 22.12+ and pnpm. `.nvmrc` pins Node 24, which CI uses too, and the `packageManager` field in `package.json` pins pnpm. With [Corepack](https://nodejs.org/api/corepack.html) enabled, `pnpm` runs that version:
+You need Node.js 24+ and pnpm: the website stores its data with Node's built-in SQLite module, `node:sqlite`. `.nvmrc` pins Node 24, which CI uses too, and the `packageManager` field in `package.json` pins pnpm. With [Corepack](https://nodejs.org/api/corepack.html) enabled, `pnpm` runs that version:
 
 ```sh
 corepack enable
@@ -22,48 +22,110 @@ Node 25 and later don't include Corepack: install it first with `npm install -g 
 
 ```text
 apps/
-  web/                 @xbase/web: Vite + TanStack Start website
+  web/                 @xbase/web: XBase, the self-hosted web app (TanStack Start on a Node server, SQLite)
   extension/           @xbase/extension: x-companion, the WXT Chromium extension
 packages/
-  ui/                  @xbase/ui: theme.css, the shared design tokens
+  ai/                  @xbase/ai: AI provider calls and prompts, shared by both apps
+  ui/                  @xbase/ui: BoardUI components and styles, and each app's palette
 pnpm-workspace.yaml    workspace folders, shared dependency versions (catalog)
 .oxlintrc.json         lint rules for the whole repository
 .oxfmtrc.json          format settings for the whole repository
 lefthook.yml           git hooks
 .github/workflows/     CI and the extension release
-.agents/skills/        agent skills for PanelUI and TanStack Start (see below)
+.agents/skills/        agent skills for TanStack Start, Chrome extensions and MCP (see below)
+.claude/skills/        links to them for Claude Code, plus BoardUI's own skill
 ```
 
 ### Agent skills
 
-`.agents/skills/` holds [agent skills](https://skills.sh/) that teach coding agents PanelUI web (`panelui-web`) and TanStack Start (`start-core` and the skills it links to). Codex reads them there; `.claude/skills/` links them for Claude Code. `skills-lock.json` records each skill's source and hash. They come from the `skills` CLI, so don't edit them by hand, and lint and formatting skip them. To pull the latest versions:
+`.agents/skills/` holds [agent skills](https://skills.sh/) that teach coding agents TanStack Start (`start-core` and the skills it links to), Chrome extensions (`chrome-extensions`) and MCP servers (`mcp-builder`). Codex reads them there; `.claude/skills/` links them for Claude Code. `skills-lock.json` records each skill's source and hash. They come from the `skills` CLI, so don't edit them by hand, and lint and formatting skip them. To pull the latest versions:
 
 ```sh
 npx skills update --project
 ```
 
+`.claude/skills/boardui/` is BoardUI's own skill for Claude Code: its design rules, a catalog of every component with usage examples, and its theming, layout and motion recipes. Read it before you build UI (see [Style the UI](#style-the-ui)). The `skills` CLI doesn't manage it, so `npx skills update` leaves it alone.
+
+### Shared packages
+
+`packages/` holds code that both apps use. A package has no build step: it ships its TypeScript or CSS source, and an app imports it by subpath, such as `import { generateText } from '@xbase/ai/llm'` or `@import '@xbase/ui/styles/globals.css'`. The app's bundler and `tsc` then treat that source like the app's own code:
+
+- **Declare each subpath**: an app can import only the paths listed in the package's `exports` in its `package.json`. Add a new module there before you import it. `@xbase/ui` is the exception for its TypeScript: BoardUI imports files as `@xbase/ui/<folder>/<file>` without an extension, which `exports` can't map, so `tsconfig.json` `paths` resolve it (in `packages/ui` and in each app), and Vite, WXT and Vitest follow them with `resolve.tsconfigPaths`. Its stylesheets still go through `exports`.
+- **Pass both apps' type checks**: each app checks the package source with its own `tsconfig.json`. Each package's `tsconfig.json` combines the strictest options of both, so `pnpm --filter @xbase/ai typecheck` (or `@xbase/ui`) catches most problems first.
+- **Depend on a package** with `"@xbase/ai": "workspace:*"` in the app's `package.json`, then run `pnpm install`.
+
+`@xbase/ai` holds the AI code: the provider list, the HTTP calls to each provider (`generateText`, and `listModels`, which also validates a key), the prompts, and `scrubSecrets`, which both apps run on provider error text before showing it. It calls providers with plain `fetch`, so it runs in the extension's service worker and on the website's server alike. Its tests run with `pnpm --filter @xbase/ai test`.
+
 ### Shared dependency versions
 
-Versions that every app must agree on, such as React, Tailwind CSS, Vite, TypeScript and `panelui-web`, live in the `catalog` in `pnpm-workspace.yaml`. An app references them as `"catalog:"` in its `package.json`. Change the version there, then run `pnpm install`.
+Versions that every package must agree on, such as React, React Aria Components, Remix Icon, Tailwind CSS, Vite, Vitest and TypeScript, live in the `catalog` in `pnpm-workspace.yaml`. A package references them as `"catalog:"` in its `package.json`. Change the version there, then run `pnpm install`.
 
 pnpm doesn't run dependencies' install scripts unless `allowBuilds` in `pnpm-workspace.yaml` lists them, and `strictDepBuilds` makes the install fail when a new dependency needs one. Review the package's script before you allow it.
 
+## Work on the website
+
+`apps/web` is a Node server, not a static site: TanStack Start renders every page on request, behind the sign-in, and [Nitro](https://nitro.build)'s `node-server` preset builds it into `apps/web/.output`. Nothing is prerendered.
+
+- **Give it a `.env` first**: the server doesn't start without `APP_PASSWORD`. Copy `apps/web/.env.example` to `apps/web/.env` (git ignores it) and set a password of 12 characters or more. [apps/web/README.md](apps/web/README.md#environment) lists every variable.
+- **Keep server code in `*.server.ts` files**: TanStack Start fails the build when browser code imports one. The UI reaches the server through `createServerFn` wrappers in each feature's `*.functions.ts`.
+
+### Change the database schema
+
+The tables live in `apps/web/src/server/db/schema.ts`, and the SQL migrations that create them in `apps/web/drizzle/`. The server applies pending migrations when it starts.
+
+1. Edit `schema.ts`.
+2. Write a migration, named after the change:
+
+   ```sh
+   pnpm --filter @xbase/web db:generate --name <slug>   # e.g. --name add-post-media
+   ```
+
+3. Commit the new folder in `apps/web/drizzle/` with your change.
+
+Never edit a migration that is already on `main`: databases that ran it won't run it again, so add a new one instead. `pnpm test` fails when `schema.ts` has a change without its migration: a test runs `drizzle-kit generate` against a copy of `apps/web/drizzle/` and expects it to write nothing.
+
 ## Style the UI
 
-Both apps use [PanelUI web](https://panelui.dev/docs/web) components, from the `panelui-web` package, styled with Tailwind CSS v4 on the shared theme:
+Both apps are built from [BoardUI](https://www.boardui.com) components: React and Tailwind CSS v4 source files on [React Aria Components](https://react-spectrum.adobe.com/react-aria/react-aria-components.html), with icons from [Remix Icon](https://remixicon.com) (`@remixicon/react`). BoardUI isn't an npm package: its CLI copies each component's source into `packages/ui` (`@xbase/ui`), and both apps import it from there by path, such as `import { Button } from '@xbase/ui/components/base/buttons/button'`. Each component file opens with a doc comment that lists its variants and sizes.
 
-- **Import each component from its own path**: `import { Button } from 'panelui-web/button'`. A component that PanelUI lacks can come from shadcn/ui, as in the extension's `src/components/ui/`.
-- **Keep the tokens in `packages/ui/theme.css`**: it defines the colours, radius and font that PanelUI reads, in X's palette, and makes `dark:` follow the operating system's theme. Each app imports it from its Tailwind entry stylesheet (`apps/web/src/styles.css`, `apps/extension/src/assets/tailwind.css`). Change a colour there, not in an app.
-- **Keep the `@source` line in each app's entry stylesheet**: Tailwind doesn't scan `node_modules`, so that line points it at `panelui-web`'s classes. Without it, PanelUI components render unstyled and nothing reports an error.
-- **Upgrade `panelui-web` on purpose**: it is pre-1.0 and changes often, so the catalog pins an exact version. Read the changes before you bump it.
-
-To copy a component's source into an app instead, so you can change it, use the shadcn CLI with the PanelUI registry, which each app's `components.json` registers. It writes to `src/components/panelui/`:
-
-```sh
-pnpm dlx shadcn@latest add @panelui/alert --cwd apps/web
+```text
+packages/ui/
+  boardui.json             where the BoardUI CLI writes files, and the import paths it uses
+  components/base/         buttons, inputs, select, tabs, tooltip, chips…
+  components/application/  the sidebar and the sign-in card, trimmed for the website
+  components/foundations/  icons and the reading direction that other components use
+  components/xbase/        XBase's own components, for what BoardUI lacks
+  styles/                  BoardUI's tokens (theme.css), type scale (typography.css) and Tailwind entry (globals.css)
+  palettes/                one palette per app: petrol.css (website), x.css (extension)
+  lib/color-scheme.js      the dark-mode script
 ```
 
-For components that use colour tokens, such as alert, the CLI also edits the app's stylesheet: it adds `@custom-variant dark (&:is(.dark *));`, `:root` and `.dark` token blocks and an `@theme inline` block. Revert all of it. The shared theme already defines these tokens, and the custom variant would switch every `dark:` class to a `.dark` class that never exists, turning dark mode off.
+- **Use a BoardUI component** whenever one fits, and never hand-build a lookalike of one. Look them up with `npx boardui@latest list` or in the skill's [component catalog](.claude/skills/boardui/references/components.md). Only the free components are available: BoardUI Pro items need a license.
+- **Add a component with the BoardUI CLI**, run from `packages/ui`. `boardui.json` sends its files to that package, rewrites their imports to `@xbase/ui/...`, and the CLI installs the npm packages they need there. With `-y` it skips files that already exist, so it never overwrites XBase's changes. It also adds `@tailwindcss/postcss`, which only Next.js projects use, so remove that again:
+
+  ```sh
+  cd packages/ui
+  npx boardui@latest add <name> -y
+  pnpm remove @tailwindcss/postcss
+  ```
+
+  A new folder of TypeScript files also goes in the `include` of `packages/ui/tsconfig.json`: Vite resolves `@xbase/ui` imports only in the files it lists.
+
+- **Change an installed component in place**, rather than wrapping it, and delete a component once nothing uses it. Mark each change with an `XBase:` comment that says why, so a later refresh from the registry (`add <name> --overwrite`) doesn't drop it unnoticed; `packages/ui/components/__tests__/xbase-edits.test.ts` fails if the accent-text, placeholder or focus-ring edits are reverted. Keep BoardUI's `styles/` whole, though: `globals.css` holds the styles of every BoardUI component, installed or not, so a component you add later works. Its one `XBase:` edit gives every ring offset the page colour, so a focus ring keeps a 2px gap from its control in both modes.
+- **Write your own component only when BoardUI has no alternative.** It goes in `packages/ui/components/xbase/`, as a thin composition of `react-aria-components` styled with BoardUI's tokens, type scale and motion, with a doc comment that says why BoardUI's components don't cover it. Today there are four: `Modal` (dialogs and alert dialogs), `Callout` (an inline status note), `Combobox` (a searchable select) and `Spinner` (a busy state). The sidebar's mobile drawer, `SidebarDrawer` in `dashboard-sidebar.tsx`, is the same kind of addition. Compositions of BoardUI parts that only one app needs stay in that app, such as the website's layouts in `apps/web/src/features/shell/`.
+- **Follow BoardUI's design rules**. The skill has them in full; in short:
+  - Colour only with semantic tokens, such as `text-text-secondary`, `bg-background-primary-default` or `border-border-button-default`, never raw palette classes, hex or OKLCH values. Accent text and links use `text-text-accent`.
+  - Set type only with the composite utilities, such as `text-body-regular` or `text-title-3-semibold`, never `text-sm font-medium`.
+  - Cards are `rounded-3xl border border-border-button-default bg-background-primary-default`. Space things with `gap`, not margins.
+  - Pass icons as components, such as `leadingIcon={RiAddLine}`, and merge classes with `cx()` from `@xbase/ui/utils/cx`.
+  - Build fields from BoardUI's React Aria inputs, never a raw `<input>` or `<select>`.
+  - Focus shows as `outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring`, plus `focus-visible:ring-offset-2` on an accent fill, so the ring doesn't merge into it. Animations reuse the skill's motion recipes.
+- **Mind BoardUI's plain buttons**: `Button`, `IconButton` and `CloseButton` are HTML buttons, not React Aria ones. Use `onClick` and `disabled`, wrap them in React Aria's `<Focusable>` inside a `TooltipTrigger`, and in `<Pressable>` inside a `DialogTrigger`. On the website, their link versions become TanStack Router links in `apps/web/src/features/shell/router-links.ts` (`ButtonRouterLink` and friends), and React Aria's own links navigate through the `RouterProvider` in `apps/web/src/routes/__root.tsx`.
+- **Mind React Aria's native validation**: BoardUI's fields are React Aria fields, and they use the browser's validation unless told otherwise. Pass `validationBehavior="aria"` when you set `isInvalid` yourself on a field inside a `<form>`, or when its type has built-in validity rules (`url`, `email`) that the app doesn't enforce. Otherwise the browser silently blocks the form's submit, or marks the field invalid with no message. XBase's forms report their own errors.
+- **Keep each app's palette in `packages/ui/palettes/`**. A palette overrides BoardUI's tokens for one app: the website uses `petrol.css`, XBase's own petrol-blue palette with the Inter font, and the extension uses `x.css`, X's greys and blue with X's Chirp-first font stack, so the side panel blends with x.com. Each app's entry stylesheet (`apps/web/src/styles.css`, `apps/extension/src/assets/tailwind.css`) imports `@xbase/ui/styles/globals.css`, then its palette.
+- **Change a colour in its palette file**, never in an app or a component, for light mode (`:root:not(.dark)`) and dark mode (`.dark`). `pnpm --filter @xbase/ui test` checks WCAG AA for every token pair the components draw, in both modes and both palettes, and fails when one drops below it. When a new component draws a new pair, add it to `packages/ui/palettes/__tests__/contrast.test.ts`.
+- **Dark mode follows the operating system** through BoardUI's `dark` class on `<html>`. `packages/ui/lib/color-scheme.js` sets it from `prefers-color-scheme` and follows changes. It has to run before the first paint, so it is a blocking script in `<head>`: the website inlines it (`apps/web/src/routes/__root.tsx`), and the extension's side panel loads it as a file (`apps/extension/public/color-scheme.js` links to it), because Manifest V3 forbids inline scripts. There is no theme switch. Don't write `dark:` colour overrides: pick another token.
+- **Keep the `@source` lines in each app's entry stylesheet**: Tailwind doesn't scan files outside the app, so they point it at `packages/ui/components`. Without them, components render unstyled and nothing reports an error. The extension skips `components/application/`, which only the website uses.
 
 ## Run the checks
 
@@ -72,14 +134,14 @@ Run these from the repository root before you open a pull request. CI runs the s
 ```sh
 pnpm format:check   # oxfmt, formatting
 pnpm lint           # oxlint, with type-aware rules; warnings fail
-pnpm typecheck      # tsc in each app
-pnpm test           # Vitest in each app that has tests
+pnpm typecheck      # tsc in each app and package
+pnpm test           # Vitest in each app and package that has tests
 pnpm build          # each app's production build
 ```
 
 `pnpm format` and `pnpm lint:fix` fix most formatting and lint problems for you. When a lint rule is wrong for one line, disable it there with a reason: `// oxlint-disable-next-line <rule> -- <why>`.
 
-The website's build regenerates `apps/web/src/routeTree.gen.ts` from the files in `src/routes/`. Commit it: CI type checks before it builds, and fails if the build changes a committed file.
+The website's build and its dev server regenerate `apps/web/src/routeTree.gen.ts` from the files in `src/routes/`. Commit it: CI type checks before it builds, and fails if the build changes a committed file.
 
 ### Git hooks
 

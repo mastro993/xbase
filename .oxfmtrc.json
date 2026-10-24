@@ -5,11 +5,17 @@
     "newlinesBetween": false
   },
   "sortTailwindcss": {
-    "functions": ["cn", "cva", "clsx", "tv"]
+    "functions": ["cx", "sortCx"]
   },
-  // Class order depends on each app's theme, so each app points at its own entry stylesheet.
-  // A wrong path turns sorting off without an error.
+  // Class order depends on the theme, so each app points at its own entry stylesheet and
+  // packages/ui at BoardUI's. A wrong path turns sorting off without an error.
   "overrides": [
+    {
+      "files": ["packages/ui/**"],
+      "options": {
+        "sortTailwindcss": { "stylesheet": "./packages/ui/styles/globals.css" }
+      }
+    },
     {
       "files": ["apps/web/**"],
       "options": {
