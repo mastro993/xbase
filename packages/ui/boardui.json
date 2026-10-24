@@ -1,0 +1,16 @@
+{
+  "paths": {
+    "components": "components",
+    "utils": "utils",
+    "hooks": "hooks",
+    "styles": "styles",
+    "lib": "lib"
+  },
+  "aliases": {
+    "components": "@xbase/ui/components",
+    "utils": "@xbase/ui/utils",
+    "hooks": "@xbase/ui/hooks",
+    "styles": "@xbase/ui/styles",
+    "lib": "@xbase/ui/lib"
+  }
+}

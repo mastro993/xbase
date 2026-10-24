@@ -9,60 +9,674 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthedRouteImport } from './routes/_authed'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as McpRouteImport } from './routes/mcp'
+import { Route as DotwellKnownSplatRouteImport } from './routes/[.]well-known/$'
+import { Route as DotwellKnownOauthAuthorizationServerRouteImport } from './routes/[.]well-known/oauth-authorization-server'
+import { Route as AuthedIndexRouteImport } from './routes/_authed/index'
+import { Route as AuthedDiscoverRouteImport } from './routes/_authed/discover'
+import { Route as AuthedDraftsRouteImport } from './routes/_authed/drafts'
+import { Route as AuthedQueueRouteImport } from './routes/_authed/queue'
+import { Route as AuthedSettingsRouteImport } from './routes/_authed/settings'
+import { Route as AuthedStatsRouteImport } from './routes/_authed/stats'
+import { Route as ApiSplatRouteImport } from './routes/api/$'
+import { Route as ApiHealthRouteImport } from './routes/api/health'
+import { Route as OauthAuthorizeRouteImport } from './routes/oauth/authorize'
+import { Route as OauthRegisterRouteImport } from './routes/oauth/register'
+import { Route as OauthRevokeRouteImport } from './routes/oauth/revoke'
+import { Route as OauthTokenRouteImport } from './routes/oauth/token'
+import { Route as DotwellKnownOauthProtectedResourceSplatRouteImport } from './routes/[.]well-known/oauth-protected-resource/$'
+import { Route as AuthedDiscoverIndexRouteImport } from './routes/_authed/discover.index'
+import { Route as AuthedDiscoverSearchIdRouteImport } from './routes/_authed/discover.$searchId'
+import { Route as AuthedDraftsIndexRouteImport } from './routes/_authed/drafts.index'
+import { Route as AuthedDraftsDraftIdRouteImport } from './routes/_authed/drafts.$draftId'
+import { Route as AuthedDraftsNewRouteImport } from './routes/_authed/drafts.new'
+import { Route as AuthedQueueIndexRouteImport } from './routes/_authed/queue.index'
+import { Route as AuthedQueuePostIdRouteImport } from './routes/_authed/queue.$postId'
+import { Route as ApiV1DraftsRouteImport } from './routes/api/v1/drafts'
+import { Route as ApiV1MeRouteImport } from './routes/api/v1/me'
+import { Route as ApiV1DraftsDraftIdRouteImport } from './routes/api/v1/drafts.$draftId'
 
-const IndexRoute = IndexRouteImport.update({
+const AuthedRoute = AuthedRouteImport.update({
+  id: '/_authed',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const McpRoute = McpRouteImport.update({
+  id: '/mcp',
+  path: '/mcp',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DotwellKnownSplatRoute = DotwellKnownSplatRouteImport.update({
+  id: '/.well-known/$',
+  path: '/.well-known/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DotwellKnownOauthAuthorizationServerRoute =
+  DotwellKnownOauthAuthorizationServerRouteImport.update({
+    id: '/.well-known/oauth-authorization-server',
+    path: '/.well-known/oauth-authorization-server',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const AuthedIndexRoute = AuthedIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedDiscoverRoute = AuthedDiscoverRouteImport.update({
+  id: '/discover',
+  path: '/discover',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedDraftsRoute = AuthedDraftsRouteImport.update({
+  id: '/drafts',
+  path: '/drafts',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedQueueRoute = AuthedQueueRouteImport.update({
+  id: '/queue',
+  path: '/queue',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedSettingsRoute = AuthedSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedStatsRoute = AuthedStatsRouteImport.update({
+  id: '/stats',
+  path: '/stats',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const ApiSplatRoute = ApiSplatRouteImport.update({
+  id: '/api/$',
+  path: '/api/$',
   getParentRoute: () => rootRouteImport,
+} as any)
+const ApiHealthRoute = ApiHealthRouteImport.update({
+  id: '/api/health',
+  path: '/api/health',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OauthAuthorizeRoute = OauthAuthorizeRouteImport.update({
+  id: '/oauth/authorize',
+  path: '/oauth/authorize',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OauthRegisterRoute = OauthRegisterRouteImport.update({
+  id: '/oauth/register',
+  path: '/oauth/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OauthRevokeRoute = OauthRevokeRouteImport.update({
+  id: '/oauth/revoke',
+  path: '/oauth/revoke',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OauthTokenRoute = OauthTokenRouteImport.update({
+  id: '/oauth/token',
+  path: '/oauth/token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DotwellKnownOauthProtectedResourceSplatRoute =
+  DotwellKnownOauthProtectedResourceSplatRouteImport.update({
+    id: '/.well-known/oauth-protected-resource/$',
+    path: '/.well-known/oauth-protected-resource/$',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const AuthedDiscoverIndexRoute = AuthedDiscoverIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthedDiscoverRoute,
+} as any)
+const AuthedDiscoverSearchIdRoute = AuthedDiscoverSearchIdRouteImport.update({
+  id: '/$searchId',
+  path: '/$searchId',
+  getParentRoute: () => AuthedDiscoverRoute,
+} as any)
+const AuthedDraftsIndexRoute = AuthedDraftsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthedDraftsRoute,
+} as any)
+const AuthedDraftsDraftIdRoute = AuthedDraftsDraftIdRouteImport.update({
+  id: '/$draftId',
+  path: '/$draftId',
+  getParentRoute: () => AuthedDraftsRoute,
+} as any)
+const AuthedDraftsNewRoute = AuthedDraftsNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => AuthedDraftsRoute,
+} as any)
+const AuthedQueueIndexRoute = AuthedQueueIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthedQueueRoute,
+} as any)
+const AuthedQueuePostIdRoute = AuthedQueuePostIdRouteImport.update({
+  id: '/$postId',
+  path: '/$postId',
+  getParentRoute: () => AuthedQueueRoute,
+} as any)
+const ApiV1DraftsRoute = ApiV1DraftsRouteImport.update({
+  id: '/api/v1/drafts',
+  path: '/api/v1/drafts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1MeRoute = ApiV1MeRouteImport.update({
+  id: '/api/v1/me',
+  path: '/api/v1/me',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1DraftsDraftIdRoute = ApiV1DraftsDraftIdRouteImport.update({
+  id: '/$draftId',
+  path: '/$draftId',
+  getParentRoute: () => ApiV1DraftsRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
+  '/': typeof AuthedIndexRoute
+  '/login': typeof LoginRoute
+  '/mcp': typeof McpRoute
+  '/.well-known/$': typeof DotwellKnownSplatRoute
+  '/.well-known/oauth-authorization-server': typeof DotwellKnownOauthAuthorizationServerRoute
+  '/discover': typeof AuthedDiscoverRouteWithChildren
+  '/drafts': typeof AuthedDraftsRouteWithChildren
+  '/queue': typeof AuthedQueueRouteWithChildren
+  '/settings': typeof AuthedSettingsRoute
+  '/stats': typeof AuthedStatsRoute
+  '/api/$': typeof ApiSplatRoute
+  '/api/health': typeof ApiHealthRoute
+  '/oauth/authorize': typeof OauthAuthorizeRoute
+  '/oauth/register': typeof OauthRegisterRoute
+  '/oauth/revoke': typeof OauthRevokeRoute
+  '/oauth/token': typeof OauthTokenRoute
+  '/.well-known/oauth-protected-resource/$': typeof DotwellKnownOauthProtectedResourceSplatRoute
+  '/discover/$searchId': typeof AuthedDiscoverSearchIdRoute
+  '/drafts/$draftId': typeof AuthedDraftsDraftIdRoute
+  '/drafts/new': typeof AuthedDraftsNewRoute
+  '/queue/$postId': typeof AuthedQueuePostIdRoute
+  '/api/v1/drafts': typeof ApiV1DraftsRouteWithChildren
+  '/api/v1/me': typeof ApiV1MeRoute
+  '/discover/': typeof AuthedDiscoverIndexRoute
+  '/drafts/': typeof AuthedDraftsIndexRoute
+  '/queue/': typeof AuthedQueueIndexRoute
+  '/api/v1/drafts/$draftId': typeof ApiV1DraftsDraftIdRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/mcp': typeof McpRoute
+  '/.well-known/$': typeof DotwellKnownSplatRoute
+  '/.well-known/oauth-authorization-server': typeof DotwellKnownOauthAuthorizationServerRoute
+  '/settings': typeof AuthedSettingsRoute
+  '/stats': typeof AuthedStatsRoute
+  '/api/$': typeof ApiSplatRoute
+  '/api/health': typeof ApiHealthRoute
+  '/oauth/authorize': typeof OauthAuthorizeRoute
+  '/oauth/register': typeof OauthRegisterRoute
+  '/oauth/revoke': typeof OauthRevokeRoute
+  '/oauth/token': typeof OauthTokenRoute
+  '/': typeof AuthedIndexRoute
+  '/.well-known/oauth-protected-resource/$': typeof DotwellKnownOauthProtectedResourceSplatRoute
+  '/discover/$searchId': typeof AuthedDiscoverSearchIdRoute
+  '/drafts/$draftId': typeof AuthedDraftsDraftIdRoute
+  '/drafts/new': typeof AuthedDraftsNewRoute
+  '/queue/$postId': typeof AuthedQueuePostIdRoute
+  '/api/v1/drafts': typeof ApiV1DraftsRouteWithChildren
+  '/api/v1/me': typeof ApiV1MeRoute
+  '/discover': typeof AuthedDiscoverIndexRoute
+  '/drafts': typeof AuthedDraftsIndexRoute
+  '/queue': typeof AuthedQueueIndexRoute
+  '/api/v1/drafts/$draftId': typeof ApiV1DraftsDraftIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
+  '/_authed': typeof AuthedRouteWithChildren
+  '/login': typeof LoginRoute
+  '/mcp': typeof McpRoute
+  '/.well-known/$': typeof DotwellKnownSplatRoute
+  '/.well-known/oauth-authorization-server': typeof DotwellKnownOauthAuthorizationServerRoute
+  '/_authed/discover': typeof AuthedDiscoverRouteWithChildren
+  '/_authed/drafts': typeof AuthedDraftsRouteWithChildren
+  '/_authed/queue': typeof AuthedQueueRouteWithChildren
+  '/_authed/settings': typeof AuthedSettingsRoute
+  '/_authed/stats': typeof AuthedStatsRoute
+  '/api/$': typeof ApiSplatRoute
+  '/api/health': typeof ApiHealthRoute
+  '/oauth/authorize': typeof OauthAuthorizeRoute
+  '/oauth/register': typeof OauthRegisterRoute
+  '/oauth/revoke': typeof OauthRevokeRoute
+  '/oauth/token': typeof OauthTokenRoute
+  '/_authed/': typeof AuthedIndexRoute
+  '/.well-known/oauth-protected-resource/$': typeof DotwellKnownOauthProtectedResourceSplatRoute
+  '/_authed/discover/$searchId': typeof AuthedDiscoverSearchIdRoute
+  '/_authed/drafts/$draftId': typeof AuthedDraftsDraftIdRoute
+  '/_authed/drafts/new': typeof AuthedDraftsNewRoute
+  '/_authed/queue/$postId': typeof AuthedQueuePostIdRoute
+  '/api/v1/drafts': typeof ApiV1DraftsRouteWithChildren
+  '/api/v1/me': typeof ApiV1MeRoute
+  '/_authed/discover/': typeof AuthedDiscoverIndexRoute
+  '/_authed/drafts/': typeof AuthedDraftsIndexRoute
+  '/_authed/queue/': typeof AuthedQueueIndexRoute
+  '/api/v1/drafts/$draftId': typeof ApiV1DraftsDraftIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/mcp'
+    | '/.well-known/$'
+    | '/.well-known/oauth-authorization-server'
+    | '/discover'
+    | '/drafts'
+    | '/queue'
+    | '/settings'
+    | '/stats'
+    | '/api/$'
+    | '/api/health'
+    | '/oauth/authorize'
+    | '/oauth/register'
+    | '/oauth/revoke'
+    | '/oauth/token'
+    | '/.well-known/oauth-protected-resource/$'
+    | '/discover/$searchId'
+    | '/drafts/$draftId'
+    | '/drafts/new'
+    | '/queue/$postId'
+    | '/api/v1/drafts'
+    | '/api/v1/me'
+    | '/discover/'
+    | '/drafts/'
+    | '/queue/'
+    | '/api/v1/drafts/$draftId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/login'
+    | '/mcp'
+    | '/.well-known/$'
+    | '/.well-known/oauth-authorization-server'
+    | '/settings'
+    | '/stats'
+    | '/api/$'
+    | '/api/health'
+    | '/oauth/authorize'
+    | '/oauth/register'
+    | '/oauth/revoke'
+    | '/oauth/token'
+    | '/'
+    | '/.well-known/oauth-protected-resource/$'
+    | '/discover/$searchId'
+    | '/drafts/$draftId'
+    | '/drafts/new'
+    | '/queue/$postId'
+    | '/api/v1/drafts'
+    | '/api/v1/me'
+    | '/discover'
+    | '/drafts'
+    | '/queue'
+    | '/api/v1/drafts/$draftId'
+  id:
+    | '__root__'
+    | '/_authed'
+    | '/login'
+    | '/mcp'
+    | '/.well-known/$'
+    | '/.well-known/oauth-authorization-server'
+    | '/_authed/discover'
+    | '/_authed/drafts'
+    | '/_authed/queue'
+    | '/_authed/settings'
+    | '/_authed/stats'
+    | '/api/$'
+    | '/api/health'
+    | '/oauth/authorize'
+    | '/oauth/register'
+    | '/oauth/revoke'
+    | '/oauth/token'
+    | '/_authed/'
+    | '/.well-known/oauth-protected-resource/$'
+    | '/_authed/discover/$searchId'
+    | '/_authed/drafts/$draftId'
+    | '/_authed/drafts/new'
+    | '/_authed/queue/$postId'
+    | '/api/v1/drafts'
+    | '/api/v1/me'
+    | '/_authed/discover/'
+    | '/_authed/drafts/'
+    | '/_authed/queue/'
+    | '/api/v1/drafts/$draftId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
+  AuthedRoute: typeof AuthedRouteWithChildren
+  LoginRoute: typeof LoginRoute
+  McpRoute: typeof McpRoute
+  DotwellKnownSplatRoute: typeof DotwellKnownSplatRoute
+  DotwellKnownOauthAuthorizationServerRoute: typeof DotwellKnownOauthAuthorizationServerRoute
+  ApiSplatRoute: typeof ApiSplatRoute
+  ApiHealthRoute: typeof ApiHealthRoute
+  OauthAuthorizeRoute: typeof OauthAuthorizeRoute
+  OauthRegisterRoute: typeof OauthRegisterRoute
+  OauthRevokeRoute: typeof OauthRevokeRoute
+  OauthTokenRoute: typeof OauthTokenRoute
+  DotwellKnownOauthProtectedResourceSplatRoute: typeof DotwellKnownOauthProtectedResourceSplatRoute
+  ApiV1DraftsRoute: typeof ApiV1DraftsRouteWithChildren
+  ApiV1MeRoute: typeof ApiV1MeRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
+    '/_authed': {
+      id: '/_authed'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mcp': {
+      id: '/mcp'
+      path: '/mcp'
+      fullPath: '/mcp'
+      preLoaderRoute: typeof McpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.well-known/$': {
+      id: '/.well-known/$'
+      path: '/.well-known/$'
+      fullPath: '/.well-known/$'
+      preLoaderRoute: typeof DotwellKnownSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.well-known/oauth-authorization-server': {
+      id: '/.well-known/oauth-authorization-server'
+      path: '/.well-known/oauth-authorization-server'
+      fullPath: '/.well-known/oauth-authorization-server'
+      preLoaderRoute: typeof DotwellKnownOauthAuthorizationServerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authed/': {
+      id: '/_authed/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+      preLoaderRoute: typeof AuthedIndexRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/discover': {
+      id: '/_authed/discover'
+      path: '/discover'
+      fullPath: '/discover'
+      preLoaderRoute: typeof AuthedDiscoverRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/drafts': {
+      id: '/_authed/drafts'
+      path: '/drafts'
+      fullPath: '/drafts'
+      preLoaderRoute: typeof AuthedDraftsRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/queue': {
+      id: '/_authed/queue'
+      path: '/queue'
+      fullPath: '/queue'
+      preLoaderRoute: typeof AuthedQueueRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/settings': {
+      id: '/_authed/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthedSettingsRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/stats': {
+      id: '/_authed/stats'
+      path: '/stats'
+      fullPath: '/stats'
+      preLoaderRoute: typeof AuthedStatsRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/api/$': {
+      id: '/api/$'
+      path: '/api/$'
+      fullPath: '/api/$'
+      preLoaderRoute: typeof ApiSplatRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/api/health': {
+      id: '/api/health'
+      path: '/api/health'
+      fullPath: '/api/health'
+      preLoaderRoute: typeof ApiHealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/oauth/authorize': {
+      id: '/oauth/authorize'
+      path: '/oauth/authorize'
+      fullPath: '/oauth/authorize'
+      preLoaderRoute: typeof OauthAuthorizeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/oauth/register': {
+      id: '/oauth/register'
+      path: '/oauth/register'
+      fullPath: '/oauth/register'
+      preLoaderRoute: typeof OauthRegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/oauth/revoke': {
+      id: '/oauth/revoke'
+      path: '/oauth/revoke'
+      fullPath: '/oauth/revoke'
+      preLoaderRoute: typeof OauthRevokeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/oauth/token': {
+      id: '/oauth/token'
+      path: '/oauth/token'
+      fullPath: '/oauth/token'
+      preLoaderRoute: typeof OauthTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.well-known/oauth-protected-resource/$': {
+      id: '/.well-known/oauth-protected-resource/$'
+      path: '/.well-known/oauth-protected-resource/$'
+      fullPath: '/.well-known/oauth-protected-resource/$'
+      preLoaderRoute: typeof DotwellKnownOauthProtectedResourceSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authed/discover/': {
+      id: '/_authed/discover/'
+      path: '/'
+      fullPath: '/discover/'
+      preLoaderRoute: typeof AuthedDiscoverIndexRouteImport
+      parentRoute: typeof AuthedDiscoverRoute
+    }
+    '/_authed/discover/$searchId': {
+      id: '/_authed/discover/$searchId'
+      path: '/$searchId'
+      fullPath: '/discover/$searchId'
+      preLoaderRoute: typeof AuthedDiscoverSearchIdRouteImport
+      parentRoute: typeof AuthedDiscoverRoute
+    }
+    '/_authed/drafts/': {
+      id: '/_authed/drafts/'
+      path: '/'
+      fullPath: '/drafts/'
+      preLoaderRoute: typeof AuthedDraftsIndexRouteImport
+      parentRoute: typeof AuthedDraftsRoute
+    }
+    '/_authed/drafts/$draftId': {
+      id: '/_authed/drafts/$draftId'
+      path: '/$draftId'
+      fullPath: '/drafts/$draftId'
+      preLoaderRoute: typeof AuthedDraftsDraftIdRouteImport
+      parentRoute: typeof AuthedDraftsRoute
+    }
+    '/_authed/drafts/new': {
+      id: '/_authed/drafts/new'
+      path: '/new'
+      fullPath: '/drafts/new'
+      preLoaderRoute: typeof AuthedDraftsNewRouteImport
+      parentRoute: typeof AuthedDraftsRoute
+    }
+    '/_authed/queue/': {
+      id: '/_authed/queue/'
+      path: '/'
+      fullPath: '/queue/'
+      preLoaderRoute: typeof AuthedQueueIndexRouteImport
+      parentRoute: typeof AuthedQueueRoute
+    }
+    '/_authed/queue/$postId': {
+      id: '/_authed/queue/$postId'
+      path: '/$postId'
+      fullPath: '/queue/$postId'
+      preLoaderRoute: typeof AuthedQueuePostIdRouteImport
+      parentRoute: typeof AuthedQueueRoute
+    }
+    '/api/v1/drafts': {
+      id: '/api/v1/drafts'
+      path: '/api/v1/drafts'
+      fullPath: '/api/v1/drafts'
+      preLoaderRoute: typeof ApiV1DraftsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/me': {
+      id: '/api/v1/me'
+      path: '/api/v1/me'
+      fullPath: '/api/v1/me'
+      preLoaderRoute: typeof ApiV1MeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/drafts/$draftId': {
+      id: '/api/v1/drafts/$draftId'
+      path: '/$draftId'
+      fullPath: '/api/v1/drafts/$draftId'
+      preLoaderRoute: typeof ApiV1DraftsDraftIdRouteImport
+      parentRoute: typeof ApiV1DraftsRoute
     }
   }
 }
 
+interface AuthedDiscoverRouteChildren {
+  AuthedDiscoverSearchIdRoute: typeof AuthedDiscoverSearchIdRoute
+  AuthedDiscoverIndexRoute: typeof AuthedDiscoverIndexRoute
+}
+
+const AuthedDiscoverRouteChildren: AuthedDiscoverRouteChildren = {
+  AuthedDiscoverSearchIdRoute: AuthedDiscoverSearchIdRoute,
+  AuthedDiscoverIndexRoute: AuthedDiscoverIndexRoute,
+}
+
+const AuthedDiscoverRouteWithChildren = AuthedDiscoverRoute._addFileChildren(
+  AuthedDiscoverRouteChildren,
+)
+
+interface AuthedDraftsRouteChildren {
+  AuthedDraftsDraftIdRoute: typeof AuthedDraftsDraftIdRoute
+  AuthedDraftsNewRoute: typeof AuthedDraftsNewRoute
+  AuthedDraftsIndexRoute: typeof AuthedDraftsIndexRoute
+}
+
+const AuthedDraftsRouteChildren: AuthedDraftsRouteChildren = {
+  AuthedDraftsDraftIdRoute: AuthedDraftsDraftIdRoute,
+  AuthedDraftsNewRoute: AuthedDraftsNewRoute,
+  AuthedDraftsIndexRoute: AuthedDraftsIndexRoute,
+}
+
+const AuthedDraftsRouteWithChildren = AuthedDraftsRoute._addFileChildren(
+  AuthedDraftsRouteChildren,
+)
+
+interface AuthedQueueRouteChildren {
+  AuthedQueuePostIdRoute: typeof AuthedQueuePostIdRoute
+  AuthedQueueIndexRoute: typeof AuthedQueueIndexRoute
+}
+
+const AuthedQueueRouteChildren: AuthedQueueRouteChildren = {
+  AuthedQueuePostIdRoute: AuthedQueuePostIdRoute,
+  AuthedQueueIndexRoute: AuthedQueueIndexRoute,
+}
+
+const AuthedQueueRouteWithChildren = AuthedQueueRoute._addFileChildren(
+  AuthedQueueRouteChildren,
+)
+
+interface AuthedRouteChildren {
+  AuthedDiscoverRoute: typeof AuthedDiscoverRouteWithChildren
+  AuthedDraftsRoute: typeof AuthedDraftsRouteWithChildren
+  AuthedQueueRoute: typeof AuthedQueueRouteWithChildren
+  AuthedSettingsRoute: typeof AuthedSettingsRoute
+  AuthedStatsRoute: typeof AuthedStatsRoute
+  AuthedIndexRoute: typeof AuthedIndexRoute
+}
+
+const AuthedRouteChildren: AuthedRouteChildren = {
+  AuthedDiscoverRoute: AuthedDiscoverRouteWithChildren,
+  AuthedDraftsRoute: AuthedDraftsRouteWithChildren,
+  AuthedQueueRoute: AuthedQueueRouteWithChildren,
+  AuthedSettingsRoute: AuthedSettingsRoute,
+  AuthedStatsRoute: AuthedStatsRoute,
+  AuthedIndexRoute: AuthedIndexRoute,
+}
+
+const AuthedRouteWithChildren =
+  AuthedRoute._addFileChildren(AuthedRouteChildren)
+
+interface ApiV1DraftsRouteChildren {
+  ApiV1DraftsDraftIdRoute: typeof ApiV1DraftsDraftIdRoute
+}
+
+const ApiV1DraftsRouteChildren: ApiV1DraftsRouteChildren = {
+  ApiV1DraftsDraftIdRoute: ApiV1DraftsDraftIdRoute,
+}
+
+const ApiV1DraftsRouteWithChildren = ApiV1DraftsRoute._addFileChildren(
+  ApiV1DraftsRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
+  AuthedRoute: AuthedRouteWithChildren,
+  LoginRoute: LoginRoute,
+  McpRoute: McpRoute,
+  DotwellKnownSplatRoute: DotwellKnownSplatRoute,
+  DotwellKnownOauthAuthorizationServerRoute:
+    DotwellKnownOauthAuthorizationServerRoute,
+  ApiSplatRoute: ApiSplatRoute,
+  ApiHealthRoute: ApiHealthRoute,
+  OauthAuthorizeRoute: OauthAuthorizeRoute,
+  OauthRegisterRoute: OauthRegisterRoute,
+  OauthRevokeRoute: OauthRevokeRoute,
+  OauthTokenRoute: OauthTokenRoute,
+  DotwellKnownOauthProtectedResourceSplatRoute:
+    DotwellKnownOauthProtectedResourceSplatRoute,
+  ApiV1DraftsRoute: ApiV1DraftsRouteWithChildren,
+  ApiV1MeRoute: ApiV1MeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
 
 import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
+import type { startInstance } from './start.ts'
 declare module '@tanstack/react-start' {
   interface Register {
     ssr: true
     router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
   }
 }

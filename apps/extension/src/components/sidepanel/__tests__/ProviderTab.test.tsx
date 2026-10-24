@@ -1,13 +1,16 @@
 // @vitest-environment happy-dom
+
+import { screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { listModels } from '@xbase/ai/llm';
+import { PROVIDERS } from '@xbase/ai/providers';
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { expect, it, vi } from 'vitest';
-import { listModels } from '@/lib/llm';
-import { PROVIDERS } from '@/lib/providers';
-import type { Settings } from '@/lib/settings';
+import { DEFAULT_SETTINGS, getSettings, saveSettings, type Settings } from '@/lib/settings';
 import { ProviderTab } from '../ProviderTab';
 
-vi.mock('@/lib/llm', () => ({ listModels: vi.fn() }));
+vi.mock('@xbase/ai/llm', () => ({ listModels: vi.fn() }));
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 it('reloads models when the stored key changes elsewhere', async () => {
@@ -34,4 +37,21 @@ it('reloads models when the stored key changes elsewhere', async () => {
     ['openai', 'sk-a'],
     ['openai', 'sk-b'],
   ]);
+  await act(async () => root.unmount());
+});
+
+it('switches the active provider from the select', async () => {
+  await saveSettings(DEFAULT_SETTINGS);
+  const user = userEvent.setup();
+  const container = document.body.appendChild(document.createElement('div'));
+  const root = createRoot(container);
+  await act(async () => root.render(<ProviderTab settings={DEFAULT_SETTINGS} />));
+
+  const trigger = within(container).getByRole('button', { name: /Active provider/ });
+  expect(trigger.textContent).toContain('Choose a provider');
+  await user.click(trigger);
+  // The list opens in a popover outside the container.
+  await user.click(screen.getByRole('option', { name: 'Anthropic' }));
+  expect((await getSettings()).activeProvider).toBe('anthropic');
+  await act(async () => root.unmount());
 });

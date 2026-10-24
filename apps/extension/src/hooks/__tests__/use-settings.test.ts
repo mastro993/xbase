@@ -1,5 +1,5 @@
+import { PROVIDERS } from '@xbase/ai/providers';
 import { describe, expect, it } from 'vitest';
-import { PROVIDERS } from '@/lib/providers';
 import type { Settings } from '@/lib/settings';
 import { setProviderKey } from '../use-settings';
 

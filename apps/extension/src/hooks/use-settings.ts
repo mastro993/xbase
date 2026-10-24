@@ -1,5 +1,5 @@
+import { PROVIDERS, type ProviderId } from '@xbase/ai/providers';
 import { useEffect, useState } from 'react';
-import { PROVIDERS, type ProviderId } from '@/lib/providers';
 import { getSettings, saveSettings, type Settings, watchSettings } from '@/lib/settings';
 
 /** Live view of stored settings; null until the first read resolves. */

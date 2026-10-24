@@ -26,7 +26,8 @@
     "react/capitalized-calls": "off",
     "react/memo-dependencies": "off",
     "import/no-unassigned-import": ["warn", { "allow": ["**/*.css"] }],
-    // Base UI and shadcn parts set roles on purpose.
+    // Status lines are role="status" and button rows role="group" on purpose: the <output> and
+    // <fieldset> this rule suggests are form elements, with their own semantics and styles.
     "jsx-a11y/prefer-tag-over-role": "off",
     "unicorn/consistent-function-scoping": "off",
     "typescript/no-unsafe-type-assertion": "off",

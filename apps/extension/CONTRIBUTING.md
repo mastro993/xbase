@@ -8,7 +8,7 @@ x-companion is in early development, so expect parts of the code and this guide 
 
 ## Set up your environment
 
-You need Node.js 22.12+, pnpm and a Chromium browser, version 140 or newer. Install dependencies once, from the repository root:
+You need Node.js 24+, pnpm and a Chromium browser, version 140 or newer. Install dependencies once, from the repository root:
 
 ```sh
 pnpm install
@@ -91,7 +91,7 @@ If `main` moves while the workflow runs, for example because someone merged a pu
 
 ## How the extension works
 
-x-companion has three parts that talk through extension messages, plus the provider adapters the background uses.
+x-companion has three parts that talk through extension messages, plus the provider adapters and prompts the background uses. Those two come from `@xbase/ai` (`packages/ai` in the repository root), which the website shares.
 
 - **Background service worker** (`src/entrypoints/background.ts`):
   - Enables the side panel and toolbar icon per tab, on x.com only. The manifest has no global `side_panel` entry, so the panel never follows you to other sites.
@@ -108,22 +108,18 @@ x-companion has three parts that talk through extension messages, plus the provi
   - Reads the user's own @handle from the side navigation's profile link, so the prompt can say which posts are theirs.
   - Fills the Draft.js editor with a synthetic paste, then checks the result. A result is dropped if the box changed while the action ran.
 - **Side panel** (`src/entrypoints/sidepanel/`, `src/components/sidepanel/`):
-  - Built with React 19, [PanelUI web](https://panelui.dev/docs/web) (`panelui-web`), the shadcn/ui (Base UI) components PanelUI lacks, and Tailwind v4, in X's colour palette from the shared `@xbase/ui` theme.
-  - Follows the system light or dark theme.
+  - Built with React 19, Tailwind v4 and [BoardUI](https://www.boardui.com) components from the shared `@xbase/ui` package (`packages/ui`), in X's colour palette and Chirp-first font stack (`packages/ui/palettes/x.css`), so it matches x.com. The website uses another palette.
+  - Follows the system light or dark theme: `public/color-scheme.js` (a link to `packages/ui/lib/color-scheme.js`) sets BoardUI's `dark` class before the first paint. It's a file, not an inline script, because Manifest V3 forbids inline scripts.
   - Keeps all state in extension storage: the settings in one item, the API keys in another (`src/lib/settings.ts`). Both live in `storage.local`. Only changed parts are written, so a style edit never rewrites the keys.
   - Shows saved keys only masked: a key can be replaced or removed, never read back into the page.
-- **Large language model (LLM) adapters** (`src/lib/llm.ts`):
+- **Large language model (LLM) adapters** (`packages/ai/src/llm.ts`, imported from `@xbase/ai/llm`):
   - Two request paths: Chat Completions (OpenAI, xAI, DeepSeek, OpenRouter) and Anthropic Messages.
   - Request low reasoning effort when the model supports it.
   - Attach images as `pbs.twimg.com` URLs, each after a text label that matches its marker in the prompt, so the provider downloads them. If the provider rejects a request with images (a 400, 404 or 422), the adapter retries once without them. This covers models that can't read images and pictures the provider couldn't fetch.
-- **Jev adapter** (`src/lib/jev.ts`), not used yet:
-  - Asks [Jev](https://docs.typesafe.ai/introduction), TypeSafe's decision model, typed questions about some state: yes/no, pick one option or rate on a scale. The answers come back typed, with probabilities instead of text.
-  - Sends the same System One request to TypeSafe with a TypeSafe key, or to OpenRouter with an OpenRouter key.
-  - The host list includes `https://api.typesafe.ai/*` for the TypeSafe route, because TypeSafe's CORS rules reject extension origins.
-- **Prompts** (`src/lib/prompts/`):
+- **Prompts** (`packages/ai/src/prompts/`, imported from `@xbase/ai/prompts`):
   - One file per action. Each exports a `PromptBuilder`: a function from `PromptConfig` (the context, meaning the post with its conversation and the reply box text, plus the style guide and projects) to a system message, a user message and the pictures to attach.
   - `refine-post.ts` is the new-post prompt, a `PostPromptBuilder`: it gets only the draft, the style guide and projects, since there's no post to reply to. It isn't in `PROMPTS`, because it isn't a reply composer action.
-  - `PROMPTS` in `index.ts` maps each action in `ACTIONS` (`src/lib/messages.ts`) to its prompt. To add an action, add its ID there, write its prompt file and register it, then give it a label in `src/lib/x-dom.ts`.
+  - `PROMPTS` in `index.ts` maps each action in `ACTIONS` (`packages/ai/src/post.ts`) to its prompt. To add an action, add its ID there, write its prompt file and register it, then give it a label in `src/lib/x-dom.ts`.
   - The rewrite actions share `rewrite.ts`, so each of their files holds only its instruction. The shared blocks (style guide, projects, the post with its conversation and quoted post, image markers, delimiter stripping) live in `shared.ts`.
   - Each post is its own tagged block: `<earlier>` posts, then the target `<post>`, then `<later>` posts, each with any `<quote>` inside. Media show as `[Image N]` or `[Video N]` markers. Up to 8 pictures are attached, numbered in priority order: the target's, its quote's, then the conversation's, nearest first.
   - A fresh reply is capped at 280 characters. A rewrite and a post refine keep that cap, or the draft's length if it's longer.
@@ -140,20 +136,27 @@ src/
     sidepanel/             side panel page (index.html, main.tsx, App.tsx)
   components/
     sidepanel/             panel UI: status header, provider/key/model, style, projects
-    ui/                    shadcn/ui components PanelUI lacks (field, input-group, combobox, ...)
   hooks/                   useSettings (storage-backed), useModels, useAutosave
   lib/
-    providers.ts           provider ids, labels, default models
     settings.ts            settings + key storage items, getStatus
     messages.ts            content <-> background message types
-    llm.ts                 provider HTTP adapters
-    jev.ts                 Jev decision-model adapter (not used yet)
-    prompts/               one prompt per action, shared prompt blocks
     background-utils.ts    URL check + untrusted message validation
     x-dom.ts               every X selector and DOM routine
-  assets/tailwind.css      Tailwind entry: shared @xbase/ui theme, panelui-web classes (side panel only)
+  assets/tailwind.css      Tailwind entry: BoardUI styles and the X palette from @xbase/ui (side panel only)
 public/icon/               toolbar and store icons
+public/color-scheme.js     sets the dark class before the side panel paints (link to @xbase/ui)
 wxt.config.ts              manifest (permissions, hosts, minimum Chrome)
+```
+
+The code it shares with the website lives in `@xbase/ai`, in `packages/ai/src/` at the repository root:
+
+```text
+providers.ts               provider ids, labels, default models
+llm.ts                     provider HTTP adapters: generateText, listModels
+errors.ts                  scrubSecrets: keys and account IDs out of provider error text
+post.ts                    the post shapes the prompts read, and the reply actions (ACTIONS)
+profile.ts                 style guide and project shapes, with their length limits
+prompts/                   one prompt per action, shared prompt blocks
 ```
 
 ## Code guidelines
@@ -163,9 +166,9 @@ These rules keep the extension small and private, and they limit the work when X
 - **Keep X selectors in one file**: every X selector and DOM routine lives in `src/lib/x-dom.ts`. When X changes its markup, that file is the only one to update.
 - **Keep the content script away from storage**: the content script runs on x.com and must never import settings or storage code. It asks the background for anything it needs.
 - **Treat messages as untrusted**: validate every message that reaches the background in `src/lib/background-utils.ts`, and cap the length of any new field.
-- **Clean text bound for x.com**: X's own scripts can read anything the content script shows. Pass error text through `safeError` in `src/lib/background-utils.ts`, which removes keys and account IDs.
-- **Call providers over plain HTTP**: the adapters use `fetch`, with no provider SDKs. To add a provider, extend `src/lib/providers.ts`, the matching request path in `src/lib/llm.ts` and the host list in `wxt.config.ts`.
-- **Use PanelUI first**: build side panel UI from PanelUI web components, imported one per path (`import { Button } from 'panelui-web/button'`). For what PanelUI lacks, use the shadcn/ui components in `src/components/ui/`, and add missing ones with the shadcn CLI rather than writing your own.
+- **Clean text bound for x.com**: X's own scripts can read anything the content script shows. Pass error text through `scrubSecrets` from `@xbase/ai/errors` (`packages/ai/src/errors.ts`), which removes keys and account IDs and shortens it. The website scrubs its provider errors with it too, so add new key shapes there.
+- **Call providers over plain HTTP**: the adapters use `fetch`, with no provider SDKs. To add a provider, extend `packages/ai/src/providers.ts`, the matching request path in `packages/ai/src/llm.ts` and the host list in `wxt.config.ts`.
+- **Use BoardUI first**: build side panel UI from the BoardUI components in `@xbase/ui` (`import { Button } from '@xbase/ui/components/base/buttons/button'`), with icons from `@remixicon/react`. Style only with BoardUI's semantic tokens and type utilities, so the X palette and dark mode apply. To add a component, run the BoardUI CLI from `packages/ui` (see "Style the UI" in the [XBase contributing guide](../../CONTRIBUTING.md#style-the-ui)) rather than writing your own.
 - **Don't add permissions lightly**: every permission and host in `wxt.config.ts` shows up in the install prompt. Explain any new one in your pull request.
 - **Update the docs with the code**: if a change affects behaviour described in the README or this guide, update that text in the same pull request.
 
@@ -175,7 +178,7 @@ Unit tests cover the logic, but they never call a real provider or load the real
 
 ### Run the automated checks
 
-Run `pnpm typecheck`, `pnpm test` and `pnpm build` before every commit. The CI workflow runs them on every pull request and every push to `main`, together with the repository-wide lint and format checks (see the [XBase contributing guide](../../CONTRIBUTING.md#run-the-checks)):
+Run `pnpm typecheck`, `pnpm test` and `pnpm build` before every commit, and the `@xbase/ai` tests too when you change the shared AI code. The CI workflow runs them on every pull request and every push to `main`, together with the repository-wide lint and format checks (see the [XBase contributing guide](../../CONTRIBUTING.md#run-the-checks)):
 
 ```sh
 pnpm test                                          # all unit tests, once
@@ -183,15 +186,15 @@ pnpm vitest                                        # watch mode
 pnpm vitest run src/lib/__tests__/x-dom.test.ts    # a single file
 pnpm typecheck                                     # TypeScript type check
 pnpm build                                         # catches bundling and manifest errors
+pnpm --filter @xbase/ai test                       # provider, prompt and error-text tests (packages/ai)
 ```
 
 The unit tests use Vitest, and the DOM tests run in happy-dom. They cover:
 
-- provider request and response handling, with `fetch` stubbed
-- the prompts and message validation
+- provider request and response handling, with `fetch` stubbed, the prompts, and the error text cleanup before it reaches x.com, in `packages/ai`
+- message validation
 - settings status, the stored-settings migration and where the keys are stored
-- error text cleanup before it reaches x.com
-- the side panel's key field, model reload, style guide saving and project list
+- the side panel's key field, model search and reload, tabs, style guide saving and project list
 - the X DOM logic, against hand-written fixtures
 
 When you fix a bug, add a test that fails without the fix if the code can be tested in happy-dom.

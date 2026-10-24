@@ -1,0 +1,22 @@
+{
+  // TypeScript sources, no build step: each app bundles them and type checks them with its own
+  // tsconfig. So these options are the strictest of both apps, and imports stay extensionless.
+  "include": ["src", "vitest.config.ts"],
+  "compilerOptions": {
+    "target": "ES2022",
+    // The web app's lib. DOM for fetch, Response and AbortSignal, which browsers and Node share.
+    // Files that use ES2023's Array#toSorted or #toReversed reference that lib themselves.
+    "lib": ["ES2022", "DOM"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "verbatimModuleSyntax": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true
+  }
+}

@@ -1,0 +1,26 @@
+{
+  // TypeScript sources, no build step: each app bundles them and type checks them with its own
+  // tsconfig. So these options are the strictest of both apps. Every source folder must be listed:
+  // Vite resolves the @xbase/ui alias below only in files this tsconfig includes.
+  "include": ["components", "hooks", "lib", "utils", "palettes", "test", "vitest.config.ts"],
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "verbatimModuleSyntax": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true,
+    // BoardUI imports through @xbase/ui/<dir>/<file> without extensions, and some component
+    // files are .ts: package exports can't map both, so the alias resolves through paths.
+    "paths": { "@xbase/ui/*": ["./*"] }
+  }
+}
