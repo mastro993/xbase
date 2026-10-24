@@ -85,7 +85,7 @@ export function AccountsCard({ data, error }: { data: AccountsDto; error?: SignI
               <ConfirmButton
                 size="small"
                 title={`Remove @${account.username}?`}
-                description="Its drafts and scheduled posts are deleted, and it can no longer sign in. Add it again at any time; the posts don’t come back."
+                description="Its drafts and scheduled posts are deleted, it can no longer sign in, and browsers signed in with it are signed out. Add it again at any time; the posts don’t come back."
                 action="Remove"
                 errorTitle="Couldn’t remove"
                 onConfirm={() => remove(account)}

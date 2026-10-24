@@ -90,8 +90,9 @@ export function switchAccount(session: Session, id: string): void {
 }
 
 /**
- * Unlinks an account and deletes its posts. The last one stays: without it nobody could sign in,
- * and the next X account to try would claim this XBase. Browsers working as it move to another.
+ * Unlinks an account, deleting its posts and signing out every browser that signed in with it;
+ * the browser removing it moves to another account. The last one stays: without it nobody could
+ * sign in, and the next X account to try would claim this XBase.
  */
 export function removeAccount(session: Session, id: string): void {
   const accounts = listAccounts();

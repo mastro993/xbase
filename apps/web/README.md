@@ -39,7 +39,7 @@ XBase needs an app of yours in the [X developer console](https://developer.x.com
 
 XBase asks X for `tweet.read`, `users.read`, `tweet.write` and `offline.access`: reading the profile to sign in, then posting and staying connected for the scheduler.
 
-**The first X account to sign in owns this XBase.** After that, only linked accounts can sign in; others see "This X account isn't linked". Set `X_OWNER_USERNAME` to your X username so only that account can claim it; otherwise, sign in before you share the address, and keep XBase where only you can reach it until you have. To link another account, use **Settings → X accounts → Add account**: X adds the account you're signed in to on x.com, so switch accounts there first. Removing an account deletes its drafts and scheduled posts; the last one can't be removed. XBase doesn't revoke its access on X: do that in your X settings under **Connected apps**.
+**The first X account to sign in owns this XBase.** After that, only linked accounts can sign in; others see "This X account isn't linked". Set `X_OWNER_USERNAME` to your X username so only that account can claim it; otherwise, sign in before you share the address, and keep XBase where only you can reach it until you have. To link another account, use **Settings → X accounts → Add account**: X adds the account you're signed in to on x.com, so switch accounts there first. Removing an account deletes its drafts and scheduled posts and signs out the browsers that signed in with it; the last one can't be removed. XBase doesn't revoke its access on X: do that in your X settings under **Connected apps**.
 
 ## AI providers
 
@@ -168,7 +168,7 @@ docker exec xbase node -e "new (require('node:sqlite').DatabaseSync)('/data/xbas
 
 To restore, stop the server and replace `xbase.db` with the copy, deleting any `xbase.db-wal` and `xbase.db-shm` beside it.
 
-Removing an account in Settings doesn't end other browsers' sessions: they move to another linked account. To sign everyone out, use **Settings → Sessions → Sign out everywhere**, or delete the rows in the `sessions` table.
+Removing an account in Settings signs out every browser that signed in with it. To sign everyone out, use **Settings → Sessions → Sign out everywhere**, or delete the rows in the `sessions` table.
 
 ## REST API
 

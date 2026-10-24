@@ -1,7 +1,7 @@
 {
   "version": "7",
   "dialect": "sqlite",
-  "id": "2b9c1b77-6a8d-4ff2-b3d3-8c12eaf37293",
+  "id": "cb11c95c-3399-4abe-9562-6f621b9a7002",
   "prevIds": ["63d9e4b4-6194-4e88-b306-23c1bda070f8"],
   "ddl": [
     {
@@ -558,7 +558,7 @@
       "table": "sessions",
       "name": "account_id",
       "type": "text",
-      "notNull": false,
+      "notNull": true,
       "autoincrement": false,
       "default": null,
       "generated": null,
@@ -810,7 +810,7 @@
       "tableTo": "x_accounts",
       "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
-      "onDelete": "SET NULL",
+      "onDelete": "CASCADE",
       "nameExplicit": false,
       "entityType": "fks"
     },

@@ -129,20 +129,13 @@ describe('the session’s account', () => {
     });
   });
 
-  it('falls back to the oldest account once its own is removed', async () => {
+  it('signs out once its account is removed', async () => {
     const other = seedAccount({ id: '2002' });
     const token = tokenFrom((await signIn()).response);
     setSessionAccount(sha256(token), other);
     db.delete(xAccounts).where(eq(xAccounts.id, other)).run();
-    await expect(read(`__Host-xbase_session=${token}`)).resolves.toMatchObject({
-      accountId: account,
-    });
-  });
-
-  it('counts as signed out with no account left', async () => {
-    const token = tokenFrom((await signIn()).response);
-    db.delete(xAccounts).run();
     await expect(read(`__Host-xbase_session=${token}`)).resolves.toBeNull();
+    expect(db.select().from(sessions).all()).toEqual([]);
   });
 
   it('answers a call without a session with a 401', async () => {

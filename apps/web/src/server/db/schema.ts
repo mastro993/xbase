@@ -53,8 +53,10 @@ export const xAccounts = snakeCase.table('x_accounts', {
 /** Browser sessions. The cookie holds a random token; only its sha256 is stored. */
 export const sessions = snakeCase.table('sessions', {
   id: text().primaryKey(), // sha256 hex of the cookie token
-  /** The account the browser works as; null once it's removed (see readSession). */
-  accountId: text().references(() => xAccounts.id, { onDelete: 'set null' }),
+  /** The account the browser works as; removing the account signs its browsers out. */
+  accountId: text()
+    .notNull()
+    .references(() => xAccounts.id, { onDelete: 'cascade' }),
   createdAt: createdAt(),
   expiresAt: timestamp().notNull(),
   lastSeenAt: timestamp().notNull(),

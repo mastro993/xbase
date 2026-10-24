@@ -20,8 +20,7 @@ beforeEach(() => {
 });
 
 /** A session row working as `accountId`, as issueSession stores it. */
-function sessionAs(accountId: string) {
-  const id = 'session-hash';
+function sessionAs(accountId: string, id = 'session-hash') {
   const now = new Date();
   db.insert(sessions)
     .values({
@@ -55,16 +54,20 @@ describe('accounts', () => {
     expect(() => switchAccount(session, '9999')).toThrow(NotFoundError);
   });
 
-  it('removes an account with its posts and moves its browsers to another', () => {
+  it('removes an account with its posts, signing out the other browsers that used it', () => {
     const brand = seedAccount({ id: '2002' });
     createDraft({ accountId: brand, parts: ['brand post'], origin: 'web' });
     createDraft({ accountId: owner, parts: ['owner post'], origin: 'web' });
+    sessionAs(brand, 'other-browser');
     removeAccount(sessionAs(brand), brand);
     expect(listAccounts().map(({ id }) => id)).toEqual([owner]);
     expect(db.select({ accountId: posts.accountId }).from(posts).all()).toEqual([
       { accountId: owner },
     ]);
-    expect(sessionAccount()).toBe(owner);
+    // The browser that removed it moves to another account.
+    expect(
+      db.select({ id: sessions.id, accountId: sessions.accountId }).from(sessions).all(),
+    ).toEqual([{ id: 'session-hash', accountId: owner }]);
   });
 
   it('keeps the last account: without one, the next X account would claim XBase', () => {

@@ -1,8 +1,8 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { deleteCookie, getCookie, setCookie } from '@tanstack/react-start/server';
-import { asc, eq } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { getDb } from '@/server/db/client.server';
-import { sessions, xAccounts } from '@/server/db/schema';
+import { sessions } from '@/server/db/schema';
 import { getEnv } from '@/server/env.server';
 import { jsonError } from '@/server/http';
 
@@ -31,21 +31,7 @@ export function sessionCookie() {
   };
 }
 
-/** The oldest linked account: where a session lands when its own account was removed. */
-export function firstAccountId(): string | null {
-  const db = getDb();
-  const first = db
-    .select({ id: xAccounts.id })
-    .from(xAccounts)
-    .orderBy(asc(xAccounts.createdAt), asc(xAccounts.id))
-    .get();
-  return first?.id ?? null;
-}
-
-/**
- * The current request's session, or null when signed out or expired. With no account left there
- * is nothing to work as, so that counts as signed out too.
- */
+/** The current request's session, or null when signed out or expired. */
 export function readSession(): Session | null {
   const token = getCookie(sessionCookie().name);
   if (!token) return null;
@@ -54,12 +40,10 @@ export function readSession(): Session | null {
   const row = db.select().from(sessions).where(eq(sessions.id, id)).get();
   const now = new Date();
   if (!row || row.expiresAt.getTime() <= now.getTime()) return null;
-  const accountId = row.accountId ?? firstAccountId();
-  if (!accountId) return null;
   if (now.getTime() - row.lastSeenAt.getTime() > TOUCH_MS) {
     db.update(sessions).set({ lastSeenAt: now }).where(eq(sessions.id, id)).run();
   }
-  return { id, accountId };
+  return { id, accountId: row.accountId };
 }
 
 /** For server functions: serverFnGuard already turned a signed-out call away. */
