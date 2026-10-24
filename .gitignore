@@ -9,6 +9,8 @@ node_modules
 # .tanstack: TanStack Start build cache
 .tanstack
 .nitro
+# .build: Swift Package Manager cache, created by Swift tooling run at the repo root
+.build
 # dist must stay ignored: Tailwind skips ignored paths, and scanning a previous
 # client build changes the CSS hash between TanStack Start's client and SSR builds.
 dist
