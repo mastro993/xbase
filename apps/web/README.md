@@ -168,6 +168,11 @@ docker exec xbase node -e "new (require('node:sqlite').DatabaseSync)('/data/xbas
 
 To restore, stop the server and replace `xbase.db` with the copy, deleting any `xbase.db-wal` and `xbase.db-shm` beside it.
 
+### Upgrading from password sign-in
+
+> [!WARNING]
+> The first start after upgrading from a version with `APP_PASSWORD` **deletes every draft and scheduled post**, and signs every browser out. Those posts and sessions belong to no X account, and keeping the sessions would let them in again as soon as someone claims XBase. The stored AI provider key and the voice go too: keys now come from the environment, and each account has its own voice. Back up the database first (above) if you want to keep a copy.
+
 Removing an account in Settings signs out every browser that signed in with it. To sign everyone out, use **Settings → Sessions → Sign out everywhere**, or delete the rows in the `sessions` table.
 
 ## REST API
