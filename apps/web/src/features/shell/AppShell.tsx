@@ -107,7 +107,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           <NavLinks />
         </DashboardSidebar>
       </div>
-      <main className="min-h-0 min-w-0 flex-1 overflow-y-auto">{children}</main>
+      {/* relative: absolutely positioned content (sr-only status lines) would otherwise escape this
+          scroll box and stretch the page itself, adding a second scroll into blank space. */}
+      <main className="relative min-h-0 min-w-0 flex-1 overflow-y-auto">{children}</main>
       <SidebarDrawer isOpen={drawerOpen} onOpenChange={setDrawerOpen}>
         <DashboardSidebar
           mobile
