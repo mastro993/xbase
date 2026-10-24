@@ -6,12 +6,12 @@ import {
 } from '@remixicon/react';
 import { useNavigate, useRouter } from '@tanstack/react-router';
 import { useServerFn } from '@tanstack/react-start';
+import type { SavedSearchDto } from '@xbase/core/discover';
 import { ButtonLink } from '@xbase/ui/components/base/buttons/button';
 import { ConfirmButton } from '@/features/shell/ConfirmButton';
 import { EmptyState } from '@/features/shell/EmptyState';
 import { focusPageHeading } from '@/lib/focus';
 import { deleteSavedSearchFn } from './discover.functions';
-import type { SavedSearchDto } from './discover.schema';
 import { SavedSearchDialog } from './SavedSearchDialog';
 
 /** X's own search, newest first: what the user can do until XBase runs searches itself. */

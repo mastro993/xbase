@@ -1,9 +1,9 @@
 import { createServerFn } from '@tanstack/react-start';
-import { validator } from '@/lib/validate';
-import { CreateApiKeyInput, RevokeApiKeyInput } from './api-keys.schema';
-import { createApiKey, listApiKeys, revokeApiKey } from './api-keys.server';
+import { CreateApiKeyInput, RevokeApiKeyInput } from '@xbase/core/api-keys';
+import { validator } from '@xbase/core/validate';
+import { createApiKey, listApiKeys, revokeApiKey } from '@xbase/server/api-keys';
 
-// The settings page's entry points to api-keys.server.ts.
+// The settings page's entry points to @xbase/server/api-keys.
 
 export const listApiKeysFn = createServerFn().handler(() => listApiKeys());
 

@@ -1,10 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { accountFilter, resolveAccountId } from '@/features/accounts/accounts.server';
-import { methodNotAllowed, readJson, withApiKey } from '@/features/api-keys/rest.server';
-import { ApiNewDraftInput, ListDraftsQuery } from '@/features/posts/posts.schema';
-import { createDraft, listDrafts } from '@/features/posts/posts.server';
-import { parseInput } from '@/lib/validate';
-import { json } from '@/server/http';
+import { ApiNewDraftInput, ListDraftsQuery } from '@xbase/core/posts/schema';
+import { parseInput } from '@xbase/core/validate';
+import { accountFilter, resolveAccountId } from '@xbase/server/accounts';
+import { json } from '@xbase/server/http';
+import { createDraft, listDrafts } from '@xbase/server/posts';
+import { methodNotAllowed, readJson, withApiKey } from '@xbase/server/rest';
 
 // ?account= narrows the list to one account. A new draft goes to `account`, which may be left out
 // while only one account is linked.

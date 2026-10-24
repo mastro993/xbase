@@ -1,0 +1,35 @@
+{
+  "name": "@xbase/core",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./accounts": "./src/accounts.ts",
+    "./ai": "./src/ai.ts",
+    "./api-keys": "./src/api-keys.ts",
+    "./auth": "./src/auth.ts",
+    "./consent": "./src/consent.ts",
+    "./discover": "./src/discover.ts",
+    "./errors": "./src/errors.ts",
+    "./loopback": "./src/loopback.ts",
+    "./mcp": "./src/mcp.ts",
+    "./mcp-url": "./src/mcp-url.ts",
+    "./posts/dates": "./src/posts/dates.ts",
+    "./posts/schema": "./src/posts/schema.ts",
+    "./posts/text": "./src/posts/text.ts",
+    "./posts/weighted-length": "./src/posts/weighted-length.ts",
+    "./validate": "./src/validate.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@xbase/ai": "workspace:*",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

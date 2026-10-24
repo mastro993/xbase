@@ -1,6 +1,7 @@
 import { RiPencilLine } from '@remixicon/react';
 import { useNavigate, useRouter } from '@tanstack/react-router';
 import { useServerFn } from '@tanstack/react-start';
+import type { PostDto } from '@xbase/core/posts/schema';
 import { Button } from '@xbase/ui/components/base/buttons/button';
 import { Callout } from '@xbase/ui/components/xbase/callout';
 import { Spinner } from '@xbase/ui/components/xbase/spinner';
@@ -11,7 +12,6 @@ import { readableError } from '@/lib/readable-error';
 import { LocalTime } from './LocalTime';
 import { PostPreview } from './PostPreview';
 import { schedulePostFn, unschedulePostFn } from './posts.functions';
-import type { PostDto } from './posts.schema';
 import { PostStatusAlert } from './PostStatusAlert';
 import { ScheduleDialog } from './ScheduleDialog';
 

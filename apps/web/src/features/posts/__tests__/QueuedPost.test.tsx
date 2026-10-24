@@ -9,8 +9,8 @@ import {
 } from '@tanstack/react-router';
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import type { PostDto } from '@xbase/core/posts/schema';
 import { afterEach, expect, it, vi } from 'vitest';
-import type { PostDto } from '../posts.schema';
 import { QueuedPost } from '../QueuedPost';
 
 // Server functions need the server: the page calls these stand-ins instead.

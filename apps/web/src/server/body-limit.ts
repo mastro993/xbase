@@ -1,5 +1,5 @@
 import { createMiddleware } from '@tanstack/react-start';
-import { jsonError } from './http';
+import { jsonError } from '@xbase/server/http';
 
 // Start reads a server function's whole body before any function middleware runs, so before
 // serverFnGuard can turn a stranger away, and the Node server sets no size limit. This request

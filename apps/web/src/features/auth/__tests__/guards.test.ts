@@ -1,12 +1,11 @@
 import { isRedirect } from '@tanstack/react-router';
+import { createTestDb, seedAccount } from '@xbase/db/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { seedAccount } from '@/test/accounts';
-import { createTestDb } from '@/test/db';
 import { inRequest } from '@/test/request';
 import { isPublicPath, pageGuard, PUBLIC_SERVER_FNS, serverFnGuard } from '../guards';
 import { issueSession } from '../session.server';
 
-vi.mock('@/server/env.server', () => ({
+vi.mock('@xbase/server/env', () => ({
   getEnv: () => ({ APP_URL: 'https://xbase.test' }),
 }));
 

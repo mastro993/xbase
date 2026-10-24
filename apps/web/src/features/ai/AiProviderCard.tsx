@@ -1,6 +1,12 @@
 import { useRouter } from '@tanstack/react-router';
 import { useServerFn } from '@tanstack/react-start';
 import { type ModelOption, PROVIDERS } from '@xbase/ai/providers';
+import {
+  type AiSettingsDto,
+  KEY_ENV,
+  WRITING_PROVIDERS,
+  type WritingProvider,
+} from '@xbase/core/ai';
 import { Button } from '@xbase/ui/components/base/buttons/button';
 import { Select, SelectItem } from '@xbase/ui/components/base/select/select';
 import { Callout } from '@xbase/ui/components/xbase/callout';
@@ -9,7 +15,6 @@ import { type FormEvent, useId, useRef, useState } from 'react';
 import { SectionCard } from '@/features/shell/SectionCard';
 import { readableError } from '@/lib/readable-error';
 import { listModelsFn, saveAiSettingsFn } from './ai.functions';
-import { type AiSettingsDto, KEY_ENV, WRITING_PROVIDERS, type WritingProvider } from './ai.schema';
 import { ModelField } from './ModelField';
 import { SavedStatus } from './SavedStatus';
 

@@ -1,10 +1,10 @@
 import { Link } from '@tanstack/react-router';
+import { MAX_LIST_LIMIT, type PostDto } from '@xbase/core/posts/schema';
+import { threadLabel } from '@xbase/core/posts/text';
 import { cx } from '@xbase/ui/utils/cx';
 import { ROW_LINK, ROW_LIST, ROW_TEXT } from '@/features/shell/row-link';
 import { LocalTime } from './LocalTime';
-import { threadLabel } from './post-text';
 import { PostRowContent } from './PostRowContent';
-import { MAX_LIST_LIMIT, type PostDto } from './posts.schema';
 
 /** The Drafts list pane: drafts and failed posts, last edited first. */
 export function DraftList({ drafts }: { drafts: PostDto[] }) {

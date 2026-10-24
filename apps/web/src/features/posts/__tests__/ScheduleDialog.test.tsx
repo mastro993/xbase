@@ -1,8 +1,8 @@
 // @vitest-environment happy-dom
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { toDateTimeInput } from '@xbase/core/posts/dates';
 import { afterEach, expect, it, vi } from 'vitest';
-import { toDateTimeInput } from '../dates';
 import { ScheduleDialog } from '../ScheduleDialog';
 
 afterEach(cleanup);

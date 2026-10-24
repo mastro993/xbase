@@ -1,5 +1,6 @@
 import { useRouter } from '@tanstack/react-router';
 import { useServerFn } from '@tanstack/react-start';
+import { MAX_SEARCH_NAME, MAX_SEARCH_QUERY, type SavedSearchDto } from '@xbase/core/discover';
 import { Button, type ButtonProps } from '@xbase/ui/components/base/buttons/button';
 import { Input } from '@xbase/ui/components/base/input/input';
 import { Textarea } from '@xbase/ui/components/base/textarea/textarea';
@@ -9,7 +10,6 @@ import { Spinner } from '@xbase/ui/components/xbase/spinner';
 import { type FormEvent, useId, useRef, useState } from 'react';
 import { readableError } from '@/lib/readable-error';
 import { createSavedSearchFn, updateSavedSearchFn } from './discover.functions';
-import { MAX_SEARCH_NAME, MAX_SEARCH_QUERY, type SavedSearchDto } from './discover.schema';
 
 type SavedSearchDialogProps = Omit<ButtonProps, 'onClick'> & {
   /** The search to edit; unset to create one. */

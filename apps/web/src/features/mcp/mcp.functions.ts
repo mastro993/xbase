@@ -1,8 +1,8 @@
 import { createServerFn } from '@tanstack/react-start';
-import { oauthConfig } from '@/features/oauth/config.server';
-import { validator } from '@/lib/validate';
-import { listConnectedApps, revokeConnectedApp } from './connected-apps.server';
-import { type McpSettingsDto, RevokeConnectedAppInput } from './mcp.schema';
+import { type McpSettingsDto, RevokeConnectedAppInput } from '@xbase/core/mcp';
+import { validator } from '@xbase/core/validate';
+import { listConnectedApps, revokeConnectedApp } from '@xbase/mcp/connected-apps';
+import { oauthConfig } from '@xbase/mcp/oauth/config';
 
 // The settings page's entry points to the MCP connection.
 

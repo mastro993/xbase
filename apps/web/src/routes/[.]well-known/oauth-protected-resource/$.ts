@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { methodNotAllowed, oauthError, preflight, publicJson } from '@/features/oauth/http';
-import { protectedResourceMetadata } from '@/features/oauth/metadata.server';
+import { methodNotAllowed, oauthError, preflight, publicJson } from '@xbase/mcp/oauth/http';
+import { protectedResourceMetadata } from '@xbase/mcp/oauth/metadata';
 
 // One document at both RFC 9728 locations: the path-aware one for /mcp, which the 401 from /mcp
 // points at, and the root one, which the MCP spec allows as a fallback.

@@ -1,7 +1,7 @@
+import { claudeCodeCommand } from '@xbase/core/mcp-url';
 import { Tab, TabList, TabPanel, Tabs } from '@xbase/ui/components/base/tabs/tabs';
 import type { ReactNode } from 'react';
 import { CopyField } from './CopyField';
-import { claudeCodeCommand } from './mcp-url';
 
 function Steps({ children }: { children: ReactNode }) {
   return (

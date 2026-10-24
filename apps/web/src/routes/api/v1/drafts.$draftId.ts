@@ -1,9 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { methodNotAllowed, readJson, withApiKey } from '@/features/api-keys/rest.server';
-import { ApiDraftInput } from '@/features/posts/posts.schema';
-import { deletePost, getPost, updateDraft } from '@/features/posts/posts.server';
-import { parseInput } from '@/lib/validate';
-import { json } from '@/server/http';
+import { ApiDraftInput } from '@xbase/core/posts/schema';
+import { parseInput } from '@xbase/core/validate';
+import { json } from '@xbase/server/http';
+import { deletePost, getPost, updateDraft } from '@xbase/server/posts';
+import { methodNotAllowed, readJson, withApiKey } from '@xbase/server/rest';
 
 // Any of the owner's posts by id; posts on their way to X or already there can't be changed (409).
 export const Route = createFileRoute('/api/v1/drafts/$draftId')({

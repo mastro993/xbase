@@ -1,9 +1,9 @@
+import type { McpSettingsDto } from '@xbase/core/mcp';
+import { mcpReach } from '@xbase/core/mcp-url';
 import { Callout } from '@xbase/ui/components/xbase/callout';
-import type { McpSettingsDto } from '@/features/mcp/mcp.schema';
 import { SectionCard } from '@/features/shell/SectionCard';
 import { ConnectedApps } from './ConnectedApps';
 import { CopyField } from './CopyField';
-import { mcpReach } from './mcp-url';
 import { McpConnectTabs } from './McpConnectTabs';
 
 /** The MCP server's URL, how to connect clients, and the clients connected so far. */

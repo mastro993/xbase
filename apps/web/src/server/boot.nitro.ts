@@ -1,5 +1,5 @@
+import { getEnv, needsHttpsWarning } from '@xbase/server/env';
 import { definePlugin } from 'nitro';
-import { getEnv, needsHttpsWarning } from './env.server';
 
 // A production server stops at boot. In `vite dev`, exiting would only make Nitro restart its
 // runner in a loop, so it logs and keeps going: requests then show the same error.

@@ -2,8 +2,8 @@
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { type ModelOption, PROVIDERS } from '@xbase/ai/providers';
+import type { AiSettingsDto } from '@xbase/core/ai';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import type { AiSettingsDto } from '../ai.schema';
 import { AiProviderCard } from '../AiProviderCard';
 
 const mocks = vi.hoisted(() => ({

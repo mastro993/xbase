@@ -6,8 +6,8 @@ import {
   RouterProvider,
 } from '@tanstack/react-router';
 import { cleanup, render, screen, within } from '@testing-library/react';
+import type { PostDto } from '@xbase/core/posts/schema';
 import { afterEach, expect, it } from 'vitest';
-import type { PostDto } from '../posts.schema';
 import { QueueList } from '../QueueList';
 
 afterEach(cleanup);

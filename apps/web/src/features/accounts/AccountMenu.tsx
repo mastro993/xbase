@@ -1,6 +1,7 @@
 import { RiAddLine, RiCheckLine, RiExpandUpDownLine, RiLogoutBoxRLine } from '@remixicon/react';
 import { useRouter } from '@tanstack/react-router';
 import { useServerFn } from '@tanstack/react-start';
+import type { AccountDto, AccountsDto } from '@xbase/core/accounts';
 import { Avatar } from '@xbase/ui/components/base/avatar/avatar';
 import { ButtonLink } from '@xbase/ui/components/base/buttons/button';
 import {
@@ -18,7 +19,6 @@ import { useState } from 'react';
 import { logoutFn } from '@/features/auth/auth.functions';
 import { readableError } from '@/lib/readable-error';
 import { switchAccountFn } from './accounts.functions';
-import type { AccountDto, AccountsDto } from './accounts.schema';
 
 /** Adding an account is signing in with it: X asks which account, then XBase switches to it. */
 export const ADD_ACCOUNT_HREF = '/auth/x/start?intent=add';

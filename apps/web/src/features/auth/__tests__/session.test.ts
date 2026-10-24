@@ -1,22 +1,20 @@
 import { createHash } from 'node:crypto';
+import { sessions, xAccounts } from '@xbase/db/schema';
+import { createTestDb, seedAccount } from '@xbase/db/testing';
+import { deleteAllSessions, setSessionAccount } from '@xbase/server/sessions';
 import { eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { sessions, xAccounts } from '@/server/db/schema';
-import { seedAccount } from '@/test/accounts';
-import { createTestDb } from '@/test/db';
 import { inRequest } from '@/test/request';
 import {
   issueSession,
   readSession,
   requireSession,
-  revokeAllSessions,
   revokeSession,
   sessionCookie,
-  setSessionAccount,
 } from '../session.server';
 
 const env = vi.hoisted(() => ({ APP_URL: 'https://xbase.test' }));
-vi.mock('@/server/env.server', () => ({ getEnv: () => env }));
+vi.mock('@xbase/server/env', () => ({ getEnv: () => env }));
 
 const sha256 = (value: string) => createHash('sha256').update(value).digest('hex');
 const request = (cookie?: string) =>
@@ -112,7 +110,7 @@ describe('sessions', () => {
         .all(),
     ).toHaveLength(1);
 
-    revokeAllSessions();
+    deleteAllSessions();
     expect(db.select().from(sessions).all()).toEqual([]);
   });
 });

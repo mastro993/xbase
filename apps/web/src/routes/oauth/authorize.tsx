@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { ConsentSearch } from '@xbase/core/consent';
+import { decideConsent, startAuthorization } from '@xbase/mcp/oauth/authorize';
 import { readSession } from '@/features/auth/session.server';
-import { decideConsent, startAuthorization } from '@/features/oauth/authorize.server';
-import { ConsentSearch } from '@/features/oauth/consent.schema';
 import { ConsentPage } from '@/features/oauth/ConsentPage';
 import { getConsentFn } from '@/features/oauth/oauth.functions';
 

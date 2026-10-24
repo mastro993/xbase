@@ -1,14 +1,14 @@
 import { createServerFn } from '@tanstack/react-start';
-import { validator } from '@/lib/validate';
-import { SavedSearchIdInput, SavedSearchInput, UpdateSavedSearchInput } from './discover.schema';
+import { SavedSearchIdInput, SavedSearchInput, UpdateSavedSearchInput } from '@xbase/core/discover';
+import { validator } from '@xbase/core/validate';
 import {
   createSavedSearch,
   deleteSavedSearch,
   listSavedSearches,
   updateSavedSearch,
-} from './discover.server';
+} from '@xbase/server/discover';
 
-// The Discover page's entry points to discover.server.ts.
+// The Discover page's entry points to @xbase/server/discover.
 
 export const listSavedSearchesFn = createServerFn().handler(() => listSavedSearches());
 

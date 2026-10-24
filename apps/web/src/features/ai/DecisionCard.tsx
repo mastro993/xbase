@@ -1,6 +1,7 @@
 import { useRouter } from '@tanstack/react-router';
 import { useServerFn } from '@tanstack/react-start';
 import type { ModelOption } from '@xbase/ai/providers';
+import { KEY_ENV } from '@xbase/core/ai';
 import { Button } from '@xbase/ui/components/base/buttons/button';
 import { Callout } from '@xbase/ui/components/xbase/callout';
 import { Spinner } from '@xbase/ui/components/xbase/spinner';
@@ -8,7 +9,6 @@ import { type FormEvent, useId, useState } from 'react';
 import { SectionCard } from '@/features/shell/SectionCard';
 import { readableError } from '@/lib/readable-error';
 import { listDecisionModelsFn, saveDecisionFn } from './ai.functions';
-import { KEY_ENV } from './ai.schema';
 import { ModelField } from './ModelField';
 import { SavedStatus } from './SavedStatus';
 

@@ -1,8 +1,8 @@
 // @vitest-environment happy-dom
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import type { SavedSearchDto } from '@xbase/core/discover';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import type { SavedSearchDto } from '../discover.schema';
 import { SavedSearchDialog } from '../SavedSearchDialog';
 
 const mocks = vi.hoisted(() => ({

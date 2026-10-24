@@ -1,11 +1,12 @@
 import { RiAddLine } from '@remixicon/react';
 import { useRouter } from '@tanstack/react-router';
 import { useServerFn } from '@tanstack/react-start';
+import type { AccountDto, AccountsDto } from '@xbase/core/accounts';
+import type { SignInError } from '@xbase/core/auth';
 import { Chip } from '@xbase/ui/components/base/badges/chip';
 import { ButtonLink } from '@xbase/ui/components/base/buttons/button';
 import { Callout } from '@xbase/ui/components/xbase/callout';
 import { useRef, useState } from 'react';
-import type { SignInError } from '@/features/auth/auth.schema';
 import {
   ITEM_DETAILS,
   ITEM_LIST,
@@ -17,7 +18,6 @@ import { ConfirmButton } from '@/features/shell/ConfirmButton';
 import { SectionCard } from '@/features/shell/SectionCard';
 import { AccountAvatar, ADD_ACCOUNT_HREF } from './AccountMenu';
 import { removeAccountFn } from './accounts.functions';
-import type { AccountDto, AccountsDto } from './accounts.schema';
 
 // Why adding an account came back to Settings without one. not_linked and not_owner only happen
 // on /login.

@@ -1,6 +1,7 @@
 import { RiAddLine } from '@remixicon/react';
 import { useRouter } from '@tanstack/react-router';
 import { useServerFn } from '@tanstack/react-start';
+import { MAX_API_KEY_NAME } from '@xbase/core/api-keys';
 import { Button } from '@xbase/ui/components/base/buttons/button';
 import { Input } from '@xbase/ui/components/base/input/input';
 import { Callout } from '@xbase/ui/components/xbase/callout';
@@ -10,7 +11,6 @@ import { type FormEvent, useId, useRef, useState } from 'react';
 import { CopyField } from '@/features/settings/CopyField';
 import { readableError } from '@/lib/readable-error';
 import { createApiKeyFn } from './api-keys.functions';
-import { MAX_API_KEY_NAME } from './api-keys.schema';
 
 /**
  * Names a new key, then shows it once. The plaintext lives only in this component's state: it

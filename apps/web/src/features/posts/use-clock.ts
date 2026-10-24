@@ -1,5 +1,5 @@
+import { type Clock, SERVER_CLOCK } from '@xbase/core/posts/dates';
 import { useMemo, useSyncExternalStore } from 'react';
-import { type Clock, SERVER_CLOCK } from './dates';
 
 // The current minute, shared by every reader through one timer. The server snapshot is null, so
 // the server and the hydrating browser both render in UTC; then React rerenders in local time.

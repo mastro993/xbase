@@ -1,8 +1,8 @@
 import { createFileRoute, Outlet, useMatch } from '@tanstack/react-router';
+import { MAX_LIST_LIMIT } from '@xbase/core/posts/schema';
 import { DraftList } from '@/features/posts/DraftList';
 import { NewDraftButton } from '@/features/posts/NewDraftButton';
 import { listDraftsFn } from '@/features/posts/posts.functions';
-import { MAX_LIST_LIMIT } from '@/features/posts/posts.schema';
 import { SplitView } from '@/features/shell/SplitView';
 
 // The list pane stays mounted while drafts open beside it, so its loader doesn't rerun on its

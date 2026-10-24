@@ -1,9 +1,9 @@
 import { createFileRoute, redirect } from '@tanstack/react-router';
+import { LoginSearch, type SignInError, safeNext } from '@xbase/core/auth';
 import { AuthCard } from '@xbase/ui/components/application/auth/auth-card';
 import { SocialButton } from '@xbase/ui/components/base/social-button/social-button';
 import { Callout } from '@xbase/ui/components/xbase/callout';
 import { getAuthStateFn } from '@/features/auth/auth.functions';
-import { LoginSearch, type SignInError, safeNext } from '@/features/auth/auth.schema';
 import { AppMark } from '@/features/shell/AppMark';
 
 export const Route = createFileRoute('/login')({

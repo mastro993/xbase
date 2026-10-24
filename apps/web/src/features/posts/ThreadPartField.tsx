@@ -1,4 +1,5 @@
 import { RiArrowGoBackLine, RiDeleteBinLine, RiSparkling2Line } from '@remixicon/react';
+import { MAX_WEIGHTED_LENGTH, weightedLength } from '@xbase/core/posts/weighted-length';
 import { Button } from '@xbase/ui/components/base/buttons/button';
 import { TextField } from '@xbase/ui/components/base/input/input';
 import { Label } from '@xbase/ui/components/base/input/label';
@@ -6,7 +7,6 @@ import { TextareaBase } from '@xbase/ui/components/base/textarea/textarea';
 import { Spinner } from '@xbase/ui/components/xbase/spinner';
 import { cx } from '@xbase/ui/utils/cx';
 import type { Ref } from 'react';
-import { MAX_WEIGHTED_LENGTH, weightedLength } from './weighted-length';
 
 type ThreadPartFieldProps = {
   id: string;
