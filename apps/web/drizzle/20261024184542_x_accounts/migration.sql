@@ -1,0 +1,49 @@
+CREATE TABLE `x_accounts` (
+	`id` text PRIMARY KEY,
+	`username` text NOT NULL,
+	`name` text NOT NULL,
+	`avatar_url` text,
+	`access_token` text NOT NULL,
+	`refresh_token` text,
+	`token_expires_at` integer NOT NULL,
+	`scope` text NOT NULL,
+	`voice` text,
+	`created_at` integer NOT NULL,
+	`updated_at` integer NOT NULL
+);
+--> statement-breakpoint
+-- Provider keys now come from the environment: drop the stored one, so no plain-text key stays in
+-- the file or its backups. The voice moved to each account, which old rows can't name.
+UPDATE `settings` SET `value` = json_remove(`value`, '$.apiKey') WHERE `key` = 'ai';--> statement-breakpoint
+DELETE FROM `settings` WHERE `key` = 'voice';--> statement-breakpoint
+-- Sessions and posts from password sign-in belong to no X account. Old sessions would otherwise
+-- work again as soon as someone claims this XBase, so everyone signs in again; the posts start over.
+DROP TABLE `sessions`;--> statement-breakpoint
+CREATE TABLE `sessions` (
+	`id` text PRIMARY KEY,
+	`account_id` text NOT NULL,
+	`created_at` integer NOT NULL,
+	`expires_at` integer NOT NULL,
+	`last_seen_at` integer NOT NULL,
+	CONSTRAINT `fk_sessions_account_id_x_accounts_id_fk` FOREIGN KEY (`account_id`) REFERENCES `x_accounts`(`id`) ON DELETE CASCADE
+);
+--> statement-breakpoint
+DROP TABLE `posts`;--> statement-breakpoint
+CREATE TABLE `posts` (
+	`id` text PRIMARY KEY,
+	`account_id` text NOT NULL,
+	`status` text DEFAULT 'draft' NOT NULL,
+	`parts` text NOT NULL,
+	`publish_at` integer,
+	`published_at` integer,
+	`x_post_id` text,
+	`error` text,
+	`origin` text NOT NULL,
+	`created_at` integer NOT NULL,
+	`updated_at` integer NOT NULL,
+	CONSTRAINT `fk_posts_account_id_x_accounts_id_fk` FOREIGN KEY (`account_id`) REFERENCES `x_accounts`(`id`) ON DELETE CASCADE,
+	CONSTRAINT "posts_status_ck" CHECK("status" in ('draft', 'scheduled', 'publishing', 'published', 'failed')),
+	CONSTRAINT "posts_origin_ck" CHECK("origin" in ('web', 'api', 'mcp'))
+);
+--> statement-breakpoint
+CREATE INDEX `posts_account_status_publish_at_idx` ON `posts` (`account_id`,`status`,`publish_at`);

@@ -2,24 +2,29 @@ import { scrubSecrets } from '@xbase/ai/errors';
 import { generateText, type LlmConfig, listModels } from '@xbase/ai/llm';
 import { EMPTY_STYLE, type StyleGuide } from '@xbase/ai/profile';
 import { cleanReply, refinePostPrompt } from '@xbase/ai/prompts';
-import { type ModelOption, PROVIDERS, type ProviderId } from '@xbase/ai/providers';
+import { type ModelOption, PROVIDERS } from '@xbase/ai/providers';
+import { DEFAULT_DECISION_MODEL, listDecisionModels } from '@xbase/ai/typesafe';
 import { eq } from 'drizzle-orm';
-import { z } from 'zod';
+import type { z } from 'zod';
 import { InvalidStateError, ValidationError } from '@/lib/errors';
 import { parseInput } from '@/lib/validate';
 import { getDb } from '@/server/db/client.server';
-import { settings } from '@/server/db/schema';
+import { settings, xAccounts } from '@/server/db/schema';
+import { getEnv } from '@/server/env.server';
 import {
   AI_NOT_CONFIGURED,
   type AiSettingsDto,
+  KEY_ENV,
   SaveAiSettingsInput,
+  SaveDecisionInput,
   VoiceInput,
+  WRITING_PROVIDERS,
+  type WritingProvider,
 } from './ai.schema';
 
-// AI writing with the owner's own provider key. The key is stored in SQLite and only ever used
-// here: it never goes back to the browser, and errors are scrubbed of it.
-
-const StoredAi = SaveAiSettingsInput.extend({ apiKey: z.string().min(1) });
+// AI writing, and TypeSafe for decisions, with the owner's own provider keys. The keys live in the
+// server's environment and are only ever used here: errors are scrubbed of them. The database
+// keeps the choice of provider and model, workspace-wide, and each account's voice.
 
 function readSetting<T>(key: string, schema: z.ZodType<T>): T | null {
   const row = getDb().select().from(settings).where(eq(settings.key, key)).get();
@@ -36,11 +41,33 @@ function writeSetting(key: string, value: unknown): void {
     .run();
 }
 
-const storedAi = (): LlmConfig | null => readSetting('ai', StoredAi);
+const keyFor = (provider: keyof typeof KEY_ENV): string | undefined => getEnv()[KEY_ENV[provider]];
 
-function toDto(config: LlmConfig | null): AiSettingsDto {
-  if (!config) return null;
-  return { provider: config.provider, model: config.model, keyHint: `…${config.apiKey.slice(-4)}` };
+/** The key, or a ValidationError naming the variable to set. */
+function requireKey(provider: keyof typeof KEY_ENV): string {
+  const key = keyFor(provider);
+  if (!key)
+    throw new ValidationError(`Set ${KEY_ENV[provider]} in the server’s environment first.`);
+  return key;
+}
+
+const availableProviders = () => WRITING_PROVIDERS.filter((provider) => keyFor(provider));
+
+type WritingConfig = LlmConfig & { provider: WritingProvider };
+
+/** The saved provider while it still has a key, else the first provider with one. */
+function writingConfig(): WritingConfig | null {
+  const saved = readSetting('ai', SaveAiSettingsInput);
+  const savedKey = saved && keyFor(saved.provider);
+  if (saved && savedKey) return { ...saved, apiKey: savedKey };
+  const [provider] = availableProviders();
+  if (!provider) return null;
+  return { provider, model: PROVIDERS[provider].defaultModel, apiKey: requireKey(provider) };
+}
+
+function decisionModel(): ModelOption | null {
+  if (!keyFor('typesafe')) return null;
+  return readSetting('decision', SaveDecisionInput)?.model ?? DEFAULT_DECISION_MODEL;
 }
 
 // Provider error text can echo the key back: it reaches the browser scrubbed.
@@ -51,34 +78,28 @@ function providerError(error: unknown, apiKey: string): Error {
 }
 
 export function getAiSettings(): AiSettingsDto {
-  return toDto(storedAi());
+  const writing = writingConfig();
+  return {
+    available: availableProviders(),
+    writing: writing && { provider: writing.provider, model: writing.model },
+    decision: decisionModel(),
+  };
 }
 
-/** Without apiKey, keeps the stored key if it's for the same provider. */
-export function saveAiSettings(input: {
-  provider: ProviderId;
-  model: ModelOption;
-  apiKey?: string;
-}): AiSettingsDto {
-  const stored = storedAi();
-  const apiKey = input.apiKey ?? (stored?.provider === input.provider ? stored.apiKey : undefined);
-  if (!apiKey) throw new ValidationError(`Enter your ${PROVIDERS[input.provider].label} API key.`);
-  const config = { provider: input.provider, model: input.model, apiKey };
-  writeSetting('ai', config);
-  return toDto(config);
+export function saveAiSettings(input: z.infer<typeof SaveAiSettingsInput>): AiSettingsDto {
+  const saved = parseInput(SaveAiSettingsInput, input);
+  requireKey(saved.provider);
+  writeSetting('ai', saved);
+  return getAiSettings();
 }
 
-/** The provider's text models; doubles as a key check. Without apiKey, uses the stored one. */
+/** The provider's text models; doubles as a check of the key in the environment. */
 export async function listModelsFor({
   provider,
-  apiKey,
 }: {
-  provider: ProviderId;
-  apiKey?: string;
+  provider: WritingProvider;
 }): Promise<ModelOption[]> {
-  const stored = storedAi();
-  const key = apiKey ?? (stored?.provider === provider ? stored.apiKey : undefined);
-  if (!key) throw new ValidationError(`Enter your ${PROVIDERS[provider].label} API key.`);
+  const key = requireKey(provider);
   try {
     return await listModels(provider, key);
   } catch (error) {
@@ -86,25 +107,48 @@ export async function listModelsFor({
   }
 }
 
-/** The style guide every prompt gets; empty fields when it was never saved. */
-export function getVoice(): StyleGuide {
-  return readSetting('voice', VoiceInput) ?? EMPTY_STYLE;
+export function saveDecisionModel(input: z.infer<typeof SaveDecisionInput>): AiSettingsDto {
+  const saved = parseInput(SaveDecisionInput, input);
+  requireKey('typesafe');
+  writeSetting('decision', saved);
+  return getAiSettings();
 }
 
-export function saveVoice(voice: StyleGuide): StyleGuide {
+/** TypeSafe's models for TYPESAFE_API_KEY; doubles as a check of the key. */
+export async function listDecisionModelsFor(): Promise<ModelOption[]> {
+  const key = requireKey('typesafe');
+  try {
+    return await listDecisionModels(key);
+  } catch (error) {
+    throw providerError(error, key);
+  }
+}
+
+/** The account's style guide, which every prompt gets; empty fields when it was never saved. */
+export function getVoice(accountId: string): StyleGuide {
+  const row = getDb()
+    .select({ voice: xAccounts.voice })
+    .from(xAccounts)
+    .where(eq(xAccounts.id, accountId))
+    .get();
+  const parsed = VoiceInput.safeParse(row?.voice);
+  return parsed.success ? parsed.data : EMPTY_STYLE;
+}
+
+export function saveVoice(accountId: string, voice: StyleGuide): StyleGuide {
   const saved = parseInput(VoiceInput, voice);
-  writeSetting('voice', saved);
+  getDb().update(xAccounts).set({ voice: saved }).where(eq(xAccounts.id, accountId)).run();
   return saved;
 }
 
-/** Rewrites a draft in the owner's voice. Times out after a minute (generateText's limit). */
-export async function refineDraft(text: string): Promise<string> {
-  const config = storedAi();
+/** Rewrites a draft in the account's voice. Times out after a minute (generateText's limit). */
+export async function refineDraft(accountId: string, text: string): Promise<string> {
+  const config = writingConfig();
   if (!config) throw new InvalidStateError(AI_NOT_CONFIGURED);
   const draft = text.trim();
   let refined: string;
   try {
-    const prompt = refinePostPrompt({ draft, style: getVoice(), projects: [] });
+    const prompt = refinePostPrompt({ draft, style: getVoice(accountId), projects: [] });
     refined = cleanReply(await generateText(config, prompt), draft);
   } catch (error) {
     throw providerError(error, config.apiKey);

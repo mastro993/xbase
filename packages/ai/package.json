@@ -9,7 +9,8 @@
     "./post": "./src/post.ts",
     "./profile": "./src/profile.ts",
     "./prompts": "./src/prompts/index.ts",
-    "./providers": "./src/providers.ts"
+    "./providers": "./src/providers.ts",
+    "./typesafe": "./src/typesafe.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

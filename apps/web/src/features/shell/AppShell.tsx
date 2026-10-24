@@ -3,7 +3,6 @@ import {
   RiCalendarScheduleLine,
   RiCompass3Line,
   RiDraftLine,
-  RiLogoutBoxRLine,
   RiMenuLine,
   RiSettings4Line,
 } from '@remixicon/react';
@@ -11,12 +10,12 @@ import { createLink, Link } from '@tanstack/react-router';
 import {
   DashboardSidebar,
   SidebarDrawer,
-  SidebarNavButton,
   SidebarNavItem,
 } from '@xbase/ui/components/application/dashboard/dashboard-sidebar';
 import { IconButton } from '@xbase/ui/components/base/buttons/icon-button';
 import { type ReactNode, useState } from 'react';
-import { logoutFn } from '@/features/auth/auth.functions';
+import { AccountMenu } from '@/features/accounts/AccountMenu';
+import type { AccountsDto } from '@/features/accounts/accounts.schema';
 import { AppMark } from './AppMark';
 
 // A TanStack Link on the sidebar's row: the current section (child routes included) gets
@@ -54,17 +53,6 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
-// A native POST, with or without JavaScript: the server ends the session and redirects to /login.
-// Leaving the page this way lets the browser ask first when a draft has unsaved changes, before
-// anything is sent; a client-side sign-out would end the session before the composer could ask.
-function SignOutButton() {
-  return (
-    <form method="post" action={logoutFn.url}>
-      <SidebarNavButton type="submit" icon={RiLogoutBoxRLine} label="Sign out" />
-    </form>
-  );
-}
-
 /** The mark, linking home; with the app's name where there's room. */
 function HomeLink({ named = false, onNavigate }: { named?: boolean; onNavigate?: () => void }) {
   return (
@@ -85,9 +73,10 @@ function HomeLink({ named = false, onNavigate }: { named?: boolean; onNavigate?:
 
 /**
  * The signed-in layout: BoardUI's sidebar as an icon rail, then the page. Below the md breakpoint
- * the rail gives way to a top bar whose button opens the sidebar in a drawer.
+ * the rail gives way to a top bar whose button opens the sidebar in a drawer. The account menu,
+ * with sign-out, sits at the foot of the sidebar.
  */
-export function AppShell({ children }: { children: ReactNode }) {
+export function AppShell({ accounts, children }: { accounts: AccountsDto; children: ReactNode }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const closeDrawer = () => setDrawerOpen(false);
   return (
@@ -103,7 +92,11 @@ export function AppShell({ children }: { children: ReactNode }) {
         <HomeLink named />
       </header>
       <div className="hidden shrink-0 p-3 pe-0 md:flex">
-        <DashboardSidebar collapsed logo={<HomeLink />} footer={<SignOutButton />}>
+        <DashboardSidebar
+          collapsed
+          logo={<HomeLink />}
+          footer={<AccountMenu data={accounts} collapsed />}
+        >
           <NavLinks />
         </DashboardSidebar>
       </div>
@@ -115,7 +108,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           mobile
           onClose={closeDrawer}
           logo={<HomeLink named onNavigate={closeDrawer} />}
-          footer={<SignOutButton />}
+          footer={<AccountMenu data={accounts} collapsed={false} />}
         >
           <NavLinks onNavigate={closeDrawer} />
         </DashboardSidebar>

@@ -11,6 +11,9 @@ export const getMcpSettingsFn = createServerFn().handler((): McpSettingsDto => (
   apps: listConnectedApps(),
 }));
 
+/** For the settings page to notice an app that connected while it was open. */
+export const listConnectedAppsFn = createServerFn().handler(() => listConnectedApps());
+
 export const revokeConnectedAppFn = createServerFn({ method: 'POST' })
   .validator(validator(RevokeConnectedAppInput))
   .handler(({ data }) => revokeConnectedApp(data.grantId));

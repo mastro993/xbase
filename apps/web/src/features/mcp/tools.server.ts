@@ -1,7 +1,13 @@
 import type { CallToolResult, McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
+import { accountFilter, resolveAccountId } from '@/features/accounts/accounts.server';
 import { listSavedSearches } from '@/features/discover/discover.server';
-import { MAX_LIST_LIMIT, NonEmptyParts, type PostDto } from '@/features/posts/posts.schema';
+import {
+  AccountName,
+  MAX_LIST_LIMIT,
+  NonEmptyParts,
+  type PostDto,
+} from '@/features/posts/posts.schema';
 import {
   createDraft,
   deletePost,
@@ -15,7 +21,8 @@ import {
 import { ServiceError } from '@/lib/errors';
 import { POST_ORIGINS, POST_STATUSES } from '@/server/db/schema';
 
-// The MCP tools: the same services as the UI and the REST API, with origin 'mcp'. Registered in a
+// The MCP tools: the same services as the UI and the REST API, with origin 'mcp'. Posts belong to
+// one of the linked X accounts; lists cover them all unless `account` narrows them. Registered in a
 // fixed order, so tools/list is stable. None publishes: posting to X can't be undone.
 
 const Id = z
@@ -27,9 +34,11 @@ const Parts = NonEmptyParts.describe(
   'One string per post; more than one makes a thread. X counts each URL as 23 characters and most emoji and CJK characters as 2, against a limit of 280 for standard accounts.',
 );
 const Time = z.iso.datetime({ offset: true });
+const Account = AccountName.describe('The X username the post is for, e.g. @xbase');
 
 const Post = z.object({
   id: z.string(),
+  account: z.string(),
   // From the schema: a status this enum lacked would fail output validation for every list.
   status: z.enum(POST_STATUSES),
   parts: z.array(z.string()),
@@ -94,11 +103,13 @@ export function registerTools(server: McpServer): void {
           .max(MAX_LIST_LIMIT)
           .optional()
           .describe(`How many to return, 1 to ${MAX_LIST_LIMIT}; default 50`),
+        account: Account.optional().describe('Only this account’s; default every account'),
       }),
       outputSchema: PostList,
       annotations: READ,
     },
-    async ({ limit }) => result(() => ({ items: listDrafts({ limit }) })),
+    async ({ limit, account }) =>
+      result(() => ({ items: listDrafts({ accountId: accountFilter(account), limit }) })),
   );
 
   server.registerTool(
@@ -118,11 +129,17 @@ export function registerTools(server: McpServer): void {
     {
       title: 'Create a draft',
       description: 'Saves a new post or thread as a draft. It is not published.',
-      inputSchema: z.object({ parts: Parts }),
+      inputSchema: z.object({
+        parts: Parts,
+        account: Account.optional().describe(
+          'Required when several X accounts are linked; the error lists them',
+        ),
+      }),
       outputSchema: Post,
       annotations: { ...WRITE, idempotentHint: false },
     },
-    async ({ parts }) => result(() => createDraft({ parts, origin: 'mcp' })),
+    async ({ parts, account }) =>
+      result(() => createDraft({ accountId: resolveAccountId(account), parts, origin: 'mcp' })),
   );
 
   server.registerTool(
@@ -190,13 +207,15 @@ export function registerTools(server: McpServer): void {
       inputSchema: z.object({
         from: Time.optional().describe('Only posts at or after this ISO 8601 time'),
         to: Time.optional().describe('Only posts before this ISO 8601 time'),
+        account: Account.optional().describe('Only this account’s; default every account'),
       }),
       outputSchema: PostList,
       annotations: READ,
     },
-    async ({ from, to }) =>
+    async ({ from, to, account }) =>
       result(() => ({
         items: listScheduled({
+          accountId: accountFilter(account),
           from: from ? new Date(from) : undefined,
           to: to ? new Date(to) : undefined,
         }),

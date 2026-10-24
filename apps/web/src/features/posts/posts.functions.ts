@@ -1,5 +1,6 @@
 import { notFound } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
+import { requireSession } from '@/features/auth/session.server';
 import { NotFoundError } from '@/lib/errors';
 import { validator } from '@/lib/validate';
 import {
@@ -20,13 +21,16 @@ import {
   updateDraft,
 } from './posts.server';
 
-// The UI's entry points to posts.server.ts. Errors reach the caller with their message.
+// The UI's entry points to posts.server.ts. Lists and new drafts are the account the browser works
+// as. Errors reach the caller with their message.
 
 export const listDraftsFn = createServerFn()
   .validator(validator(ListDraftsInput))
-  .handler(({ data }) => listDrafts(data));
+  .handler(({ data }) => listDrafts({ ...data, accountId: requireSession().accountId }));
 
-export const listScheduledFn = createServerFn().handler(() => listScheduled());
+export const listScheduledFn = createServerFn().handler(() =>
+  listScheduled({ accountId: requireSession().accountId }),
+);
 
 /** A missing post throws notFound(), so a route loader renders its 404. */
 export const getPostFn = createServerFn()
@@ -42,7 +46,9 @@ export const getPostFn = createServerFn()
 
 export const createDraftFn = createServerFn({ method: 'POST' })
   .validator(validator(CreateDraftInput))
-  .handler(({ data }) => createDraft({ parts: data.parts, origin: 'web' }));
+  .handler(({ data }) =>
+    createDraft({ accountId: requireSession().accountId, parts: data.parts, origin: 'web' }),
+  );
 
 export const updateDraftFn = createServerFn({ method: 'POST' })
   .validator(validator(UpdateDraftInput))

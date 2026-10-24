@@ -6,9 +6,11 @@ import { readSession } from './session.server';
 // Global middleware, registered in src/start.ts. This file is bundled for the client too: keep
 // server-only calls inside the .server() callbacks, which the compiler strips there.
 
-// Machine endpoints with their own auth (API keys, OAuth tokens) and the sign-in page.
+// Machine endpoints with their own auth (API keys, OAuth tokens) and signing in.
 const PUBLIC_PATHS = new Set([
   '/login',
+  '/auth/x/start',
+  '/auth/x/callback',
   '/mcp',
   '/oauth/token',
   '/oauth/register',
@@ -36,7 +38,6 @@ export const pageGuard = createMiddleware().server(({ next, pathname, request, h
 // Start's serverFnMeta. Every other server function needs a session. Signing out is public so
 // that a session that already expired still lands on /login rather than a 401.
 export const PUBLIC_SERVER_FNS: ReadonlySet<string> = new Set([
-  'src/features/auth/auth.functions.ts#loginFn',
   'src/features/auth/auth.functions.ts#getAuthStateFn',
   'src/features/auth/auth.functions.ts#logoutFn',
 ]);

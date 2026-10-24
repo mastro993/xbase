@@ -9,17 +9,15 @@ type ModelFieldProps = {
   /** The models the key can use, once loaded; until then only the chosen one is listed. */
   models: ModelOption[] | null;
   loading: boolean;
-  /** Whether there's a key (typed or stored) to load them with. */
-  canLoad: boolean;
   onChange: (model: ModelOption) => void;
   onLoad: () => void;
 };
 
 /**
  * The model, in a searchable list: OpenRouter alone lists hundreds. Typing filters by name; the
- * chevron shows them all. Load models fetches the list for the key.
+ * chevron shows them all. Load models fetches the list with the key from the server's environment.
  */
-export function ModelField({ model, models, loading, canLoad, onChange, onLoad }: ModelFieldProps) {
+export function ModelField({ model, models, loading, onChange, onLoad }: ModelFieldProps) {
   // The chosen model stays listed, first, even when the loaded list lacks it.
   const options = model
     ? [model, ...(models ?? []).filter((option) => option.id !== model.id)]
@@ -35,7 +33,6 @@ export function ModelField({ model, models, loading, canLoad, onChange, onLoad }
           size="xs"
           leadingIcon={loading ? Spinner : RiRefreshLine}
           aria-busy={loading || undefined}
-          disabled={!canLoad}
           onClick={() => !loading && onLoad()}
         >
           Load models
@@ -53,9 +50,7 @@ export function ModelField({ model, models, loading, canLoad, onChange, onLoad }
         <span role="status">
           {models
             ? `The key works: ${models.length} ${models.length === 1 ? 'model' : 'models'} to choose from. Type to search them.`
-            : canLoad
-              ? 'Load the models your key can use to pick another.'
-              : 'Enter a key to load the models it can use.'}
+            : 'Load the models your key can use to pick another.'}
         </span>
       }
     >

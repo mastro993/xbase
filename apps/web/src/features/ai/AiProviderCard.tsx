@@ -1,18 +1,7 @@
-import { RiArrowRightUpLine } from '@remixicon/react';
 import { useRouter } from '@tanstack/react-router';
 import { useServerFn } from '@tanstack/react-start';
-import {
-  looksLikeKeyFor,
-  type ModelOption,
-  PROVIDER_IDS,
-  PROVIDERS,
-  type ProviderId,
-} from '@xbase/ai/providers';
+import { type ModelOption, PROVIDERS } from '@xbase/ai/providers';
 import { Button } from '@xbase/ui/components/base/buttons/button';
-import { LinkButton } from '@xbase/ui/components/base/buttons/link-button';
-import { HintText } from '@xbase/ui/components/base/input/hint-text';
-import { InputBase, TextField } from '@xbase/ui/components/base/input/input';
-import { Label } from '@xbase/ui/components/base/input/label';
 import { Select, SelectItem } from '@xbase/ui/components/base/select/select';
 import { Callout } from '@xbase/ui/components/xbase/callout';
 import { Spinner } from '@xbase/ui/components/xbase/spinner';
@@ -20,77 +9,63 @@ import { type FormEvent, useId, useRef, useState } from 'react';
 import { SectionCard } from '@/features/shell/SectionCard';
 import { readableError } from '@/lib/readable-error';
 import { listModelsFn, saveAiSettingsFn } from './ai.functions';
-import type { AiSettingsDto } from './ai.schema';
+import { type AiSettingsDto, KEY_ENV, WRITING_PROVIDERS, type WritingProvider } from './ai.schema';
 import { ModelField } from './ModelField';
 import { SavedStatus } from './SavedStatus';
 
-// Keep password managers from offering to save or fill an API key. On InputBase, not TextField:
-// React Aria puts a TextField's data-* props on its wrapper, and these must reach the <input>.
-const NO_AUTOFILL = { autoComplete: 'off', 'data-1p-ignore': true, 'data-lpignore': 'true' };
+/** "A, B or C". */
+const either = (items: string[]) =>
+  items.length < 2 ? items.join('') : `${items.slice(0, -1).join(', ')} or ${items.at(-1)}`;
 
 /**
- * Provider, write-only key and model. A new key is checked with the provider (listModelsFn)
- * before it's saved; leaving the key empty keeps the stored one for the same provider.
+ * The provider and model Refine with AI uses. Only providers with a key in the server's
+ * environment are offered; the keys themselves never reach the browser.
  */
 export function AiProviderCard({ settings }: { settings: AiSettingsDto }) {
   const router = useRouter();
   const listModels = useServerFn(listModelsFn);
   const saveSettings = useServerFn(saveAiSettingsFn);
   const formId = useId();
-  const errorId = useId();
-  const keyInput = useRef<HTMLInputElement>(null);
-  // Answers from an older provider or key are dropped.
+  // Answers for an earlier provider are dropped.
   const request = useRef(0);
 
-  const [provider, setProvider] = useState<ProviderId | null>(settings?.provider ?? null);
-  const [apiKey, setApiKey] = useState('');
-  const [model, setModel] = useState<ModelOption | null>(settings?.model ?? null);
+  const { available, writing } = settings;
+  const [provider, setProvider] = useState<WritingProvider | null>(writing?.provider ?? null);
+  const [model, setModel] = useState<ModelOption | null>(writing?.model ?? null);
   const [models, setModels] = useState<ModelOption[] | null>(null);
   const [loadingModels, setLoadingModels] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<{ title: string; message: string } | null>(null);
   const [saved, setSaved] = useState(false);
 
-  const info = provider ? PROVIDERS[provider] : null;
-  const key = apiKey.trim();
-  const storedKeyHint = settings && settings.provider === provider ? settings.keyHint : null;
-  const canLoadModels = !!provider && (!!key || !!storedKeyHint);
-  // listModels' wording (@xbase/ai/llm) for a key the provider refused.
-  const keyRefused = error?.message === 'Invalid API key';
-  // A partly typed prefix ("sk-an") doesn't flash the warning.
-  const suspicious =
-    !!provider && !!key && !info?.keyPrefix.startsWith(key) && !looksLikeKeyFor(provider, key);
+  const missing = WRITING_PROVIDERS.filter((id) => !available.includes(id));
+  const missingHint =
+    missing.length > 0 &&
+    `To offer ${either(missing.map((id) => PROVIDERS[id].label))}, set ${either(missing.map((id) => KEY_ENV[id]))} and restart the server.`;
 
-  const edited = () => {
-    setSaved(false);
-    setError(null);
-  };
-
-  const chooseProvider = (next: ProviderId) => {
+  const chooseProvider = (next: WritingProvider) => {
     if (next === provider) return;
     request.current += 1;
     setProvider(next);
     setModels(null);
     setLoadingModels(false);
-    setModel(settings?.provider === next ? settings.model : PROVIDERS[next].defaultModel);
-    edited();
+    setModel(writing?.provider === next ? writing.model : PROVIDERS[next].defaultModel);
+    setSaved(false);
+    setError(null);
   };
 
-  /** Loads the models for the typed key, or the stored one; null when the provider refuses it. */
-  const loadModels = async (errorTitle = 'Couldn’t load models'): Promise<ModelOption[] | null> => {
-    if (!provider) return null;
+  const loadModels = async () => {
+    if (!provider) return;
     const id = ++request.current;
     setLoadingModels(true);
     setError(null);
     try {
-      const list = await listModels({ data: { provider, apiKey: key || undefined } });
+      const list = await listModels({ data: { provider } });
       if (id === request.current) setModels(list);
-      return list;
     } catch (cause) {
       if (id === request.current) {
-        setError({ title: errorTitle, message: readableError(cause) });
+        setError({ title: 'Couldn’t load models', message: readableError(cause) });
       }
-      return null;
     } finally {
       if (id === request.current) setLoadingModels(false);
     }
@@ -99,21 +74,13 @@ export function AiProviderCard({ settings }: { settings: AiSettingsDto }) {
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (saving) return;
-    if (!provider || !info || !model) {
+    if (!provider || !model) {
       setError({ title: 'Not saved', message: 'Choose a provider first.' });
-      return;
-    }
-    if (!key && !storedKeyHint) {
-      setError({ title: 'Not saved', message: `Enter your ${info.label} API key.` });
-      keyInput.current?.focus();
       return;
     }
     setSaving(true);
     try {
-      // Check a new key with the provider before storing it.
-      if (key && !(await loadModels('Not saved'))) return;
-      await saveSettings({ data: { provider, model, apiKey: key || undefined } });
-      setApiKey('');
+      await saveSettings({ data: { provider, model } });
       setSaved(true);
       await router.invalidate({ sync: true });
     } catch (cause) {
@@ -123,15 +90,29 @@ export function AiProviderCard({ settings }: { settings: AiSettingsDto }) {
     }
   };
 
+  if (available.length === 0) {
+    return (
+      <SectionCard
+        title="AI provider"
+        description="Refine with AI sends your draft to an AI provider, using your own API key."
+      >
+        <Callout tone="info" role="note" title="No provider key yet">
+          Set {either(WRITING_PROVIDERS.map((id) => KEY_ENV[id]))} in the server’s environment, then
+          restart it. AI writing stays off until then.
+        </Callout>
+      </SectionCard>
+    );
+  }
+
   return (
     <SectionCard
       title="AI provider"
       description="Refine with AI sends your draft to this provider, using your own API key."
-      hint="The key stays on your server and is never shown again, here or anywhere else."
+      hint={missingHint || 'The keys stay in the server’s environment and never reach the browser.'}
       actions={
         <>
           <SavedStatus saved={saved} />
-          {/* Busy, not disabled: the button keeps focus while it checks and saves. */}
+          {/* Busy, not disabled: the button keeps focus while it saves. */}
           <Button
             type="submit"
             form={formId}
@@ -145,7 +126,7 @@ export function AiProviderCard({ settings }: { settings: AiSettingsDto }) {
     >
       <form id={formId} onSubmit={onSubmit} className="flex flex-col gap-5" noValidate>
         {error && (
-          <Callout id={errorId} tone="error" role="alert" title={error.title}>
+          <Callout tone="error" role="alert" title={error.title}>
             {error.message}
           </Callout>
         )}
@@ -154,72 +135,28 @@ export function AiProviderCard({ settings }: { settings: AiSettingsDto }) {
           placeholder="Choose a provider"
           selectedKey={provider}
           // The only keys are the provider IDs listed below.
-          onSelectionChange={(id) => id && chooseProvider(id as ProviderId)}
+          onSelectionChange={(id) => id && chooseProvider(id as WritingProvider)}
           className="w-full"
           popoverClassName="w-(--trigger-width)"
         >
-          {PROVIDER_IDS.map((id) => (
+          {available.map((id) => (
             <SelectItem key={id} id={id}>
               {PROVIDERS[id].label}
             </SelectItem>
           ))}
         </Select>
-        {provider && info && (
-          <>
-            <TextField
-              type="password"
-              value={apiKey}
-              isInvalid={keyRefused}
-              // The form reports errors itself: native validation would block a retry.
-              validationBehavior="aria"
-              aria-describedby={keyRefused ? errorId : undefined}
-              onChange={(value) => {
-                setApiKey(value);
-                setModels(null);
-                edited();
-              }}
-            >
-              <div className="flex w-full flex-wrap items-center justify-between gap-x-3 gap-y-1">
-                <Label>API key</Label>
-                <LinkButton
-                  href={info.keysUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  size="xs"
-                  trailingIcon={RiArrowRightUpLine}
-                >
-                  Get a key
-                  <span className="sr-only"> from {info.label} (opens in a new tab)</span>
-                </LinkButton>
-              </div>
-              <InputBase
-                ref={keyInput}
-                placeholder={
-                  storedKeyHint ? `Leave empty to keep ${storedKeyHint}` : `${info.keyPrefix}…`
-                }
-                spellCheck={false}
-                {...NO_AUTOFILL}
-              />
-              <HintText role="status">
-                {suspicious
-                  ? `This doesn’t look like an API key for ${info.label}. Check that you copied the right one.`
-                  : storedKeyHint
-                    ? `Saved key ${storedKeyHint}. A new key is checked with ${info.label} before it’s saved.`
-                    : `XBase checks the key with ${info.label} before saving it.`}
-              </HintText>
-            </TextField>
-            <ModelField
-              model={model}
-              models={models}
-              loading={loadingModels}
-              canLoad={canLoadModels}
-              onChange={(next) => {
-                setModel(next);
-                edited();
-              }}
-              onLoad={() => void loadModels()}
-            />
-          </>
+        {provider && (
+          <ModelField
+            model={model}
+            models={models}
+            loading={loadingModels}
+            onChange={(next) => {
+              setModel(next);
+              setSaved(false);
+              setError(null);
+            }}
+            onLoad={() => void loadModels()}
+          />
         )}
       </form>
     </SectionCard>

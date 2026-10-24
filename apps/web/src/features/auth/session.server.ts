@@ -1,12 +1,10 @@
-import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import { deleteCookie, getCookie, setCookie } from '@tanstack/react-start/server';
 import { eq } from 'drizzle-orm';
-import { clientIp } from '@/server/client-ip.server';
 import { getDb } from '@/server/db/client.server';
 import { sessions } from '@/server/db/schema';
 import { getEnv } from '@/server/env.server';
-import type { LoginError } from './auth.schema';
-import { loginLimiter } from './rate-limit.server';
+import { jsonError } from '@/server/http';
 
 // Sessions are opaque random tokens in a cookie; the database keeps only their sha256, so a
 // leaked database can't sign anyone in, and deleting rows signs devices out.
@@ -16,8 +14,10 @@ const TTL_MS = 30 * 24 * 60 * 60 * 1000;
 // Write last_seen_at at most this often, not on every request.
 const TOUCH_MS = 60 * 60 * 1000;
 
-const sha256 = (value: string) => createHash('sha256').update(value).digest();
-const hashToken = (token: string) => sha256(token).toString('hex');
+const hashToken = (token: string) => createHash('sha256').update(token).digest('hex');
+
+/** A signed-in browser, and the X account it works as. */
+export type Session = { id: string; accountId: string };
 
 /**
  * The session cookie's name and flags. `__Host-` and Secure need HTTPS, so a plain-HTTP LAN
@@ -31,13 +31,8 @@ export function sessionCookie() {
   };
 }
 
-/** Constant time: both sides are hashed to the same length before comparing. */
-export function checkPassword(input: string): boolean {
-  return timingSafeEqual(sha256(input), sha256(getEnv().APP_PASSWORD));
-}
-
 /** The current request's session, or null when signed out or expired. */
-export function readSession(): { id: string } | null {
+export function readSession(): Session | null {
   const token = getCookie(sessionCookie().name);
   if (!token) return null;
   const db = getDb();
@@ -48,11 +43,23 @@ export function readSession(): { id: string } | null {
   if (now.getTime() - row.lastSeenAt.getTime() > TOUCH_MS) {
     db.update(sessions).set({ lastSeenAt: now }).where(eq(sessions.id, id)).run();
   }
-  return { id };
+  return { id, accountId: row.accountId };
 }
 
-/** Starts a new session and sets its cookie. Replaces the request's old session, if any. */
-export function issueSession(): void {
+/** For server functions: serverFnGuard already turned a signed-out call away. */
+export function requireSession(): Session {
+  const session = readSession();
+  if (!session) throw jsonError(401, 'unauthorized', 'Sign in again.');
+  return session;
+}
+
+/** Switches the session to another linked account. */
+export function setSessionAccount(sessionId: string, accountId: string): void {
+  getDb().update(sessions).set({ accountId }).where(eq(sessions.id, sessionId)).run();
+}
+
+/** Starts a new session as `accountId` and sets its cookie. Replaces the request's old session. */
+export function issueSession(accountId: string): void {
   const { name, options } = sessionCookie();
   const db = getDb();
   const previous = getCookie(name);
@@ -66,6 +73,7 @@ export function issueSession(): void {
   db.insert(sessions)
     .values({
       id: hashToken(token),
+      accountId,
       createdAt: now,
       expiresAt: new Date(now.getTime() + TTL_MS),
       lastSeenAt: now,
@@ -90,20 +98,4 @@ export function revokeSession(): void {
 /** Signs every device out. */
 export function revokeAllSessions(): void {
   getDb().delete(sessions).run();
-}
-
-/**
- * Checks the password and starts a session. Failures count per client (see clientIp): behind a
- * proxy without TRUST_PROXY_HOPS, everyone shares one counter, so anyone can pause sign-in.
- */
-export function attemptLogin(password: string): LoginError | null {
-  const ip = clientIp();
-  if (loginLimiter.isLimited(ip)) return 'rate_limited';
-  if (!checkPassword(password)) {
-    loginLimiter.fail(ip);
-    return 'invalid';
-  }
-  loginLimiter.reset(ip);
-  issueSession();
-  return null;
 }

@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
+import { seedAccount } from '@/test/accounts';
 import { createTestDb } from '@/test/db';
 import { oauthClients, oauthCodes, oauthGrants, oauthTokens, sessions } from '../db/schema';
 import { runHousekeeping } from '../housekeeping.server';
@@ -17,10 +18,11 @@ const ids = <T>(rows: T[], key: keyof T) => new Set(rows.map((row) => row[key]))
 
 describe('runHousekeeping', () => {
   it('deletes expired sessions', () => {
+    const accountId = seedAccount();
     db.insert(sessions)
       .values([
-        { id: 'expired', expiresAt: at(-1), lastSeenAt: at(-2) },
-        { id: 'valid', expiresAt: at(1), lastSeenAt: at(0) },
+        { id: 'expired', accountId, expiresAt: at(-1), lastSeenAt: at(-2) },
+        { id: 'valid', accountId, expiresAt: at(1), lastSeenAt: at(0) },
       ])
       .run();
     expect(runHousekeeping(NOW).sessions).toBe(1);

@@ -40,8 +40,8 @@ const FIELDS: Record<StyleField, { label: string; hint: string; placeholder: str
   },
 };
 
-/** The style guide every AI prompt gets. All four fields are optional. */
-export function VoiceCard({ voice }: { voice: StyleGuide }) {
+/** The account's style guide, which every AI prompt gets. All four fields are optional. */
+export function VoiceCard({ voice, username }: { voice: StyleGuide; username: string }) {
   const router = useRouter();
   const saveVoice = useServerFn(saveVoiceFn);
   const formId = useId();
@@ -70,7 +70,7 @@ export function VoiceCard({ voice }: { voice: StyleGuide }) {
   return (
     <SectionCard
       title="Voice"
-      description="How the AI should sound when it refines your drafts."
+      description={`How the AI should sound when it refines @${username}’s drafts. Each account has its own.`}
       hint={`Every field is optional, up to ${MAX_STYLE_FIELD_LENGTH.toLocaleString('en-US')} characters each.`}
       actions={
         <>

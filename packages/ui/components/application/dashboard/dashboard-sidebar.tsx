@@ -7,7 +7,6 @@ import {
   createContext,
   useContext,
   type AnchorHTMLAttributes,
-  type ButtonHTMLAttributes,
   type ComponentType,
   type DOMAttributes,
   type ReactElement,
@@ -41,7 +40,7 @@ import {
  * their label in a tooltip. `SidebarDrawer` holds the expanded panel on small
  * screens, where BoardUI's `mobile` mode expects a drawer.
  *
- *   <DashboardSidebar collapsed logo={<Mark />} footer={<SignOut />}>
+ *   <DashboardSidebar collapsed logo={<Mark />} footer={<AccountMenu />}>
  *     <NavLink to="/drafts" icon={RiDraftLine} label="Drafts" />
  *   </DashboardSidebar>
  */
@@ -156,49 +155,12 @@ export function SidebarNavItem({ icon, label, className, ref, ...props }: Sideba
   );
 }
 
-export interface SidebarNavButtonProps extends Omit<
-  ButtonHTMLAttributes<HTMLButtonElement>,
-  'children'
-> {
-  icon: IconComponent;
-  label: string;
-  ref?: Ref<HTMLButtonElement>;
-}
-
-/** An action row with a nav row's look, e.g. a sign-out form's submit button. */
-export function SidebarNavButton({
-  icon,
-  label,
-  className,
-  type = 'button',
-  ref,
-  ...props
-}: SidebarNavButtonProps) {
-  const { collapsed } = useContext(SidebarContext);
-  return (
-    <RailTooltip collapsed={collapsed} label={label}>
-      <button
-        ref={ref}
-        type={type}
-        {...props}
-        className={cx(
-          styles.row,
-          collapsed ? styles.rowWidth.collapsed : styles.rowWidth.expanded,
-          className,
-        )}
-      >
-        <RowContent icon={icon} label={label} collapsed={collapsed} />
-      </button>
-    </RailTooltip>
-  );
-}
-
 export interface DashboardSidebarProps {
   /** The app's mark, at the top. */
   logo?: ReactNode;
   /** The navigation rows: SidebarNavItem, or a router link built on it. */
   children: ReactNode;
-  /** Rows pinned under the navigation, e.g. sign out. */
+  /** Pinned under the navigation, e.g. an account menu. */
   footer?: ReactNode;
   /** The 60px icon rail: labels hide and show as tooltips. */
   collapsed?: boolean;

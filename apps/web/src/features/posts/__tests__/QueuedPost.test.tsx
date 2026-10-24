@@ -22,6 +22,7 @@ afterEach(cleanup);
 
 const post: PostDto = {
   id: 'p1',
+  account: 'xbase',
   status: 'scheduled',
   parts: ['Hello there'],
   publishAt: '2026-11-02T10:00:00.000Z',

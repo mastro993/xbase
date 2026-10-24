@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { needsHttpsWarning, parseEnv } from '../env.server';
 
-const PASSWORD = 'correct horse battery';
+const X = { X_CLIENT_ID: 'client-id', X_CLIENT_SECRET: 'client-secret' };
 
 describe('parseEnv', () => {
   it('fills the development defaults', () => {
-    expect(parseEnv({ APP_PASSWORD: PASSWORD }, false)).toEqual({
-      APP_PASSWORD: PASSWORD,
-      APP_URL: 'http://localhost:5173',
+    expect(parseEnv(X, false)).toEqual({
+      ...X,
+      APP_URL: 'http://127.0.0.1:5173',
       DATABASE_PATH: './data/xbase.db',
       TRUST_PROXY_HOPS: 0,
     });
@@ -17,40 +17,72 @@ describe('parseEnv', () => {
     ['1', 1],
     ['5', 5],
   ])('reads TRUST_PROXY_HOPS=%s', (TRUST_PROXY_HOPS, expected) => {
-    expect(parseEnv({ APP_PASSWORD: PASSWORD, TRUST_PROXY_HOPS }, false).TRUST_PROXY_HOPS).toBe(
-      expected,
-    );
+    expect(parseEnv({ ...X, TRUST_PROXY_HOPS }, false).TRUST_PROXY_HOPS).toBe(expected);
   });
 
   it.each(['-1', '6', '1.5', 'yes'])('rejects TRUST_PROXY_HOPS=%s', (TRUST_PROXY_HOPS) => {
-    expect(() => parseEnv({ APP_PASSWORD: PASSWORD, TRUST_PROXY_HOPS }, false)).toThrow(
+    expect(() => parseEnv({ ...X, TRUST_PROXY_HOPS }, false)).toThrow(
       'TRUST_PROXY_HOPS must be a whole number from 0 to 5',
     );
   });
 
-  it('requires APP_PASSWORD of at least 12 characters', () => {
-    expect(() => parseEnv({}, false)).toThrow('APP_PASSWORD is required');
-    expect(() => parseEnv({ APP_PASSWORD: 'short' }, false)).toThrow(
-      'APP_PASSWORD must be at least 12 characters',
-    );
+  it('requires the X app’s client id and secret', () => {
+    expect(() => parseEnv({ X_CLIENT_SECRET: 'secret' }, false)).toThrow('X_CLIENT_ID is required');
+    expect(() => parseEnv({ X_CLIENT_ID: 'id' }, false)).toThrow('X_CLIENT_SECRET is required');
   });
 
-  it('treats empty values as unset', () => {
-    expect(() => parseEnv({ APP_PASSWORD: '' }, false)).toThrow('APP_PASSWORD is required');
-    expect(parseEnv({ APP_PASSWORD: PASSWORD, DATABASE_PATH: '' }, false).DATABASE_PATH).toBe(
-      './data/xbase.db',
+  it('reads the optional AI keys, trimmed', () => {
+    const env = parseEnv(
+      {
+        ...X,
+        OPENAI_API_KEY: ' sk-openai\n',
+        ANTHROPIC_API_KEY: 'sk-ant',
+        XAI_API_KEY: 'xai-key',
+        OPENROUTER_API_KEY: 'sk-or',
+        TYPESAFE_API_KEY: 'ts-key',
+      },
+      false,
     );
+    expect(env).toMatchObject({
+      OPENAI_API_KEY: 'sk-openai',
+      ANTHROPIC_API_KEY: 'sk-ant',
+      XAI_API_KEY: 'xai-key',
+      OPENROUTER_API_KEY: 'sk-or',
+      TYPESAFE_API_KEY: 'ts-key',
+    });
+  });
+
+  it('treats empty and blank values as unset', () => {
+    expect(() => parseEnv({ ...X, X_CLIENT_ID: '' }, false)).toThrow('X_CLIENT_ID is required');
+    expect(() => parseEnv({ ...X, X_CLIENT_SECRET: '  ' }, false)).toThrow(
+      'X_CLIENT_SECRET is required',
+    );
+    const env = parseEnv({ ...X, DATABASE_PATH: '', OPENAI_API_KEY: '', XAI_API_KEY: ' ' }, false);
+    expect(env.DATABASE_PATH).toBe('./data/xbase.db');
+    expect(env).not.toHaveProperty('OPENAI_API_KEY');
+    expect(env).not.toHaveProperty('XAI_API_KEY');
   });
 
   it('requires APP_URL in production', () => {
-    expect(() => parseEnv({ APP_PASSWORD: PASSWORD }, true)).toThrow(
-      'APP_URL is required in production',
+    expect(() => parseEnv(X, true)).toThrow('APP_URL is required in production');
+  });
+
+  it.each([
+    ['@Owner', 'owner'],
+    [' xbase_app ', 'xbase_app'],
+  ])('reads X_OWNER_USERNAME=%j as %s', (X_OWNER_USERNAME, expected) => {
+    expect(parseEnv({ ...X, X_OWNER_USERNAME }, false).X_OWNER_USERNAME).toBe(expected);
+  });
+
+  it.each(['not a name', '@', 'way_too_long_for_x_1'])('rejects X_OWNER_USERNAME=%j', (value) => {
+    expect(() => parseEnv({ ...X, X_OWNER_USERNAME: value }, false)).toThrow(
+      'X_OWNER_USERNAME must be an X username, like @you',
     );
   });
 
   it('reports every problem at once', () => {
-    expect(() => parseEnv({ APP_PASSWORD: 'short' }, true)).toThrow(
-      /APP_PASSWORD must be at least 12 characters[\s\S]*APP_URL is required in production/,
+    expect(() => parseEnv({}, true)).toThrow(
+      /APP_URL is required in production[\s\S]*X_CLIENT_ID is required[\s\S]*X_CLIENT_SECRET is required/,
     );
   });
 
@@ -60,7 +92,7 @@ describe('parseEnv', () => {
     ['HTTPS://X.Example:443/', 'https://x.example'],
     ['http://192.168.1.5:3000', 'http://192.168.1.5:3000'],
   ])('keeps the origin of %s', (APP_URL, expected) => {
-    expect(parseEnv({ APP_PASSWORD: PASSWORD, APP_URL }, true).APP_URL).toBe(expected);
+    expect(parseEnv({ ...X, APP_URL }, true).APP_URL).toBe(expected);
   });
 
   it.each([
@@ -71,17 +103,12 @@ describe('parseEnv', () => {
     ['ftp://x.example', 'must be an http(s) URL'],
     ['x.example', 'must be an http(s) URL'],
   ])('rejects APP_URL=%s', (APP_URL, message) => {
-    expect(() => parseEnv({ APP_PASSWORD: PASSWORD, APP_URL }, true)).toThrow(message);
+    expect(() => parseEnv({ ...X, APP_URL }, true)).toThrow(message);
   });
 });
 
 describe('needsHttpsWarning', () => {
-  const env = (APP_URL: string) => ({
-    APP_PASSWORD: PASSWORD,
-    APP_URL,
-    DATABASE_PATH: 'x',
-    TRUST_PROXY_HOPS: 0,
-  });
+  const env = (APP_URL: string) => ({ ...X, APP_URL, DATABASE_PATH: 'x', TRUST_PROXY_HOPS: 0 });
 
   it.each([
     ['https://x.example', false],

@@ -2,13 +2,18 @@ import { z } from 'zod';
 
 // Shared by the login page and the server: no server imports here.
 
-export const LOGIN_ERRORS = ['invalid', 'rate_limited'] as const;
-export type LoginError = (typeof LOGIN_ERRORS)[number];
+/**
+ * Why signing in with X didn't work. denied: cancelled on X. not_linked: another X account owns
+ * this XBase. not_owner: X_OWNER_USERNAME names another account to claim it. expired: the attempt
+ * took too long or came from another browser. failed: X erred.
+ */
+export const SIGN_IN_ERRORS = ['denied', 'not_linked', 'not_owner', 'expired', 'failed'] as const;
+export type SignInError = (typeof SIGN_IN_ERRORS)[number];
 
 /** The login page's search params. Anything unexpected is dropped rather than failing. */
 export const LoginSearch = z.object({
   next: z.string().optional().catch(undefined),
-  error: z.enum(LOGIN_ERRORS).optional().catch(undefined),
+  error: z.enum(SIGN_IN_ERRORS).optional().catch(undefined),
 });
 
 const BASE = 'http://xbase.invalid';
@@ -27,16 +32,4 @@ export function safeNext(value: unknown): string {
   } catch {
     return '/';
   }
-}
-
-const MAX_PASSWORD = 1024;
-
-/** Reads the login form. Never throws on bad input: a missing password is a wrong one. */
-export function parseLoginForm(data: unknown): { password: string; next: string } {
-  if (!(data instanceof FormData)) throw new Error('Expected form data');
-  const password = data.get('password');
-  return {
-    password: typeof password === 'string' && password.length <= MAX_PASSWORD ? password : '',
-    next: safeNext(data.get('next')),
-  };
 }

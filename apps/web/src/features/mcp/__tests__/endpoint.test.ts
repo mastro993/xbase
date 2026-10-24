@@ -4,11 +4,16 @@ import { hashSecret } from '@/features/oauth/crypto.server';
 import { createGrant, revokeGrant, saveClient } from '@/features/oauth/store.server';
 import { verifyAccessToken } from '@/features/oauth/token.server';
 import { oauthGrants, posts } from '@/server/db/schema';
+import { seedAccount } from '@/test/accounts';
 import { createTestDb } from '@/test/db';
 import { serveMcp } from '../endpoint.server';
 
 vi.mock('@/server/env.server', () => ({
-  getEnv: () => ({ APP_PASSWORD: 'test-password-123', APP_URL: 'https://xbase.test' }),
+  getEnv: () => ({
+    APP_URL: 'https://xbase.test',
+    X_CLIENT_ID: 'test-client-id',
+    X_CLIENT_SECRET: 'test-client-secret',
+  }),
 }));
 
 const MCP_URL = 'https://xbase.test/mcp';
@@ -24,6 +29,7 @@ let accessToken: string;
 let grantId: string;
 beforeEach(async () => {
   db = createTestDb();
+  seedAccount();
   const { tokens } = await connectedClient();
   accessToken = tokens.access_token;
   grantId = db.select().from(oauthGrants).get()?.id ?? '';
@@ -147,6 +153,7 @@ describe('tools', () => {
     const created = await callTool('create_draft', { parts: ['Hello from MCP'] });
     expect(created.isError).toBeFalsy();
     expect(created.structuredContent).toMatchObject({
+      account: 'user1001',
       parts: ['Hello from MCP'],
       origin: 'mcp',
       status: 'draft',
@@ -161,6 +168,31 @@ describe('tools', () => {
     const queue = await callTool('list_scheduled', {});
     expect(queue.structuredContent.items.map((item: { id: string }) => item.id)).toEqual([id]);
     expect((await callTool('list_saved_searches')).structuredContent).toEqual({ items: [] });
+  });
+
+  it('needs the account for a new draft once several are linked, and filters lists by it', async () => {
+    seedAccount({ id: '2002', username: 'other' });
+    const unnamed = await callTool('create_draft', { parts: ['Hello'] });
+    expect(unnamed.isError).toBe(true);
+    expect(unnamed.content[0].text).toBe(
+      'Say which account: @user1001, @other. Fix the arguments and try again.',
+    );
+    expect(db.select().from(posts).all()).toEqual([]);
+
+    const named = await callTool('create_draft', { parts: ['Hello'], account: '@other' });
+    expect(named.structuredContent.account).toBe('other');
+    await callTool('create_draft', { parts: ['Hi'], account: 'user1001' });
+
+    const accounts = async (name: string, args: Record<string, unknown>) =>
+      (await callTool(name, args)).structuredContent.items.map(
+        (item: { account: string }) => item.account,
+      );
+    expect(await accounts('list_drafts', { account: 'other' })).toEqual(['other']);
+    expect(new Set(await accounts('list_drafts', {}))).toEqual(new Set(['other', 'user1001']));
+    const publishAt = new Date(Date.now() + 3600_000).toISOString();
+    await callTool('schedule_post', { id: named.structuredContent.id, publishAt });
+    expect(await accounts('list_scheduled', { account: 'user1001' })).toEqual([]);
+    expect(await accounts('list_scheduled', {})).toEqual(['other']);
   });
 
   it('turns service errors into tool errors with a next step', async () => {

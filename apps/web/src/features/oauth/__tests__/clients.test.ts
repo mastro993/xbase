@@ -6,7 +6,11 @@ import { isPublicAddress } from '../cimd.server';
 import { findClient, handleRegister } from '../clients.server';
 
 vi.mock('@/server/env.server', () => ({
-  getEnv: () => ({ APP_PASSWORD: 'test-password-123', APP_URL: 'https://xbase.test' }),
+  getEnv: () => ({
+    APP_URL: 'https://xbase.test',
+    X_CLIENT_ID: 'test-client-id',
+    X_CLIENT_SECRET: 'test-client-secret',
+  }),
 }));
 vi.mock('node:dns/promises', () => ({ lookup: vi.fn() }));
 

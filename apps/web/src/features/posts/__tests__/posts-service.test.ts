@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { InvalidStateError, NotFoundError, ValidationError } from '@/lib/errors';
 import { type PostStatus, posts } from '@/server/db/schema';
+import { seedAccount } from '@/test/accounts';
 import { createTestDb } from '@/test/db';
 import {
   createDraft,
@@ -19,16 +20,18 @@ const NOW = new Date('2026-10-23T12:00:00.000Z');
 const later = (minutes: number) => new Date(NOW.getTime() + minutes * MINUTE);
 
 let db: ReturnType<typeof createTestDb>;
+let accountId: string;
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] });
   vi.setSystemTime(NOW);
   db = createTestDb();
+  accountId = seedAccount();
 });
 afterEach(() => {
   vi.useRealTimers();
 });
 
-const draft = (...parts: string[]) => createDraft({ parts, origin: 'web' });
+const draft = (...parts: string[]) => createDraft({ accountId, parts, origin: 'web' });
 /** Puts a post straight into a state the service only reaches through publishing. */
 const force = (id: string, status: PostStatus, publishAt: Date | null = later(5)) =>
   db.update(posts).set({ status, publishAt }).where(eq(posts.id, id)).run();
@@ -38,6 +41,7 @@ describe('createDraft', () => {
     const post = draft('First', 'Second');
     expect(post).toEqual({
       id: expect.any(String),
+      account: 'user1001',
       status: 'draft',
       parts: ['First', 'Second'],
       publishAt: null,
@@ -59,7 +63,7 @@ describe('createDraft', () => {
   });
 
   it('records where the post came from', () => {
-    expect(createDraft({ parts: ['From the API'], origin: 'api' }).origin).toBe('api');
+    expect(createDraft({ accountId, parts: ['From the API'], origin: 'api' }).origin).toBe('api');
   });
 });
 
@@ -86,6 +90,18 @@ describe('listDrafts', () => {
     expect(listDrafts({ limit: 1 })).toHaveLength(1);
     expect(listDrafts({ limit: 0 })).toHaveLength(1);
     expect(listDrafts({ limit: 1000 })).toHaveLength(3);
+  });
+
+  it('lists one account’s drafts, or every account’s without one', () => {
+    draft('mine');
+    const other = seedAccount({ id: '2002', username: 'other' });
+    createDraft({ accountId: other, parts: ['theirs'], origin: 'web' });
+
+    const list = (options?: { accountId?: string }) =>
+      listDrafts(options).map(({ account, parts }) => [account, parts[0]]);
+    expect(list({ accountId })).toEqual([['user1001', 'mine']]);
+    expect(list({ accountId: other })).toEqual([['other', 'theirs']]);
+    expect(list()).toHaveLength(2);
   });
 });
 
@@ -233,6 +249,22 @@ describe('listScheduled', () => {
     const texts = (list: { parts: string[] }[]) => list.map(({ parts }) => parts[0]);
     expect(texts(listScheduled())).toEqual(['early', 'sending', 'failed', 'late']);
     expect(texts(listScheduled({ from: later(20), to: later(60) }))).toEqual(['sending', 'failed']);
+  });
+
+  it('lists one account’s queue, or every account’s without one', () => {
+    schedulePost(draft('mine').id, later(10));
+    const other = seedAccount({ id: '2002', username: 'other' });
+    const theirs = createDraft({ accountId: other, parts: ['theirs'], origin: 'web' });
+    schedulePost(theirs.id, later(20));
+
+    const list = (options?: { accountId?: string }) =>
+      listScheduled(options).map(({ account, parts }) => [account, parts[0]]);
+    expect(list({ accountId })).toEqual([['user1001', 'mine']]);
+    expect(list({ accountId: other })).toEqual([['other', 'theirs']]);
+    expect(list()).toEqual([
+      ['user1001', 'mine'],
+      ['other', 'theirs'],
+    ]);
   });
 
   it('skips failed posts that never had a time', () => {

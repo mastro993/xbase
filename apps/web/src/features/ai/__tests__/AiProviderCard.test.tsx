@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { ModelOption } from '@xbase/ai/providers';
+import { type ModelOption, PROVIDERS } from '@xbase/ai/providers';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import type { AiSettingsDto } from '../ai.schema';
 import { AiProviderCard } from '../AiProviderCard';
@@ -22,10 +22,13 @@ vi.mock('@tanstack/react-router', () => ({ useRouter: () => ({ invalidate: mocks
 
 const model = (id: string, label = id): ModelOption => ({ id, label, lowEffort: true });
 const OPENROUTER = Array.from({ length: 300 }, (_, i) => model(`vendor/model-${i}`, `Model ${i}`));
-const STORED: AiSettingsDto = {
-  provider: 'openrouter',
-  model: model('anthropic/claude-haiku-5.5', 'Anthropic: Claude Haiku 5.5'),
-  keyHint: '…1234',
+const SETTINGS: AiSettingsDto = {
+  available: ['openai', 'openrouter'],
+  writing: {
+    provider: 'openrouter',
+    model: model('anthropic/claude-haiku-5.5', 'Anthropic: Claude Haiku 5.5'),
+  },
+  decision: null,
 };
 
 beforeEach(() => {
@@ -35,96 +38,89 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
-const keyField = () => screen.getByLabelText('API key');
+const modelInput = () => screen.getByRole('combobox', { name: 'Model' }) as HTMLInputElement;
 
-const chooseOpenAi = async (user: ReturnType<typeof userEvent.setup>) => {
+it('says which variables to set while no provider has a key', () => {
+  render(<AiProviderCard settings={{ available: [], writing: null, decision: null }} />);
+  expect(screen.getByRole('note').textContent).toContain(
+    'Set OPENAI_API_KEY, ANTHROPIC_API_KEY, XAI_API_KEY or OPENROUTER_API_KEY',
+  );
+  expect(screen.queryByRole('button', { name: 'Save' })).toBeNull();
+});
+
+it('offers only the providers with a key, never asking for one', async () => {
+  const user = userEvent.setup();
+  render(<AiProviderCard settings={SETTINGS} />);
+  expect(screen.queryByLabelText(/API key/)).toBeNull();
+  expect(
+    screen.getByText(/To offer Anthropic or xAI \(Grok\), set ANTHROPIC_API_KEY or XAI_API_KEY/),
+  ).toBeDefined();
   await user.click(screen.getByRole('button', { name: /Provider/ }));
-  await user.click(screen.getByRole('option', { name: 'OpenAI' }));
-};
-
-it('asks for a key before saving, and focuses its field', async () => {
-  const user = userEvent.setup();
-  render(<AiProviderCard settings={null} />);
-  expect(screen.queryByLabelText('API key')).toBeNull();
-  await chooseOpenAi(user);
-  await user.click(screen.getByRole('button', { name: 'Save' }));
-  expect(screen.getByRole('alert').textContent).toContain('Enter your OpenAI API key.');
-  expect(document.activeElement).toBe(keyField());
-  expect(mocks.listModelsFn).not.toHaveBeenCalled();
+  expect(screen.getAllByRole('option').map((option) => option.textContent)).toEqual([
+    'OpenAI',
+    'OpenRouter',
+  ]);
 });
 
-it('keeps the key write-only and warns about another provider’s key', async () => {
+it('saves the current choice without asking the provider', async () => {
   const user = userEvent.setup();
-  render(<AiProviderCard settings={null} />);
-  await chooseOpenAi(user);
-  const key = keyField();
-  expect(key.getAttribute('type')).toBe('password');
-  expect(key.getAttribute('autocomplete')).toBe('off');
-  expect(key.hasAttribute('data-1p-ignore')).toBe(true);
-  expect(key.getAttribute('data-lpignore')).toBe('true');
-  await user.type(key, 'xai-abc');
-  const help = document.getElementById(key.getAttribute('aria-describedby')!.split(' ')[0]);
-  expect(help?.textContent).toContain('doesn’t look like an API key for OpenAI');
-});
-
-it('marks a refused key and saves nothing', async () => {
-  const user = userEvent.setup();
-  mocks.listModelsFn.mockRejectedValue(new Error('Invalid API key'));
-  render(<AiProviderCard settings={null} />);
-  await chooseOpenAi(user);
-  await user.type(keyField(), 'sk-fake');
-  await user.click(screen.getByRole('button', { name: 'Save' }));
-  const alert = await screen.findByRole('alert');
-  expect(alert.textContent).toContain('Not saved');
-  expect(alert.textContent).toContain('Invalid API key');
-  expect(keyField().getAttribute('aria-invalid')).toBe('true');
-  expect(keyField().getAttribute('aria-describedby')).toContain(alert.id);
-  expect(mocks.saveAiSettingsFn).not.toHaveBeenCalled();
-  expect((keyField() as HTMLInputElement).value).toBe('sk-fake');
-});
-
-it('saves with the stored key without asking the provider', async () => {
-  const user = userEvent.setup();
-  mocks.saveAiSettingsFn.mockResolvedValue(undefined);
-  render(<AiProviderCard settings={STORED} />);
-  expect(keyField().getAttribute('placeholder')).toBe('Leave empty to keep …1234');
+  mocks.saveAiSettingsFn.mockResolvedValue(SETTINGS);
+  render(<AiProviderCard settings={SETTINGS} />);
   const save = screen.getByRole('button', { name: 'Save' });
   await user.click(save);
   expect(mocks.listModelsFn).not.toHaveBeenCalled();
   expect(mocks.saveAiSettingsFn).toHaveBeenCalledWith({
-    data: { provider: 'openrouter', model: STORED.model, apiKey: undefined },
+    data: { provider: 'openrouter', model: SETTINGS.writing?.model },
   });
   expect(mocks.invalidate).toHaveBeenCalled();
   expect(screen.getAllByRole('status').some((s) => s.textContent === 'Saved')).toBe(true);
   expect(document.activeElement).toBe(save);
 });
 
+it('switches to another provider’s default model', async () => {
+  const user = userEvent.setup();
+  mocks.saveAiSettingsFn.mockResolvedValue(SETTINGS);
+  render(<AiProviderCard settings={SETTINGS} />);
+  await user.click(screen.getByRole('button', { name: /Provider/ }));
+  await user.click(screen.getByRole('option', { name: 'OpenAI' }));
+  expect(modelInput().value).toBe(PROVIDERS.openai.defaultModel.label);
+  await user.click(screen.getByRole('button', { name: 'Save' }));
+  expect(mocks.saveAiSettingsFn).toHaveBeenCalledWith({
+    data: { provider: 'openai', model: PROVIDERS.openai.defaultModel },
+  });
+});
+
+it('reports models it couldn’t load, and saves nothing', async () => {
+  const user = userEvent.setup();
+  mocks.listModelsFn.mockRejectedValue(new Error('Invalid API key'));
+  render(<AiProviderCard settings={SETTINGS} />);
+  await user.click(screen.getByRole('button', { name: 'Load models' }));
+  const alert = await screen.findByRole('alert');
+  expect(alert.textContent).toContain('Couldn’t load models');
+  expect(alert.textContent).toContain('Invalid API key');
+  expect(mocks.saveAiSettingsFn).not.toHaveBeenCalled();
+});
+
 it('searches a long model list and picks from it', async () => {
   const user = userEvent.setup();
   mocks.listModelsFn.mockResolvedValue(OPENROUTER);
-  render(<AiProviderCard settings={STORED} />);
+  render(<AiProviderCard settings={SETTINGS} />);
   const load = screen.getByRole('button', { name: 'Load models' });
   await user.click(load);
-  expect(mocks.listModelsFn).toHaveBeenCalledWith({
-    data: { provider: 'openrouter', apiKey: undefined },
-  });
+  expect(mocks.listModelsFn).toHaveBeenCalledWith({ data: { provider: 'openrouter' } });
   expect(document.activeElement).toBe(load);
-  const input = screen.getByRole('combobox', { name: 'Model' });
-  expect((input as HTMLInputElement).value).toBe('Anthropic: Claude Haiku 5.5');
+  const input = modelInput();
+  expect(input.value).toBe('Anthropic: Claude Haiku 5.5');
   await user.clear(input);
   await user.type(input, 'Model 29');
   const listbox = screen.getByRole('listbox');
   // Model 29 and Model 290…299.
   expect(within(listbox).getAllByRole('option')).toHaveLength(11);
   await user.keyboard('{ArrowDown}{Enter}');
-  expect((input as HTMLInputElement).value).toBe('Model 29');
-  mocks.saveAiSettingsFn.mockResolvedValue(undefined);
+  expect(input.value).toBe('Model 29');
+  mocks.saveAiSettingsFn.mockResolvedValue(SETTINGS);
   await user.click(screen.getByRole('button', { name: 'Save' }));
   expect(mocks.saveAiSettingsFn).toHaveBeenCalledWith({
-    data: {
-      provider: 'openrouter',
-      model: model('vendor/model-29', 'Model 29'),
-      apiKey: undefined,
-    },
+    data: { provider: 'openrouter', model: model('vendor/model-29', 'Model 29') },
   });
 });

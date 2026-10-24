@@ -2,12 +2,12 @@
 
 XBase is a pnpm monorepo for tools that help you write on X in your own voice.
 
-| Path             | Package            | What it is                                                                                                                                                  |
-| ---------------- | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `apps/web`       | `@xbase/web`       | [XBase](apps/web/README.md), a self-hosted, single-user X workspace: a Node app built with [TanStack Start](https://tanstack.com/start), with SQLite        |
-| `apps/extension` | `@xbase/extension` | [x-companion](apps/extension/README.md), a Chromium extension that drafts replies on X, built with [WXT](https://wxt.dev)                                   |
-| `packages/ai`    | `@xbase/ai`        | The AI provider, LLM and prompt code shared by both apps                                                                                                    |
-| `packages/ui`    | `@xbase/ui`        | The shared [BoardUI](https://www.boardui.com) package: its components and styles, XBase's few own components, and one colour palette per app in `palettes/` |
+| Path             | Package            | What it is                                                                                                                                                                                 |
+| ---------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `apps/web`       | `@xbase/web`       | [XBase](apps/web/README.md), a self-hosted X workspace you sign in to with X, for one or several accounts: a Node app built with [TanStack Start](https://tanstack.com/start), with SQLite |
+| `apps/extension` | `@xbase/extension` | [x-companion](apps/extension/README.md), a Chromium extension that drafts replies on X, built with [WXT](https://wxt.dev)                                                                  |
+| `packages/ai`    | `@xbase/ai`        | The AI provider, LLM and prompt code shared by both apps                                                                                                                                   |
+| `packages/ui`    | `@xbase/ui`        | The shared [BoardUI](https://www.boardui.com) package: its components and styles, XBase's few own components, and one colour palette per app in `palettes/`                                |
 
 Both apps are React 19 apps built from [BoardUI](https://www.boardui.com) components on Tailwind CSS v4: the website in XBase's own palette, the extension in X's, so it blends with x.com.
 
@@ -22,7 +22,7 @@ pnpm install
 
 The install also sets up the git hooks and generates the extension's TypeScript config.
 
-The web app needs a password before it starts. Copy its example environment file and set `APP_PASSWORD` (12 characters or more):
+The web app needs your own X app before it starts. Copy its example environment file and set `X_CLIENT_ID` and `X_CLIENT_SECRET`, as [Set up your X app](apps/web/README.md#set-up-your-x-app) explains:
 
 ```sh
 cp apps/web/.env.example apps/web/.env
@@ -31,7 +31,7 @@ cp apps/web/.env.example apps/web/.env
 Start an app's dev server:
 
 ```sh
-pnpm --filter @xbase/web dev         # http://localhost:5173
+pnpm --filter @xbase/web dev         # http://127.0.0.1:5173
 pnpm --filter @xbase/extension dev   # opens Chrome with the extension loaded
 ```
 
