@@ -19,8 +19,9 @@ import { AccountAvatar, ADD_ACCOUNT_HREF } from './AccountMenu';
 import { removeAccountFn } from './accounts.functions';
 import type { AccountDto, AccountsDto } from './accounts.schema';
 
-// Why adding an account came back to Settings without one. not_linked only happens on /login.
-const ADD_ERRORS: Record<Exclude<SignInError, 'not_linked'>, string> = {
+// Why adding an account came back to Settings without one. not_linked and not_owner only happen
+// on /login.
+const ADD_ERRORS: Record<Exclude<SignInError, 'not_linked' | 'not_owner'>, string> = {
   denied: 'X didn’t give XBase access. Try again and choose Authorize app.',
   expired: 'It took longer than 10 minutes. Try again.',
   failed: 'X didn’t answer as expected. Try again in a moment.',
@@ -58,7 +59,7 @@ export function AccountsCard({ data, error }: { data: AccountsDto; error?: SignI
       <p role="status" className="sr-only">
         {announcement}
       </p>
-      {error && error !== 'not_linked' && (
+      {error && error !== 'not_linked' && error !== 'not_owner' && (
         <Callout tone="error" role="alert" title="Account not added">
           {ADD_ERRORS[error]}
         </Callout>

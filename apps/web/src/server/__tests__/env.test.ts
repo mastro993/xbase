@@ -67,6 +67,19 @@ describe('parseEnv', () => {
     expect(() => parseEnv(X, true)).toThrow('APP_URL is required in production');
   });
 
+  it.each([
+    ['@Owner', 'owner'],
+    [' xbase_app ', 'xbase_app'],
+  ])('reads X_OWNER_USERNAME=%j as %s', (X_OWNER_USERNAME, expected) => {
+    expect(parseEnv({ ...X, X_OWNER_USERNAME }, false).X_OWNER_USERNAME).toBe(expected);
+  });
+
+  it.each(['not a name', '@', 'way_too_long_for_x_1'])('rejects X_OWNER_USERNAME=%j', (value) => {
+    expect(() => parseEnv({ ...X, X_OWNER_USERNAME: value }, false)).toThrow(
+      'X_OWNER_USERNAME must be an X username, like @you',
+    );
+  });
+
   it('reports every problem at once', () => {
     expect(() => parseEnv({}, true)).toThrow(
       /APP_URL is required in production[\s\S]*X_CLIENT_ID is required[\s\S]*X_CLIENT_SECRET is required/,

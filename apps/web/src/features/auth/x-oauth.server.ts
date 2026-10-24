@@ -14,7 +14,8 @@ import { issueSession, readSession, setSessionAccount } from './session.server';
 
 // Signing in with X: OAuth 2.0 authorization code with PKCE, through the owner's X app
 // (X_CLIENT_ID, X_CLIENT_SECRET). The same flow adds an account from Settings. The first account
-// to sign in claims this XBase; after that only linked accounts can sign in.
+// to sign in claims this XBase, or only X_OWNER_USERNAME's when set; after that only linked
+// accounts can sign in.
 
 const AUTHORIZE_URL = 'https://x.com/i/oauth2/authorize';
 const TOKEN_URL = 'https://api.x.com/2/oauth2/token';
@@ -190,8 +191,13 @@ export async function finishXSignIn(url: URL): Promise<string> {
     setSessionAccount(session.id, profile.id);
     return flow.next;
   }
-  // The first account claims this XBase; after that, only linked accounts get in.
-  if (!accountExists(profile.id) && listAccounts().length > 0) return fail('not_linked');
+  // The first account claims this XBase (only X_OWNER_USERNAME's, when set); after that, only
+  // linked accounts get in.
+  if (!accountExists(profile.id)) {
+    if (listAccounts().length > 0) return fail('not_linked');
+    const owner = getEnv().X_OWNER_USERNAME;
+    if (owner && profile.username.toLowerCase() !== owner) return fail('not_owner');
+  }
   saveAccount(profile, tokens);
   issueSession(profile.id);
   return flow.next;

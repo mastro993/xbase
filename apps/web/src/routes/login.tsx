@@ -25,6 +25,11 @@ const ERRORS: Record<SignInError, { title: string; description: string }> = {
     description:
       'Another X account owns this XBase. Sign in with a linked account, then add this one in Settings.',
   },
+  not_owner: {
+    title: 'This XBase is waiting for its owner',
+    description:
+      'X_OWNER_USERNAME on the server names another X account. Sign in with that one first; it can add others in Settings.',
+  },
   expired: {
     title: 'Sign-in expired',
     description: 'It took longer than 10 minutes, or started in another browser. Try again.',

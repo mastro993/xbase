@@ -3,6 +3,7 @@ import { setSessionAccount, type Session } from '@/features/auth/session.server'
 import { InvalidStateError, NotFoundError, ValidationError } from '@/lib/errors';
 import { getDb } from '@/server/db/client.server';
 import { type XAccount, xAccounts } from '@/server/db/schema';
+import { encryptToken } from '@/server/token-crypto.server';
 import type { AccountDto, AccountsDto } from './accounts.schema';
 
 // The X accounts linked to this XBase. Every linked account sees the whole workspace; posts and
@@ -51,21 +52,35 @@ export function accountExists(id: string): boolean {
   );
 }
 
-/** Links a new account, or refreshes the profile and tokens of a linked one. */
+/**
+ * Links a new account, or refreshes the profile and tokens of a linked one. Tokens are stored
+ * encrypted (token-crypto.server.ts). An answer without a refresh token keeps the stored one, so a
+ * later sign-in can't take away the scheduler's way to renew access.
+ */
 export function saveAccount(profile: XProfile, tokens: XTokens): void {
   const values = {
     username: profile.username,
     name: profile.name,
     avatarUrl: profile.avatarUrl,
-    accessToken: tokens.accessToken,
-    refreshToken: tokens.refreshToken,
+    accessToken: encryptToken(tokens.accessToken, `${profile.id}:access`),
     tokenExpiresAt: tokens.expiresAt,
     scope: tokens.scope,
   };
+  const refreshToken =
+    tokens.refreshToken === null
+      ? null
+      : encryptToken(tokens.refreshToken, `${profile.id}:refresh`);
   getDb()
     .insert(xAccounts)
-    .values({ id: profile.id, ...values })
-    .onConflictDoUpdate({ target: xAccounts.id, set: { ...values, updatedAt: new Date() } })
+    .values({ id: profile.id, ...values, refreshToken })
+    .onConflictDoUpdate({
+      target: xAccounts.id,
+      set: {
+        ...values,
+        refreshToken: refreshToken ?? sql`${xAccounts.refreshToken}`,
+        updatedAt: new Date(),
+      },
+    })
     .run();
 }
 

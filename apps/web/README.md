@@ -39,7 +39,7 @@ XBase needs an app of yours in the [X developer console](https://developer.x.com
 
 XBase asks X for `tweet.read`, `users.read`, `tweet.write` and `offline.access`: reading the profile to sign in, then posting and staying connected for the scheduler.
 
-**The first X account to sign in owns this XBase.** After that, only linked accounts can sign in; others see "This X account isn't linked". Sign in before you share the address, and keep XBase where only you can reach it until you have. To link another account, use **Settings → X accounts → Add account**: X adds the account you're signed in to on x.com, so switch accounts there first. Removing an account deletes its drafts and scheduled posts; the last one can't be removed. XBase doesn't revoke its access on X: do that in your X settings under **Connected apps**.
+**The first X account to sign in owns this XBase.** After that, only linked accounts can sign in; others see "This X account isn't linked". Set `X_OWNER_USERNAME` to your X username so only that account can claim it; otherwise, sign in before you share the address, and keep XBase where only you can reach it until you have. To link another account, use **Settings → X accounts → Add account**: X adds the account you're signed in to on x.com, so switch accounts there first. Removing an account deletes its drafts and scheduled posts; the last one can't be removed. XBase doesn't revoke its access on X: do that in your X settings under **Connected apps**.
 
 ## AI providers
 
@@ -54,7 +54,8 @@ Keys never reach the browser or the database. Changing one takes a restart.
 | Variable                                                                   | Required      | Default                                        | What it does                                                                                                                                                           |
 | -------------------------------------------------------------------------- | ------------- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `X_CLIENT_ID`                                                              | Yes           | none                                           | Your X app's OAuth 2.0 Client ID (see [set up your X app](#set-up-your-x-app)). The server doesn't start without it.                                                   |
-| `X_CLIENT_SECRET`                                                          | Yes           | none                                           | Your X app's OAuth 2.0 Client Secret. The server doesn't start without it.                                                                                             |
+| `X_CLIENT_SECRET`                                                          | Yes           | none                                           | Your X app's OAuth 2.0 Client Secret. The server doesn't start without it. It also encrypts the stored X tokens: changing it means signing in again.                   |
+| `X_OWNER_USERNAME`                                                         | No            | none                                           | The only X account that may claim an empty XBase, for example `@you`. Without it, the first account to sign in does.                                                   |
 | `APP_URL`                                                                  | In production | `http://127.0.0.1:5173` in `pnpm dev`          | The address you open XBase at, as an origin: `https://xbase.example.com`, no path. With `https`, cookies are `Secure`. MCP clients only connect over HTTPS.            |
 | `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `XAI_API_KEY`, `OPENROUTER_API_KEY` | No            | none                                           | API keys for Refine with AI; Settings offers each provider that has one. See [AI providers](#ai-providers).                                                            |
 | `TYPESAFE_API_KEY`                                                         | No            | none                                           | A TypeSafe key for the decision model.                                                                                                                                 |
@@ -151,7 +152,7 @@ Then set `TRUST_PROXY_HOPS` to the number of proxies in front of XBase that add 
 
 Everything lives in the SQLite file at `DATABASE_PATH`, next to its `-wal` and `-shm` files while the server runs:
 
-- the linked X accounts, **including their X access and refresh tokens, in plain text**: with them, anyone can post as those accounts until you revoke XBase in your X settings;
+- the linked X accounts and their X access and refresh tokens, encrypted with a key derived from `X_CLIENT_SECRET`: the database alone can't post as them, but the database and the environment together can, until you revoke XBase in your X settings;
 - sessions, drafts, scheduled posts, saved searches and settings;
 - hashes of XBase API keys and MCP tokens (never the keys themselves).
 

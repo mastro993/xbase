@@ -8,8 +8,8 @@ import { getEnv } from '../env.server';
 /** Opens (or creates) a SQLite database and applies any pending migrations. */
 export function openDb(path: string, migrationsFolder: string) {
   const inMemory = path === ':memory:';
-  // The file holds X tokens in plain text: a new folder and file are the server user's
-  // alone. Only what this creates: an existing file may belong to someone else (a bind mount).
+  // The file holds drafts, settings and encrypted X tokens: a new folder and file are the server
+  // user's alone. Only what this creates: an existing file may belong to someone else (a bind mount).
   if (!inMemory) mkdirSync(dirname(resolve(path)), { recursive: true, mode: 0o700 });
   const created = !inMemory && !existsSync(path);
   const client = new DatabaseSync(path);

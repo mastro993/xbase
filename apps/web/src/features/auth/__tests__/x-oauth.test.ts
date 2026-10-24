@@ -1,31 +1,32 @@
 import { createHash } from 'node:crypto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { sessions, xAccounts } from '@/server/db/schema';
+import { decryptToken } from '@/server/token-crypto.server';
 import { seedAccount } from '@/test/accounts';
 import { createTestDb } from '@/test/db';
 import { inRequest } from '@/test/request';
 import { issueSession } from '../session.server';
 import { finishXSignIn, startXSignIn } from '../x-oauth.server';
 
-vi.mock('@/server/env.server', () => ({
-  getEnv: () => ({
-    APP_URL: 'https://xbase.test',
-    X_CLIENT_ID: 'client-id',
-    X_CLIENT_SECRET: 'client-secret',
-  }),
+const env = vi.hoisted(() => ({
+  APP_URL: 'https://xbase.test',
+  X_CLIENT_ID: 'client-id',
+  X_CLIENT_SECRET: 'client-secret',
+  X_OWNER_USERNAME: undefined as string | undefined,
 }));
+vi.mock('@/server/env.server', () => ({ getEnv: () => env }));
 
 const ME = { id: '1001', username: 'owner', name: 'Owner', profile_image_url: 'https://pbs/a.jpg' };
 
 /** X's token and users/me endpoints; `me` is who signs in. */
-function mockX({ me = ME, tokenStatus = 200 } = {}) {
+function mockX({ me = ME, tokenStatus = 200, refresh = true } = {}) {
   const fetch = vi.fn(async (url: string, _init?: RequestInit) => {
     if (url === 'https://api.x.com/2/oauth2/token') {
       return tokenStatus === 200
         ? Response.json({
             token_type: 'bearer',
             access_token: 'access-new',
-            refresh_token: 'refresh-new',
+            ...(refresh && { refresh_token: 'refresh-new' }),
             expires_in: 7200,
             scope: 'tweet.read users.read tweet.write offline.access',
           })
@@ -77,6 +78,7 @@ async function signIn(options: { intent?: 'sign_in' | 'add'; cookie?: string } =
 
 let db: ReturnType<typeof createTestDb>;
 beforeEach(() => {
+  env.X_OWNER_USERNAME = undefined;
   db = createTestDb();
 });
 afterEach(() => {
@@ -116,20 +118,20 @@ describe('startXSignIn', () => {
 });
 
 describe('finishXSignIn', () => {
-  it('lets the first account claim an empty XBase, keeping its tokens', async () => {
+  it('lets the first account claim an empty XBase, keeping its tokens encrypted', async () => {
     const fetch = mockX();
     const { location, setCookie } = await signIn();
     expect(location).toBe('/queue');
     expect(setCookie).toMatch(/__Host-xbase_session=[\w-]{43}/);
-    expect(db.select().from(xAccounts).all()).toEqual([
-      expect.objectContaining({
-        id: '1001',
-        username: 'owner',
-        avatarUrl: 'https://pbs/a.jpg',
-        accessToken: 'access-new',
-        refreshToken: 'refresh-new',
-      }),
-    ]);
+    const [account] = db.select().from(xAccounts).all();
+    expect(account).toMatchObject({
+      id: '1001',
+      username: 'owner',
+      avatarUrl: 'https://pbs/a.jpg',
+    });
+    expect(account.accessToken).not.toContain('access-new');
+    expect(decryptToken(account.accessToken, '1001:access')).toBe('access-new');
+    expect(decryptToken(account.refreshToken!, '1001:refresh')).toBe('refresh-new');
     expect(db.select({ accountId: sessions.accountId }).from(sessions).all()).toEqual([
       { accountId: '1001' },
     ]);
@@ -153,6 +155,27 @@ describe('finishXSignIn', () => {
     expect(db.select({ username: xAccounts.username }).from(xAccounts).all()).toEqual([
       { username: 'owner' },
     ]);
+  });
+
+  it('keeps the stored refresh token when X answers without one', async () => {
+    mockX();
+    await signIn();
+    mockX({ refresh: false });
+    await signIn();
+    const [account] = db.select().from(xAccounts).all();
+    expect(decryptToken(account.refreshToken!, '1001:refresh')).toBe('refresh-new');
+  });
+
+  it('lets only X_OWNER_USERNAME claim an empty XBase, when it’s set', async () => {
+    env.X_OWNER_USERNAME = 'owner';
+    mockX({ me: { ...ME, id: '6666', username: 'early_bird' } });
+    await expect(signIn()).resolves.toMatchObject({
+      location: '/login?error=not_owner&next=%2Fqueue',
+    });
+    expect(db.select().from(xAccounts).all()).toEqual([]);
+
+    mockX({ me: { ...ME, username: 'Owner' } });
+    await expect(signIn()).resolves.toMatchObject({ location: '/queue' });
   });
 
   it('turns away an account that isn’t linked once another owns XBase', async () => {

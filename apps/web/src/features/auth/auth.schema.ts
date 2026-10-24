@@ -4,9 +4,10 @@ import { z } from 'zod';
 
 /**
  * Why signing in with X didn't work. denied: cancelled on X. not_linked: another X account owns
- * this XBase. expired: the attempt took too long or came from another browser. failed: X erred.
+ * this XBase. not_owner: X_OWNER_USERNAME names another account to claim it. expired: the attempt
+ * took too long or came from another browser. failed: X erred.
  */
-export const SIGN_IN_ERRORS = ['denied', 'not_linked', 'expired', 'failed'] as const;
+export const SIGN_IN_ERRORS = ['denied', 'not_linked', 'not_owner', 'expired', 'failed'] as const;
 export type SignInError = (typeof SIGN_IN_ERRORS)[number];
 
 /** The login page's search params. Anything unexpected is dropped rather than failing. */

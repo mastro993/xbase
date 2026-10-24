@@ -40,6 +40,13 @@ const EnvSchema = z.object({
   // The OAuth 2.0 client of the owner's X app: signing in and every X API call go through it.
   X_CLIENT_ID: required('X_CLIENT_ID'),
   X_CLIENT_SECRET: required('X_CLIENT_SECRET'),
+  // Optional: the only X account that may claim an empty XBase. Unset, the first to sign in does.
+  X_OWNER_USERNAME: z
+    .string()
+    .trim()
+    .regex(/^@?\w{1,15}$/, 'X_OWNER_USERNAME must be an X username, like @you')
+    .transform((value) => value.replace(/^@/, '').toLowerCase())
+    .optional(),
   OPENAI_API_KEY: optionalKey,
   ANTHROPIC_API_KEY: optionalKey,
   XAI_API_KEY: optionalKey,
