@@ -87,8 +87,9 @@ export function getAiSettings(): AiSettingsDto {
 }
 
 export function saveAiSettings(input: z.infer<typeof SaveAiSettingsInput>): AiSettingsDto {
-  requireKey(input.provider);
-  writeSetting('ai', parseInput(SaveAiSettingsInput, input));
+  const saved = parseInput(SaveAiSettingsInput, input);
+  requireKey(saved.provider);
+  writeSetting('ai', saved);
   return getAiSettings();
 }
 
@@ -107,8 +108,9 @@ export async function listModelsFor({
 }
 
 export function saveDecisionModel(input: z.infer<typeof SaveDecisionInput>): AiSettingsDto {
+  const saved = parseInput(SaveDecisionInput, input);
   requireKey('typesafe');
-  writeSetting('decision', parseInput(SaveDecisionInput, input));
+  writeSetting('decision', saved);
   return getAiSettings();
 }
 

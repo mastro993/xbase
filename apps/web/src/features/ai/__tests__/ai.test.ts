@@ -81,6 +81,14 @@ describe('AI settings', () => {
     ]);
   });
 
+  it('rejects a provider XBase doesn’t write with before looking for its key', () => {
+    env.vars = { OPENAI_API_KEY: OPENAI_KEY };
+    const deepseek = { provider: 'deepseek', model: gpt } as never;
+    expect(() => saveAiSettings(deepseek)).toThrow(ValidationError);
+    expect(() => saveAiSettings(deepseek)).not.toThrow(/Set undefined/);
+    expect(db.select().from(settings).all()).toEqual([]);
+  });
+
   it('falls back to the first provider with a key once the saved one loses its key', () => {
     env.vars = { OPENAI_API_KEY: OPENAI_KEY, XAI_API_KEY: XAI_KEY };
     saveAiSettings({ provider: 'xai', model: grok });
