@@ -93,8 +93,8 @@ describe('migrations', () => {
   });
 
   // A database from before X sign-in: its password sessions would work again once someone claims
-  // XBase, and its posts belong to no account, so the X accounts migration clears both.
-  it('upgrade a password-era database, signing everyone out', () => {
+  // XBase, its posts and voice belong to no account, and its AI settings hold a plain-text key.
+  it('upgrade a password-era database, signing everyone out and dropping the stored key', () => {
     dir = mkdtempSync(join(tmpdir(), 'xbase-db-'));
     const initOnly = join(dir, 'drizzle');
     cpSync(MIGRATIONS, initOnly, { recursive: true });
@@ -109,7 +109,19 @@ describe('migrations', () => {
     old.run(
       sql`insert into posts (id, parts, origin, created_at, updated_at) values ('p', '[]', 'web', 1, 1)`,
     );
+    old.run(
+      sql`insert into settings (key, value, updated_at) values ('ai', ${JSON.stringify({ provider: 'openai', model: { id: 'm', label: 'm', lowEffort: true }, apiKey: 'sk-secret' })}, 1), ('voice', '{}', 1)`,
+    );
     const upgraded = openDb(path, MIGRATIONS);
+    expect(upgraded.all(sql`select key, value from settings`)).toEqual([
+      {
+        key: 'ai',
+        value: JSON.stringify({
+          provider: 'openai',
+          model: { id: 'm', label: 'm', lowEffort: true },
+        }),
+      },
+    ]);
     expect(tableNames(upgraded)).toEqual(TABLES);
     expect(upgraded.all(sql`select id from sessions`)).toEqual([]);
     expect(upgraded.all(sql`select id from posts`)).toEqual([]);
