@@ -6,26 +6,38 @@ on:
   issue_comment:
     types: [created]
 
-permissions:
-  contents: read
-
 concurrency:
-  # Split by event so a /ask comment cannot cancel an in-flight pull_request
-  # review and leave the required check cancelled.
+  # Split by event so a `/ask` comment cannot cancel an in-flight review check.
   group: pr-agent-${{ github.event_name }}-${{ github.event.pull_request.number || github.event.issue.number }}
   cancel-in-progress: true
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
 
 jobs:
   pr-agent:
     name: PR-Agent review
-    # Auto /review and /improve on non-draft, non-bot, same-repo PRs. All review
-    # settings live in .pr_agent.toml. Collaborator `/review`, `/improve` or
-    # `/ask …` comments re-run the job; that is the only way to review a fork
-    # PR, because GitHub withholds secrets from fork runs. Other comments never
-    # start the job.
-    # Skipped jobs (drafts, bots, forks) count as passing for required checks.
+    # Reviews every PR when it opens or gets a new commit, and answers `/review`,
+    # `/improve`, `/ask …` comments. Drafts wait for `ready_for_review`. Bot PRs
+    # (dependabot, renovate) are skipped. Fork PRs, which get no secrets, wait for
+    # a `/review` comment from a repo collaborator. Other comments never start the
+    # job. PR-Agent reads the diff through the API and never checks out the PR's
+    # code. Model, tool, and ignore settings live in `.pr_agent.toml` (single
+    # source of truth; not duplicated here).
+    #
+    # The job name is the required check `PR-Agent review`. It stays in progress
+    # while the review runs, then the gate step fails only on a blocking review
+    # (merge_recommendation is changes_required, or security_concerns is not "No").
+    # Findings alone do not fail it. issue_comment runs keep slash commands working
+    # but attach to the default branch, so they cannot satisfy the check; the gate
+    # runs only on pull_request. Skipped jobs (drafts, bots, forks) count as
+    # passing for required checks.
     if: >-
       github.event.sender.type != 'Bot' &&
+      github.actor != 'dependabot[bot]' &&
+      github.actor != 'renovate[bot]' &&
       ((github.event_name == 'pull_request' &&
       !github.event.pull_request.draft &&
       github.event.pull_request.head.repo.full_name == github.repository) ||
@@ -33,6 +45,7 @@ jobs:
       startsWith(github.event.comment.body, '/') &&
       contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)))
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
       issues: write
@@ -44,17 +57,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ANTHROPIC.KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-      # Gate only pull_request runs: issue_comment attaches to the default
-      # branch and cannot satisfy the required check. Fail only when the review
-      # is blocking (changes_required, or a security concern other than "No").
-      # A missing merge_recommendation is non-blocking because PR-Agent reads
-      # .pr_agent.toml from the default branch.
+
       - name: Fail on a blocking review
         if: github.event_name == 'pull_request'
         env:
           REVIEW: ${{ steps.pr-agent.outputs.review }}
+        shell: python
         run: |
-          python3 <<'PY'
           import json
           import os
           import sys
@@ -62,25 +71,34 @@ jobs:
           raw = os.environ.get("REVIEW", "").strip()
           if not raw:
               print("No review output; treating as non-blocking")
-              sys.exit(0)
+              raise SystemExit(0)
+
           try:
               review = json.loads(raw)
-          except json.JSONDecodeError as exc:
-              print(f"Could not parse review output ({exc}); treating as non-blocking")
-              sys.exit(0)
+          except json.JSONDecodeError as error:
+              print(f"Could not parse review output: {error}", file=sys.stderr)
+              raise SystemExit(1)
+
           if not isinstance(review, dict):
               print("Review output is not an object; treating as non-blocking")
-              sys.exit(0)
+              raise SystemExit(0)
 
           merge = review.get("merge_recommendation")
+          if isinstance(merge, str):
+              merge = merge.strip()
+
           security = review.get("security_concerns")
-          reasons = []
+          if isinstance(security, str):
+              security = security.strip()
+
+          blocking = []
           if merge == "changes_required":
-              reasons.append("merge_recommendation=changes_required")
-          if security is not None and str(security).strip() != "No":
-              reasons.append(f"security_concerns={security!r}")
-          if reasons:
-              print("Blocking review: " + "; ".join(reasons))
-              sys.exit(1)
+              blocking.append("merge_recommendation=changes_required")
+          if security is not None and security != "No":
+              blocking.append("security_concerns is not No")
+
+          if blocking:
+              print("Blocking review: " + "; ".join(blocking), file=sys.stderr)
+              raise SystemExit(1)
+
           print("Review is non-blocking")
-          PY
