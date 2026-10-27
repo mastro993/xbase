@@ -42,7 +42,20 @@ describe('sessionCookie', () => {
 
   it('drops both over plain HTTP, where browsers would refuse the cookie', () => {
     env.APP_URL = 'http://192.168.1.5:3000';
-    expect(sessionCookie()).toMatchObject({ name: 'xbase_session', options: { secure: false } });
+    expect(sessionCookie()).toMatchObject({
+      name: 'xbase_session_3000',
+      options: { secure: false },
+    });
+  });
+
+  it('puts the plain-HTTP port in the name so two dev servers keep their sessions', () => {
+    env.APP_URL = 'http://127.0.0.1:5173';
+    expect(sessionCookie().name).toBe('xbase_session_5173');
+    env.APP_URL = 'http://127.0.0.1:5174';
+    expect(sessionCookie().name).toBe('xbase_session_5174');
+    // A default port has nothing to distinguish.
+    env.APP_URL = 'http://xbase.lan';
+    expect(sessionCookie().name).toBe('xbase_session');
   });
 });
 

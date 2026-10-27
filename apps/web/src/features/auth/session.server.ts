@@ -13,15 +13,23 @@ import {
 // Call these inside a request: a server function, a server route or middleware.
 
 /**
- * The session cookie's name and flags. `__Host-` and Secure need HTTPS, so a plain-HTTP LAN
- * install gets a plain name. Lax, not Strict: the MCP consent page is reached from another site.
+ * The name and flags of an auth cookie. `__Host-` and Secure need HTTPS, so a plain-HTTP LAN
+ * install gets a plain name; browsers don't scope cookies by port, so the port joins that name
+ * and two dev servers on 127.0.0.1 keep their own sessions and sign-in flows. Lax, not Strict:
+ * the MCP consent page is reached from another site.
  */
-export function sessionCookie() {
-  const secure = new URL(getEnv().APP_URL).protocol === 'https:';
+export function authCookie(base: string) {
+  const url = new URL(getEnv().APP_URL);
+  const secure = url.protocol === 'https:';
   return {
-    name: secure ? '__Host-xbase_session' : 'xbase_session',
+    name: secure ? `__Host-${base}` : url.port ? `${base}_${url.port}` : base,
     options: { httpOnly: true, secure, sameSite: 'lax', path: '/' } as const,
   };
+}
+
+/** The session cookie's name and flags. */
+export function sessionCookie() {
+  return authCookie('xbase_session');
 }
 
 /** The current request's session, or null when signed out or expired. */

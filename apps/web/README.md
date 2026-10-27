@@ -78,7 +78,7 @@ cp apps/web/.env.example apps/web/.env   # then set X_CLIENT_ID and X_CLIENT_SEC
 pnpm --filter @xbase/web dev             # http://127.0.0.1:5173, or the next free port
 ```
 
-Open the address `pnpm dev` prints: `localhost` redirects to `127.0.0.1`, because X only sends you back to the callback URL you registered and the sign-in cookie only returns to the host that set it. On a fallback port the app works, but signing in needs `APP_URL` and X's callback pointed at that origin. Vite also answers other devices on your network at the address under **Network**; expose it only on a network you trust. The first X account you sign in with owns your local XBase. The database is created in `apps/web/data/`, which git ignores.
+Open the address `pnpm dev` prints: `localhost` redirects to `127.0.0.1`, because X only sends you back to the callback URL you registered and the sign-in cookie only returns to the host that set it. On a fallback port the app works, but signing in needs `APP_URL` and X's callback pointed at that origin; over plain HTTP the session and sign-in cookies carry the port, so checkouts on different ports keep their own sign-ins. Vite also answers other devices on your network at the address under **Network**: expose it only on a network you trust, and pass `--host 127.0.0.1` to the `dev` command to keep it on this machine. The first X account you sign in with owns your local XBase. The database is created in `apps/web/data/`, which git ignores.
 
 In `apps/web`:
 

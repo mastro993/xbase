@@ -29,7 +29,8 @@ export default defineConfig({
   // otherwise pick port 3000. 5173 comes first, but when it's taken (another checkout, say) Vite
   // moves to the next free port instead of stopping: the app works there, while signing in also
   // needs APP_URL and X's app to name that origin. `host: true` answers other devices on the
-  // network too (their sign-ins likewise need their address in APP_URL).
+  // network too (their sign-ins likewise need their address in APP_URL); `--host 127.0.0.1`
+  // keeps it on this machine.
   server: { host: true, port: 5173, strictPort: false },
   plugins: [
     localhostTo127(),
