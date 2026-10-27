@@ -6,6 +6,7 @@ const STATUS = {
   invalid_request: 400,
   not_found: 404,
   invalid_state: 409,
+  reconnect_required: 409,
   budget_exceeded: 402,
   rate_limited: 429,
 } as const;
@@ -59,27 +60,49 @@ export class RateLimitedError extends ServiceError {
   }
 }
 
+/** X refused the account's access (a 401 or a dead refresh token): it must sign in again: a 409. */
+export class ReconnectRequiredError extends ServiceError {
+  readonly accountId: string;
+
+  constructor({ accountId, username }: { accountId: string; username: string }) {
+    super(
+      'reconnect_required',
+      `X no longer accepts @${username}’s access. Sign in again to keep reading X with it.`,
+    );
+    this.accountId = accountId;
+  }
+}
+
+/** Which spend a cap limits: one account's reads, or every account's together. */
+export type BudgetScope = 'account' | 'workspace';
+
 /** A spend cap stopped a paid read before it was sent: a 402. */
 export class BudgetExceededError extends ServiceError {
   readonly cap: 'daily' | 'monthly';
+  readonly scope: BudgetScope;
   readonly resetAt: Date;
   readonly spentMicros: number;
   readonly capMicros: number;
 
-  constructor(cap: {
+  constructor(limit: {
     cap: 'daily' | 'monthly';
+    scope: BudgetScope;
+    /** The account the cap belongs to; null for the workspace cap. */
+    username: string | null;
     resetAt: Date;
     spentMicros: number;
     capMicros: number;
   }) {
+    const spending = limit.username === null ? 'for this XBase' : `for @${limit.username}`;
     super(
       'budget_exceeded',
-      `The ${cap.cap} X API spend cap of $${(cap.capMicros / 1_000_000).toFixed(2)} is reached. ` +
-        `It resets at ${cap.resetAt.toISOString()}.`,
+      `The ${limit.cap} X API spend cap of $${(limit.capMicros / 1_000_000).toFixed(2)} ${spending} ` +
+        `is reached. It resets at ${limit.resetAt.toISOString()}.`,
     );
-    this.cap = cap.cap;
-    this.resetAt = cap.resetAt;
-    this.spentMicros = cap.spentMicros;
-    this.capMicros = cap.capMicros;
+    this.cap = limit.cap;
+    this.scope = limit.scope;
+    this.resetAt = limit.resetAt;
+    this.spentMicros = limit.spentMicros;
+    this.capMicros = limit.capMicros;
   }
 }

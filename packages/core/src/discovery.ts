@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { parseInput } from './validate';
+import { DEFAULT_SPEND_CAPS, SpendCapsInput, X_HOME_TIMELINE_MAX_PAGES } from './x-api';
 
 // Reply discovery: the topics to match, who to watch, the thresholds that score a post and the
 // filters that drop it. Settings edits them one section at a time and a run reads all of them.
@@ -238,6 +239,19 @@ const DiscoveryLanguageInput = z.object({
   replies: z.enum(LANGUAGE_CODES, 'Pick a language'),
 });
 
+/** What a run reads, and how many paid pages of it. */
+const DiscoverySourcesInput = z.object({
+  /** Pages of the home timeline one run fetches; each page is a paid call of up to 25 posts. */
+  homeTimelinePages: z
+    .number()
+    .int('Use a whole number')
+    .min(1, 'Fetch at least one page')
+    .max(X_HOME_TIMELINE_MAX_PAGES, `Fetch at most ${X_HOME_TIMELINE_MAX_PAGES} pages`),
+});
+
+/** This account's share of the X API budget; the workspace caps in Settings → X API are the hard limit. */
+const DiscoveryBudgetInput = SpendCapsInput;
+
 /** The sections Settings shows, in the order it shows them, and saves them one at a time. */
 export const DISCOVERY_SECTIONS = [
   'niches',
@@ -245,6 +259,8 @@ export const DISCOVERY_SECTIONS = [
   'thresholds',
   'exclusions',
   'language',
+  'sources',
+  'budget',
 ] as const;
 export type DiscoverySection = (typeof DISCOVERY_SECTIONS)[number];
 
@@ -254,6 +270,8 @@ const DISCOVERY_SECTION_SCHEMAS = {
   thresholds: DiscoveryThresholdsInput,
   exclusions: DiscoveryExclusionsInput,
   language: DiscoveryLanguageInput,
+  sources: DiscoverySourcesInput,
+  budget: DiscoveryBudgetInput,
 } as const satisfies Record<DiscoverySection, z.ZodType>;
 
 /** Every setting, section by section: what a run reads. */
@@ -286,6 +304,8 @@ export const DEFAULT_DISCOVERY_SETTINGS: DiscoverySettings = {
     longThreads: true,
   },
   language: { posts: 'en', replies: 'en' },
+  sources: { homeTimelinePages: 1 },
+  budget: { ...DEFAULT_SPEND_CAPS },
 };
 
 /** One section, normalised and validated: for the server, and the REST API and MCP tools later. */
@@ -329,6 +349,8 @@ export function readDiscoverySettings(stored: unknown): DiscoverySettings {
     thresholds: readSection(document, 'thresholds'),
     exclusions: readSection(document, 'exclusions'),
     language: readSection(document, 'language'),
+    sources: readSection(document, 'sources'),
+    budget: readSection(document, 'budget'),
   };
 }
 

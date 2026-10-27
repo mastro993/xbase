@@ -48,6 +48,8 @@ export const xAccounts = snakeCase.table('x_accounts', {
   refreshToken: text(),
   tokenExpiresAt: timestamp().notNull(),
   scope: text().notNull(),
+  /** Set when X refused the account's access: no read is tried until it signs in again. */
+  reconnectRequiredAt: timestamp(),
   /** The account's style guide for AI writing; null until saved. */
   voice: text({ mode: 'json' }).$type<unknown>(),
   /** The account's reply-discovery settings, one key per section; null until one is saved. */

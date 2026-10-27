@@ -1,0 +1,1 @@
+ALTER TABLE `x_accounts` ADD `reconnect_required_at` integer;

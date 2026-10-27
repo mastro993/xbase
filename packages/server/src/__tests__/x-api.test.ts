@@ -1,7 +1,7 @@
 import {
   BudgetExceededError,
-  InvalidStateError,
   RateLimitedError,
+  ReconnectRequiredError,
   ValidationError,
 } from '@xbase/core/errors';
 import {
@@ -13,7 +13,8 @@ import {
 import { xAccounts, xApiCalls, xPosts, xRateLimits } from '@xbase/db/schema';
 import { createTestDb, seedAccount } from '@xbase/db/testing';
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
-import { getAccountCredentials, saveAccountTokens } from '../accounts';
+import { getAccountCredentials, listAccounts, saveAccount, saveAccountTokens } from '../accounts';
+import { getDiscoverySettings, saveDiscoverySettings } from '../discovery-settings';
 import type { Env } from '../env';
 import { getPosts, getUsers, homeTimeline, searchRecent } from '../x-api-client';
 import { getXApiSettings, saveXApiSection, saveXApiSettings } from '../x-api-settings';
@@ -58,13 +59,31 @@ type Tweet = {
   text?: string;
   author_id?: string;
   username?: string;
+  /** A long post's body; `text` is then the truncated preview. */
   note_tweet?: { text: string };
+  /** The id of the post this one quotes. */
+  quotes?: string;
 };
 
-/** A /2/tweets or search answer, with the authors in includes.users. */
-function postPage(tweets: Tweet[], nextToken?: string) {
+const asTweet = (tweet: Tweet) => ({
+  id: tweet.id,
+  text: tweet.text ?? `Post ${tweet.id}`,
+  author_id: tweet.author_id,
+  created_at: '2026-10-27T12:00:00.000Z',
+  public_metrics: {
+    like_count: 1,
+    reply_count: 0,
+    retweet_count: 0,
+    quote_count: 0,
+  },
+  ...(tweet.note_tweet ? { note_tweet: tweet.note_tweet } : {}),
+  ...(tweet.quotes ? { referenced_tweets: [{ type: 'quoted', id: tweet.quotes }] } : {}),
+});
+
+/** A /2/tweets or search answer, with the authors and quoted posts in includes. */
+function postPage(tweets: Tweet[], options: { nextToken?: string; quoted?: Tweet[] } = {}) {
   const authors = new Map<string, { id: string; username: string; name: string }>();
-  for (const tweet of tweets) {
+  for (const tweet of [...tweets, ...(options.quoted ?? [])]) {
     if (!tweet.author_id) continue;
     authors.set(tweet.author_id, {
       id: tweet.author_id,
@@ -73,20 +92,12 @@ function postPage(tweets: Tweet[], nextToken?: string) {
     });
   }
   return {
-    data: tweets.map((tweet) => ({
-      id: tweet.id,
-      text: tweet.text ?? `Post ${tweet.id}`,
-      author_id: tweet.author_id,
-      created_at: '2026-10-27T12:00:00.000Z',
-      public_metrics: {
-        like_count: 1,
-        reply_count: 0,
-        retweet_count: 0,
-        quote_count: 0,
-      },
-    })),
-    includes: { users: [...authors.values()] },
-    meta: nextToken ? { next_token: nextToken } : {},
+    data: tweets.map(asTweet),
+    includes: {
+      users: [...authors.values()],
+      ...(options.quoted ? { tweets: options.quoted.map(asTweet) } : {}),
+    },
+    meta: options.nextToken ? { next_token: options.nextToken } : {},
   };
 }
 
@@ -106,13 +117,11 @@ const seed = (id: string, username: string, expiresInSeconds = 7200) => {
 type SettingsOverrides = {
   budget?: Partial<XApiSettings['budget']>;
   cache?: Partial<XApiSettings['cache']>;
-  sources?: Partial<XApiSettings['sources']>;
 };
 
 const settings = (overrides: SettingsOverrides = {}): XApiSettings => ({
   budget: { dailyCapUsd: null, monthlyCapUsd: null, ...overrides.budget },
   cache: { windowMinutes: 60, ...overrides.cache },
-  sources: { homeTimelinePages: 1, ...overrides.sources },
 });
 
 beforeEach(() => {
@@ -146,13 +155,9 @@ describe('usage log', () => {
       settings({ budget: { dailyCapUsd: 1 }, cache: { windowMinutes: 15 } }),
     );
 
-    saveXApiSection('sources', { homeTimelinePages: 3 });
+    saveXApiSection('cache', { windowMinutes: 30 });
     expect(getXApiSettings()).toEqual(
-      settings({
-        budget: { dailyCapUsd: 1 },
-        cache: { windowMinutes: 15 },
-        sources: { homeTimelinePages: 3 },
-      }),
+      settings({ budget: { dailyCapUsd: 1 }, cache: { windowMinutes: 30 } }),
     );
   });
 
@@ -245,6 +250,29 @@ describe('usage log', () => {
     expect(usage.accounts[0]?.spend.todayMicros).toBe(10_000);
     expect(usage.accounts[1]?.spend.todayMicros).toBe(5_000);
   });
+
+  it('shows each account’s own caps next to its spend', () => {
+    const accountId = seed('1001', 'owner');
+    saveDiscoverySettings(accountId, 'budget', { dailyCapUsd: 0.5, monthlyCapUsd: null });
+    recordXApiCall({
+      accountId,
+      endpoint: 'GET /2/tweets',
+      feature: 'discovery',
+      itemCount: 1,
+      costMicros: 5_000,
+      status: 'ok',
+    });
+
+    const account = getXApiUsage().accounts[0];
+    expect(account?.caps.daily).toMatchObject({
+      limitMicros: 500_000,
+      spentMicros: 5_000,
+      reached: false,
+    });
+    expect(account?.caps.monthly.limitMicros).toBeNull();
+    // The workspace's own caps are separate: none set, so none shown.
+    expect(getXApiUsage().caps.daily.limitMicros).toBeNull();
+  });
 });
 
 describe('budget caps', () => {
@@ -260,7 +288,7 @@ describe('budget caps', () => {
       status: 'ok',
     });
 
-    expect(() => assertBudget()).not.toThrow();
+    expect(() => assertBudget(accountId)).not.toThrow();
 
     recordXApiCall({
       accountId,
@@ -270,9 +298,11 @@ describe('budget caps', () => {
       costMicros: 1,
       status: 'ok',
     });
-    expect(() => assertBudget()).toThrow(
+    expect(() => assertBudget(accountId)).toThrow(
       new BudgetExceededError({
         cap: 'daily',
+        scope: 'workspace',
+        username: null,
         resetAt: new Date('2026-10-28T00:00:00.000Z'),
         spentMicros: 10_000,
         capMicros: 10_000,
@@ -292,14 +322,75 @@ describe('budget caps', () => {
       status: 'ok',
     });
 
-    expect(() => assertBudget()).toThrow(
+    expect(() => assertBudget(accountId)).toThrow(
       new BudgetExceededError({
         cap: 'monthly',
+        scope: 'workspace',
+        username: null,
         resetAt: new Date('2026-11-01T00:00:00.000Z'),
         spentMicros: 10_000,
         capMicros: 10_000,
       }),
     );
+  });
+
+  it('stops one account at its own cap and leaves the others spending', () => {
+    const owner = seed('1001', 'owner');
+    const brand = seed('2002', 'brand');
+    saveDiscoverySettings(owner, 'budget', { dailyCapUsd: 0.01, monthlyCapUsd: null });
+    recordXApiCall({
+      accountId: owner,
+      endpoint: 'GET /2/tweets',
+      feature: 'discovery',
+      itemCount: 2,
+      costMicros: 10_000,
+      status: 'ok',
+    });
+
+    expect(() => assertBudget(owner)).toThrow(
+      new BudgetExceededError({
+        cap: 'daily',
+        scope: 'account',
+        username: 'owner',
+        resetAt: new Date('2026-10-28T00:00:00.000Z'),
+        spentMicros: 10_000,
+        capMicros: 10_000,
+      }),
+    );
+    // The brand spends nothing yet, so its own cap has no say.
+    expect(() => assertBudget(brand)).not.toThrow();
+  });
+
+  it('keeps the workspace cap as the hard limit above a looser per-account cap', () => {
+    const accountId = seed('1001', 'owner');
+    saveDiscoverySettings(accountId, 'budget', { dailyCapUsd: 1, monthlyCapUsd: null });
+    saveXApiSettings(settings({ budget: { dailyCapUsd: 0.01 } }));
+    recordXApiCall({
+      accountId,
+      endpoint: 'GET /2/tweets',
+      feature: 'discovery',
+      itemCount: 2,
+      costMicros: 10_000,
+      status: 'ok',
+    });
+
+    expect(() => assertBudget(accountId)).toThrow(/for this XBase/);
+  });
+
+  it('reports the account cap before the workspace cap when both are reached', () => {
+    const accountId = seed('1001', 'owner');
+    saveDiscoverySettings(accountId, 'budget', { dailyCapUsd: 0.005, monthlyCapUsd: null });
+    saveXApiSettings(settings({ budget: { dailyCapUsd: 0.005 } }));
+    recordXApiCall({
+      accountId,
+      endpoint: 'GET /2/tweets',
+      feature: 'discovery',
+      itemCount: 1,
+      costMicros: 5_000,
+      status: 'ok',
+    });
+
+    expect(() => assertBudget(accountId)).toThrow(/for @owner/);
   });
 
   it('stops a paid read before it leaves, without a fetch or a usage row', async () => {
@@ -395,6 +486,74 @@ describe('post cache', () => {
     await getPosts(accountId, ['1'], { feature: 'full_text' });
     await getPosts(accountId, ['1'], { feature: 'full_text' });
     expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('full text and quotes', () => {
+  it('returns note_tweet’s body instead of the truncated text', async () => {
+    const accountId = seed('1001', 'owner');
+    fetchMock.mockResolvedValueOnce(
+      reply(
+        postPage([
+          {
+            id: '1',
+            author_id: '2002',
+            text: 'A long post that X cuts at…',
+            note_tweet: { text: 'A long post, in full, with the ending X hides from text.' },
+          },
+        ]),
+      ),
+    );
+
+    const { posts } = await getPosts(accountId, ['1'], { feature: 'full_text' });
+    expect(posts[0]?.text).toBe('A long post, in full, with the ending X hides from text.');
+
+    const params = callUrl().searchParams;
+    expect(params.get('tweet.fields')).toContain('note_tweet');
+    expect(params.get('expansions')).toContain('referenced_tweets.id.author_id');
+  });
+
+  it('brings a quoted post with its full text and author, and caches it on its own', async () => {
+    const accountId = seed('1001', 'owner');
+    fetchMock.mockResolvedValueOnce(
+      reply(
+        postPage([{ id: '1', author_id: '2002', quotes: '9' }], {
+          quoted: [
+            {
+              id: '9',
+              author_id: '3003',
+              username: 'quoted',
+              text: 'The short preview…',
+              note_tweet: { text: 'The quoted post in full.' },
+            },
+          ],
+        }),
+      ),
+    );
+
+    const { posts } = await getPosts(accountId, ['1'], { feature: 'full_text' });
+    // The quote is attached to the post, not returned as a second result, and billed once.
+    expect(posts).toHaveLength(1);
+    expect(posts[0]?.quotedPost).toEqual({
+      id: '9',
+      authorId: '3003',
+      authorUsername: 'quoted',
+      text: 'The quoted post in full.',
+    });
+    expect(db.select().from(xApiCalls).get()).toMatchObject({
+      itemCount: 1,
+      costMicros: 5_000,
+    });
+
+    // The quote survives the cache, and the quoted post answers a later read on its own.
+    const parent = await getPosts(accountId, ['1'], { feature: 'full_text' });
+    expect(parent.cached).toBe(1);
+    expect(parent.posts[0]?.quotedPost?.text).toBe('The quoted post in full.');
+
+    const quoted = await getPosts(accountId, ['9'], { feature: 'full_text' });
+    expect(quoted.cached).toBe(1);
+    expect(quoted.posts[0]?.text).toBe('The quoted post in full.');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -519,10 +678,12 @@ describe('rate limits', () => {
 
   it('returns the pages already read and stops when a later page is throttled', async () => {
     const accountId = seed('1001', 'owner');
-    saveXApiSection('sources', { homeTimelinePages: 3 });
+    saveDiscoverySettings(accountId, 'sources', { homeTimelinePages: 3 });
     const reset = new Date(NOW.getTime() + 900_000);
     fetchMock
-      .mockResolvedValueOnce(reply(postPage([{ id: '1', author_id: '2002' }], 'next')))
+      .mockResolvedValueOnce(
+        reply(postPage([{ id: '1', author_id: '2002' }], { nextToken: 'next' })),
+      )
       .mockResolvedValueOnce(
         reply(
           { title: 'Too Many Requests' },
@@ -545,18 +706,18 @@ describe('rate limits', () => {
 });
 
 describe('home timeline', () => {
-  it('fetches one page by default and the configured number when raised', async () => {
+  it('fetches one page by default and the account’s configured number when raised', async () => {
     const accountId = seed('1001', 'owner');
     fetchMock.mockImplementation(async () =>
-      reply(postPage([{ id: '1', author_id: '2002' }], 'next')),
+      reply(postPage([{ id: '1', author_id: '2002' }], { nextToken: 'next' })),
     );
 
-    expect(getXApiSettings().sources.homeTimelinePages).toBe(1);
+    expect(getDiscoverySettings(accountId).sources.homeTimelinePages).toBe(1);
     const one = await homeTimeline(accountId, { feature: 'discovery' });
     expect(one.pagesFetched).toBe(1);
     expect(fetchMock).toHaveBeenCalledTimes(1);
 
-    saveXApiSection('sources', { homeTimelinePages: 2 });
+    saveDiscoverySettings(accountId, 'sources', { homeTimelinePages: 2 });
     const two = await homeTimeline(accountId, { feature: 'discovery' });
     expect(two.pagesFetched).toBe(2);
     expect(fetchMock).toHaveBeenCalledTimes(3);
@@ -564,25 +725,21 @@ describe('home timeline', () => {
 
   it('finishes the page it is on when the spend cap is reached, then stops', async () => {
     const accountId = seed('1001', 'owner');
-    saveXApiSettings(
-      settings({
-        budget: { dailyCapUsd: 0.125 },
-        sources: { homeTimelinePages: 3 },
-      }),
-    );
+    saveXApiSettings(settings({ budget: { dailyCapUsd: 0.125 } }));
+    saveDiscoverySettings(accountId, 'sources', { homeTimelinePages: 3 });
     const page = postPage(
       Array.from({ length: X_SEARCH_RESULTS_PER_CALL }, (_, index) => ({
         id: `p${index}`,
         author_id: '2002',
       })),
-      'next',
+      { nextToken: 'next' },
     );
     fetchMock.mockImplementation(async () => reply(page));
 
     const run = await homeTimeline(accountId, { feature: 'discovery' });
     expect(run.posts).toHaveLength(X_SEARCH_RESULTS_PER_CALL);
     expect(run.pagesFetched).toBe(1);
-    expect(run.stop).toMatchObject({ reason: 'budget', cap: 'daily' });
+    expect(run.stop).toMatchObject({ reason: 'budget', scope: 'workspace', cap: 'daily' });
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });
@@ -670,28 +827,74 @@ describe('tokens', () => {
     expect(db.select().from(xAccounts).get()).toMatchObject({ username: 'owner' });
   });
 
-  it('says to sign in again when the refresh is refused', async () => {
+  it('flags the account when the refresh token is refused, and clears it on a new sign-in', async () => {
     const accountId = seed('1001', 'owner', 10);
     fetchMock.mockResolvedValueOnce(reply({ error: 'invalid_grant' }, { status: 400 }));
 
     await expect(getPosts(accountId, ['1'], { feature: 'full_text' })).rejects.toBeInstanceOf(
-      InvalidStateError,
+      ReconnectRequiredError,
     );
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(db.select().from(xApiCalls).all()).toEqual([]);
+    expect(getAccountCredentials(accountId)?.reconnectRequiredAt).toBeInstanceOf(Date);
+    expect(listAccounts()[0]?.reconnectRequired).toBe(true);
+
+    // Flagged: no read is tried, so X is not asked again.
+    await expect(getPosts(accountId, ['2'], { feature: 'full_text' })).rejects.toBeInstanceOf(
+      ReconnectRequiredError,
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    // Signing in again gives the account working tokens and clears the flag.
+    saveAccount(
+      { id: accountId, username: 'owner', name: 'Owner', avatarUrl: null },
+      {
+        accessToken: 'fresh-access',
+        refreshToken: 'fresh-refresh',
+        expiresAt: new Date(Date.now() + 7_200_000),
+        scope: 'tweet.read users.read offline.access',
+      },
+    );
+    expect(getAccountCredentials(accountId)?.reconnectRequiredAt).toBeNull();
+    expect(listAccounts()[0]?.reconnectRequired).toBe(false);
+
+    fetchMock.mockResolvedValueOnce(reply(postPage([{ id: '2', author_id: '2002' }])));
+    await expect(getPosts(accountId, ['2'], { feature: 'full_text' })).resolves.toBeDefined();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
-  it('turns a 401 on a read into a sign-in message and logs the failure', async () => {
+  it('flags the account on a 401, logs the failure, and stops further reads', async () => {
     const accountId = seed('1001', 'owner');
     fetchMock.mockResolvedValueOnce(reply({ title: 'Unauthorized' }, { status: 401 }));
 
     await expect(getPosts(accountId, ['1'], { feature: 'full_text' })).rejects.toBeInstanceOf(
-      InvalidStateError,
+      ReconnectRequiredError,
     );
     expect(db.select().from(xApiCalls).get()).toMatchObject({
       status: 'error',
       itemCount: 0,
       costMicros: 0,
     });
+    expect(listAccounts()[0]?.reconnectRequired).toBe(true);
+
+    await expect(getPosts(accountId, ['2'], { feature: 'full_text' })).rejects.toBeInstanceOf(
+      ReconnectRequiredError,
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the pages already read when a later page needs a new sign-in', async () => {
+    const accountId = seed('1001', 'owner');
+    saveDiscoverySettings(accountId, 'sources', { homeTimelinePages: 2 });
+    fetchMock
+      .mockResolvedValueOnce(
+        reply(postPage([{ id: '1', author_id: '2002' }], { nextToken: 'next' })),
+      )
+      .mockResolvedValueOnce(reply({ title: 'Unauthorized' }, { status: 401 }));
+
+    const run = await homeTimeline(accountId, { feature: 'discovery' });
+    expect(run.pagesFetched).toBe(1);
+    expect(run.posts.map(({ id }) => id)).toEqual(['1']);
+    expect(run.stop).toMatchObject({ reason: 'reconnect' });
   });
 });

@@ -1,19 +1,15 @@
-import { Clock01Icon } from '@hugeicons/core-free-icons';
 import { useRouter } from '@tanstack/react-router';
 import { useServerFn } from '@tanstack/react-start';
 import {
   type SpendCapDto,
   type XApiSettings,
   type XApiUsageDto,
-  estimateHomeTimelineCostMicros,
-  estimateHomeTimelinePageMicros,
   formatUsdMicros,
 } from '@xbase/core/x-api';
 import { Button } from '@xbase/ui/components/base/buttons/button';
 import { Input } from '@xbase/ui/components/base/input/input';
 import { Callout } from '@xbase/ui/components/xbase/callout';
 import { Spinner } from '@xbase/ui/components/xbase/spinner';
-import { IconGlyph } from '@xbase/ui/utils/icon';
 import { type FormEvent, useId, useState } from 'react';
 import { LocalTime } from '@/features/posts/LocalTime';
 import {
@@ -30,7 +26,8 @@ import { saveXApiSettingsFn } from './x-api.functions';
 
 // The owner's spend controls and the evidence behind them: what each X read cost, how much of
 // X's rate-limit window is left, and where the caps stand. Every number comes from the one read
-// layer; nothing here calls X.
+// layer; nothing here calls X. The workspace caps here are the hard limit every account shares;
+// each account's own caps live with its discovery settings.
 
 const capText = (value: number | null) => (value === null ? '' : String(value));
 
@@ -57,12 +54,13 @@ const Spend = ({ label, micros, cap }: { label: string; micros: number; cap?: Sp
 const CapReached = ({ name, cap }: { name: 'daily' | 'monthly'; cap: SpendCapDto }) =>
   cap.reached ? (
     <Callout tone="error" role="alert" title={`The ${name} spend cap is reached`}>
-      Paid X reads stop until <LocalTime value={cap.resetAt} format="dateTime" />, when the {name}{' '}
-      cap of {cap.limitMicros === null ? '—' : formatUsdMicros(cap.limitMicros)} resets.
+      Paid X reads for every account stop until <LocalTime value={cap.resetAt} format="dateTime" />,
+      when the {name} cap of {cap.limitMicros === null ? '—' : formatUsdMicros(cap.limitMicros)}{' '}
+      resets.
     </Callout>
   ) : null;
 
-/** The Settings form: both caps, the cache window and the home-timeline page count. */
+/** The workspace form: both hard caps and the cache window. */
 function SettingsForm({ settings }: { settings: XApiSettings }) {
   const router = useRouter();
   const save = useServerFn(saveXApiSettingsFn);
@@ -70,14 +68,9 @@ function SettingsForm({ settings }: { settings: XApiSettings }) {
   const [daily, setDaily] = useState(capText(settings.budget.dailyCapUsd));
   const [monthly, setMonthly] = useState(capText(settings.budget.monthlyCapUsd));
   const [minutes, setMinutes] = useState(String(settings.cache.windowMinutes));
-  const [pages, setPages] = useState(String(settings.sources.homeTimelinePages));
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const pageCount = Number(pages);
-  const estimate =
-    Number.isInteger(pageCount) && pageCount >= 1 ? estimateHomeTimelineCostMicros(pageCount) : 0;
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -85,17 +78,12 @@ function SettingsForm({ settings }: { settings: XApiSettings }) {
     const dailyCap = parseCap(daily);
     const monthlyCap = parseCap(monthly);
     const windowMinutes = Number(minutes);
-    const homeTimelinePages = Number(pages);
     if (!isMoney(dailyCap) || !isMoney(monthlyCap)) {
       setError('Enter a cap in dollars, or leave it blank for no cap.');
       return;
     }
     if (!Number.isInteger(windowMinutes) || windowMinutes < 0 || windowMinutes > 10_080) {
       setError('Cache for 0 to 10,080 minutes.');
-      return;
-    }
-    if (!Number.isInteger(homeTimelinePages) || homeTimelinePages < 1 || homeTimelinePages > 10) {
-      setError('Fetch between 1 and 10 home timeline pages per run.');
       return;
     }
     setSaving(true);
@@ -105,14 +93,12 @@ function SettingsForm({ settings }: { settings: XApiSettings }) {
         data: {
           budget: { dailyCapUsd: dailyCap, monthlyCapUsd: monthlyCap },
           cache: { windowMinutes },
-          sources: { homeTimelinePages },
         },
       });
       // Show what the server normalised.
       setDaily(capText(stored.budget.dailyCapUsd));
       setMonthly(capText(stored.budget.monthlyCapUsd));
       setMinutes(String(stored.cache.windowMinutes));
-      setPages(String(stored.sources.homeTimelinePages));
       setSaved(true);
       await router.invalidate({ sync: true });
     } catch (cause) {
@@ -162,22 +148,10 @@ function SettingsForm({ settings }: { settings: XApiSettings }) {
             setSaved(false);
           }}
         />
-        <Input
-          label="Home timeline pages per run"
-          value={pages}
-          inputMode="numeric"
-          hint="One page is 25 posts and up to $0.125. Raise it only if a run needs more."
-          onChange={(value) => {
-            setPages(value);
-            setSaved(false);
-          }}
-        />
       </div>
-      <p className="flex items-center gap-1.5 text-body-2-regular text-text-secondary">
-        <IconGlyph icon={Clock01Icon} aria-hidden className="size-4 shrink-0" />
-        {pageCount >= 1 && Number.isInteger(pageCount)
-          ? `${pageCount} page${pageCount === 1 ? '' : 's'} per run costs up to ${formatUsdMicros(estimate)} (${pageCount} × ${formatUsdMicros(estimateHomeTimelinePageMicros())}); cache hits cost nothing.`
-          : 'Pick a whole number of pages.'}
+      <p className="text-body-2-regular text-text-secondary">
+        These are the hard caps for every account together. Each account can set lower caps of its
+        own under Discovery settings.
       </p>
       <div className="flex flex-wrap items-center justify-end gap-2">
         <SavedStatus saved={saved} />
@@ -222,10 +196,33 @@ export function XApiCard({ usage }: { usage: XApiUsageDto }) {
                 <p className={ITEM_NAME}>@{account.username}</p>
                 <p className={ITEM_META}>
                   <span>
-                    {formatUsdMicros(account.spend.todayMicros)} today ·{' '}
-                    {formatUsdMicros(account.spend.monthMicros)} this month
+                    {formatUsdMicros(account.spend.todayMicros)}
+                    {account.caps.daily.limitMicros === null
+                      ? ''
+                      : ` of ${formatUsdMicros(account.caps.daily.limitMicros)}`}{' '}
+                    today · {formatUsdMicros(account.spend.monthMicros)}
+                    {account.caps.monthly.limitMicros === null
+                      ? ''
+                      : ` of ${formatUsdMicros(account.caps.monthly.limitMicros)}`}{' '}
+                    this month
                   </span>
                 </p>
+                {account.caps.daily.reached && (
+                  <p className={ITEM_META}>
+                    <span>
+                      Its daily cap is reached; resets{' '}
+                      <LocalTime value={account.caps.daily.resetAt} format="dateTime" />
+                    </span>
+                  </p>
+                )}
+                {account.caps.monthly.reached && (
+                  <p className={ITEM_META}>
+                    <span>
+                      Its monthly cap is reached; resets{' '}
+                      <LocalTime value={account.caps.monthly.resetAt} format="dateTime" />
+                    </span>
+                  </p>
+                )}
                 {account.rateLimits.length === 0 ? (
                   <p className={ITEM_META}>No calls yet.</p>
                 ) : (

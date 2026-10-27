@@ -68,21 +68,29 @@ export function formatUsdMicros(micros: number): string {
   }).format(microsToUsd(micros));
 }
 
-/** The sections Settings saves one at a time; a new field never needs a migration. */
-export const X_API_SECTIONS = ['budget', 'cache', 'sources'] as const;
-export type XApiSection = (typeof X_API_SECTIONS)[number];
-
 const CapUsd = z
   .number()
   .min(0, 'Use zero or more')
   .max(1_000_000, 'That cap is too high')
   .nullable();
 
-/** A null cap means the owner set none; paid reads then only stop at X's own limits. */
-const BudgetInput = z.object({
+/**
+ * A daily and a monthly cap, in dollars. The workspace sets one pair in `x-api` settings, the hard
+ * limit every account shares; each account can set a lower pair of its own under `discovery`.
+ * A null cap means the owner set none, so paid reads then only stop at the limit above it.
+ */
+export const SpendCapsInput = z.object({
   dailyCapUsd: CapUsd,
   monthlyCapUsd: CapUsd,
 });
+export type SpendCaps = z.infer<typeof SpendCapsInput>;
+
+/** A scope that never set a cap pays whatever X charges. */
+export const DEFAULT_SPEND_CAPS: SpendCaps = { dailyCapUsd: null, monthlyCapUsd: null };
+
+/** The sections of the workspace's X API settings; a new field never needs a migration. */
+export const X_API_SECTIONS = ['budget', 'cache'] as const;
+export type XApiSection = (typeof X_API_SECTIONS)[number];
 
 const CacheInput = z.object({
   /** A post fetched this recently is served from the database instead of X. Zero disables it. */
@@ -93,31 +101,20 @@ const CacheInput = z.object({
     .max(7 * 24 * 60, 'Keep posts for at most a week'),
 });
 
-const SourcesInput = z.object({
-  /** Pages of the home timeline one run fetches. Each page is a paid call. */
-  homeTimelinePages: z
-    .number()
-    .int('Use a whole number')
-    .min(1, 'Fetch at least one page')
-    .max(X_HOME_TIMELINE_MAX_PAGES, `Fetch at most ${X_HOME_TIMELINE_MAX_PAGES} pages`),
-});
-
 const X_API_SECTION_SCHEMAS = {
-  budget: BudgetInput,
+  budget: SpendCapsInput,
   cache: CacheInput,
-  sources: SourcesInput,
 } as const satisfies Record<XApiSection, z.ZodType>;
 
-/** Every X API setting, section by section: what the read layer and Settings read. */
+/** The workspace's X API settings: the hard spend caps and the cache window. */
 export type XApiSettings = {
   [S in XApiSection]: z.infer<(typeof X_API_SECTION_SCHEMAS)[S]>;
 };
 
-/** A fresh install pays no cap until the owner sets one, caches for an hour and reads one page. */
+/** A fresh install pays no cap until the owner sets one, and caches posts for an hour. */
 export const DEFAULT_X_API_SETTINGS: XApiSettings = {
-  budget: { dailyCapUsd: null, monthlyCapUsd: null },
+  budget: { ...DEFAULT_SPEND_CAPS },
   cache: { windowMinutes: 60 },
-  sources: { homeTimelinePages: 1 },
 };
 
 /** One section, normalised and validated; the server and later the REST and MCP tools use it. */
@@ -132,9 +129,8 @@ export function parseXApiSection<S extends XApiSection>(
 
 /** Every section at once, as the Settings form saves it. */
 export const SaveXApiSettingsInput = z.object({
-  budget: BudgetInput,
+  budget: SpendCapsInput,
   cache: CacheInput,
-  sources: SourcesInput,
 });
 
 /** One section, as a caller that only changes the caps saves it. */
@@ -169,7 +165,6 @@ export function readXApiSettings(stored: unknown): XApiSettings {
   return {
     budget: readSection(document, 'budget'),
     cache: readSection(document, 'cache'),
-    sources: readSection(document, 'sources'),
   };
 }
 
@@ -208,11 +203,13 @@ export type XApiCallDto = {
   createdAt: string;
 };
 
-/** One account's spend and rate limits; caps are shared, so they sit outside this. */
+/** One account's spend, its own caps and its rate limits; the workspace caps are shown outside. */
 export type XApiAccountUsageDto = {
   id: string;
   username: string;
   spend: SpendDto;
+  /** This account's own caps, inside the workspace's hard limit. */
+  caps: { daily: SpendCapDto; monthly: SpendCapDto };
   rateLimits: XRateLimitDto[];
 };
 
@@ -228,6 +225,7 @@ export type XApiUsageDto = {
   generatedAt: string;
   accounts: XApiAccountUsageDto[];
   spend: SpendDto;
+  /** The workspace's hard caps, over every account together. */
   caps: { daily: SpendCapDto; monthly: SpendCapDto };
   settings: XApiSettings;
   /** The most results one search call returns in this tier. */

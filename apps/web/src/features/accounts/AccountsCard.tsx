@@ -78,9 +78,26 @@ export function AccountsCard({ data, error }: { data: AccountsDto; error?: SignI
                       Working as
                     </Chip>
                   )}
+                  {account.reconnectRequired && (
+                    <Chip color="yellow" variant="caption">
+                      Needs reconnecting
+                    </Chip>
+                  )}
                 </p>
+                {account.reconnectRequired && (
+                  <p className={ITEM_META}>
+                    <span>
+                      X no longer accepts this account’s access, so XBase reads nothing with it.
+                    </span>
+                  </p>
+                )}
               </div>
             </div>
+            {account.reconnectRequired && (
+              <ButtonLink href={ADD_ACCOUNT_HREF} size="small" variant="secondary">
+                Sign in again<span className="sr-only"> as @{account.username}</span>
+              </ButtonLink>
+            )}
             {!last && (
               <ConfirmButton
                 size="small"

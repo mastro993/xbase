@@ -10,9 +10,9 @@ import { getDb } from '@xbase/db/client';
 import { settings } from '@xbase/db/schema';
 import { eq } from 'drizzle-orm';
 
-// X API settings: the spend caps, the cache window and the home-timeline page count. They live in
-// the generic settings table, next to the AI choice, until discovery settings (#24) owns the
-// budget section per account; the sections-over-defaults shape then moves over unchanged.
+// X API settings: the workspace's hard spend caps and the cache window. They live in the generic
+// settings table, next to the AI choice; each account's own caps and home timeline page count
+// live in that account's discovery document (discovery-settings.ts).
 
 const KEY = 'x-api';
 

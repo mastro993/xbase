@@ -43,9 +43,9 @@ describe('cost estimation', () => {
 });
 
 describe('settings', () => {
-  it('starts with no caps, an hour of cache and one timeline page', () => {
+  it('starts with no caps and an hour of cache', () => {
     expect(readXApiSettings(null)).toEqual(DEFAULT_X_API_SETTINGS);
-    expect(DEFAULT_X_API_SETTINGS.sources.homeTimelinePages).toBe(1);
+    expect(DEFAULT_X_API_SETTINGS.budget).toEqual({ dailyCapUsd: null, monthlyCapUsd: null });
     expect(DEFAULT_X_API_SETTINGS.cache.windowMinutes).toBe(60);
   });
 
@@ -54,12 +54,9 @@ describe('settings', () => {
       ...DEFAULT_X_API_SETTINGS,
       cache: { windowMinutes: 15 },
     });
-    expect(
-      readXApiSettings({ budget: { dailyCapUsd: 2 }, sources: { homeTimelinePages: 3 } }),
-    ).toEqual({
+    expect(readXApiSettings({ budget: { dailyCapUsd: 2 } })).toEqual({
       budget: { dailyCapUsd: 2, monthlyCapUsd: null },
       cache: DEFAULT_X_API_SETTINGS.cache,
-      sources: { homeTimelinePages: 3 },
     });
   });
 
@@ -77,8 +74,6 @@ describe('settings', () => {
       dailyCapUsd: null,
       monthlyCapUsd: 10,
     });
-    expect(() => parseXApiSection('sources', { homeTimelinePages: 0 })).toThrow(ValidationError);
-    expect(() => parseXApiSection('sources', { homeTimelinePages: 11 })).toThrow(ValidationError);
     expect(() => parseXApiSection('cache', { windowMinutes: -1 })).toThrow(ValidationError);
     expect(() => parseXApiSection('budget', { dailyCapUsd: -0.01, monthlyCapUsd: null })).toThrow(
       ValidationError,
@@ -89,8 +84,7 @@ describe('settings', () => {
     const parsed = SaveXApiSettingsInput.parse({
       budget: { dailyCapUsd: 1, monthlyCapUsd: null },
       cache: { windowMinutes: 60 },
-      sources: { homeTimelinePages: 2 },
     });
-    expect(parsed.sources.homeTimelinePages).toBe(2);
+    expect(parsed.budget.dailyCapUsd).toBe(1);
   });
 });

@@ -1,6 +1,7 @@
-import { BudgetExceededError } from '@xbase/core/errors';
+import { BudgetExceededError, type BudgetScope } from '@xbase/core/errors';
 import {
   type SpendCapDto,
+  type SpendCaps,
   type SpendDto,
   type XApiAccountUsageDto,
   type XApiCallDto,
@@ -13,6 +14,7 @@ import { getDb } from '@xbase/db/client';
 import { type XApiCall, xAccounts, xApiCalls, xRateLimits } from '@xbase/db/schema';
 import { and, asc, desc, eq, gte, sql } from 'drizzle-orm';
 import { listAccounts } from './accounts';
+import { getDiscoverySettings } from './discovery-settings';
 import { getXApiSettings } from './x-api-settings';
 
 // X API usage: the log of paid reads, the spend caps that stop them, and the rate-limit windows
@@ -75,32 +77,83 @@ const cap = (limitUsd: number | null, spentMicros: number, resetAt: Date): Spend
   };
 };
 
-/** Both caps and where spend stands against them; shared by every account. */
-export function getSpendCaps(now = new Date()) {
-  const { budget } = getXApiSettings();
-  return {
-    daily: cap(budget.dailyCapUsd, spendSince(startOfUtcDay(now)), nextUtcDay(now)),
-    monthly: cap(budget.monthlyCapUsd, spendSince(startOfUtcMonth(now)), nextUtcMonth(now)),
-  };
+const CAP_NAMES = ['daily', 'monthly'] as const;
+type CapName = (typeof CAP_NAMES)[number];
+
+/** Where a cap's spend is counted from, and when it resets: UTC day or UTC month. */
+const capWindow = (name: CapName, now: Date): { from: Date; resetAt: Date } =>
+  name === 'daily'
+    ? { from: startOfUtcDay(now), resetAt: nextUtcDay(now) }
+    : { from: startOfUtcMonth(now), resetAt: nextUtcMonth(now) };
+
+/** A scope's caps and where its spend stands against them. */
+const capsFor = (budget: SpendCaps, spend: SpendDto, now: Date) => ({
+  daily: cap(budget.dailyCapUsd, spend.todayMicros, capWindow('daily', now).resetAt),
+  monthly: cap(budget.monthlyCapUsd, spend.monthMicros, capWindow('monthly', now).resetAt),
+});
+
+const capValue = (budget: SpendCaps, name: CapName): number | null =>
+  name === 'daily' ? budget.dailyCapUsd : budget.monthlyCapUsd;
+
+/** Both caps and where spend stands against every account together: the hard limit. */
+function getSpendCaps(now = new Date()) {
+  return capsFor(getXApiSettings().budget, getSpend(undefined, now), now);
+}
+
+/** One account's own caps, inside the workspace's hard limit. */
+function getAccountSpendCaps(accountId: string, now = new Date()) {
+  return capsFor(getDiscoverySettings(accountId).budget, getSpend(accountId, now), now);
+}
+
+/** The handle a cap's message names; the id if the account was removed since the read started. */
+const accountName = (accountId: string): string =>
+  listAccounts().find(({ id }) => id === accountId)?.username ?? accountId;
+
+type CapScope = {
+  scope: BudgetScope;
+  /** The account the cap belongs to; null for the workspace cap. */
+  username: string | null;
+  budget: SpendCaps;
+  /** The account whose spend this scope sums; undefined sums every account. */
+  accountId?: string;
+};
+
+/** Throws for the first cap this scope has reached, naming the cap and when it resets. */
+function assertCaps({ scope, username, budget, accountId }: CapScope, now: Date): void {
+  for (const name of CAP_NAMES) {
+    const limit = capValue(budget, name);
+    if (limit === null) continue;
+    const { from, resetAt } = capWindow(name, now);
+    const spentMicros = spendSince(from, accountId);
+    if (spentMicros < usdToMicros(limit)) continue;
+    throw new BudgetExceededError({
+      scope,
+      username,
+      cap: name,
+      resetAt,
+      spentMicros,
+      capMicros: usdToMicros(limit),
+    });
+  }
 }
 
 /**
- * Throws before a paid read would leave when either cap is reached. A call already in flight
- * finishes; the job stops before its next page. The day cap is reported first when both are hit.
+ * Throws before a paid read would leave when either cap is reached. The account's own caps are
+ * checked first, then the workspace's, which is the hard limit over every account together. A
+ * call already in flight finishes; the job stops before its next page. The day cap is reported
+ * first when both are hit.
  */
-export function assertBudget(now = new Date()): void {
-  const caps = getSpendCaps(now);
-  for (const name of ['daily', 'monthly'] as const) {
-    const state = caps[name];
-    if (state.reached && state.limitMicros !== null) {
-      throw new BudgetExceededError({
-        cap: name,
-        resetAt: new Date(state.resetAt),
-        spentMicros: state.spentMicros,
-        capMicros: state.limitMicros,
-      });
-    }
-  }
+export function assertBudget(accountId: string, now = new Date()): void {
+  assertCaps(
+    {
+      scope: 'account',
+      username: accountName(accountId),
+      budget: getDiscoverySettings(accountId).budget,
+      accountId,
+    },
+    now,
+  );
+  assertCaps({ scope: 'workspace', username: null, budget: getXApiSettings().budget }, now);
 }
 
 /** Adds one row to the usage log. Errors keep X's status line, never a token or body. */
@@ -287,6 +340,7 @@ export function getXApiUsage(now = new Date()): XApiUsageDto {
     id: account.id,
     username: account.username,
     spend: getSpend(account.id, now),
+    caps: getAccountSpendCaps(account.id, now),
     rateLimits: getDb()
       .select()
       .from(xRateLimits)
