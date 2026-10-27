@@ -14,7 +14,6 @@ import { Input } from '@xbase/ui/components/base/input/input';
 import { Callout } from '@xbase/ui/components/xbase/callout';
 import { Spinner } from '@xbase/ui/components/xbase/spinner';
 import { type FormEvent, useId, useState } from 'react';
-import { SavedStatus } from '@/features/shell/SavedStatus';
 import { LocalTime } from '@/features/posts/LocalTime';
 import {
   ITEM_DETAILS,
@@ -23,6 +22,7 @@ import {
   ITEM_NAME,
   ITEM_ROW,
 } from '@/features/settings/item-list';
+import { SavedStatus } from '@/features/shell/SavedStatus';
 import { SectionCard } from '@/features/shell/SectionCard';
 import { readableError } from '@/lib/readable-error';
 import { saveXApiSettingsFn } from './x-api.functions';
