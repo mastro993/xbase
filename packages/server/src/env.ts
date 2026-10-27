@@ -1,7 +1,8 @@
 import { isLoopbackHost } from '@xbase/core/loopback';
 import { z } from 'zod';
 
-// X refuses `localhost` callback URLs for OAuth, but takes 127.0.0.1 (vite.config.ts listens there).
+// X refuses `localhost` callback URLs for OAuth, but takes 127.0.0.1 (vite.config.ts prefers that
+// port; when it's taken, signing in on the port Vite picks needs APP_URL and X's callback there).
 const DEV_APP_URL = 'http://127.0.0.1:5173';
 
 // An origin only: OAuth issuer, absolute links and the cookie's Secure flag come from it, never
