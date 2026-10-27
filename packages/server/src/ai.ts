@@ -1,13 +1,20 @@
+import { listDecisionModels } from '@xbase/ai/decisions';
 import { scrubSecrets } from '@xbase/ai/errors';
 import { generateText, type LlmConfig, listModels } from '@xbase/ai/llm';
 import { EMPTY_STYLE, type StyleGuide } from '@xbase/ai/profile';
 import { cleanReply, refinePostPrompt } from '@xbase/ai/prompts';
-import { type ModelOption, PROVIDERS } from '@xbase/ai/providers';
-import { DEFAULT_DECISION_MODEL, listDecisionModels } from '@xbase/ai/typesafe';
+import {
+  DECISION_PROVIDERS,
+  DECISION_PROVIDER_IDS,
+  type DecisionProvider,
+  type ModelOption,
+  PROVIDERS,
+} from '@xbase/ai/providers';
 import {
   AI_NOT_CONFIGURED,
   type AiSettingsDto,
   KEY_ENV,
+  ListDecisionModelsInput,
   SaveAiSettingsInput,
   SaveDecisionInput,
   VoiceInput,
@@ -22,9 +29,10 @@ import { eq } from 'drizzle-orm';
 import type { z } from 'zod';
 import { getEnv } from './env';
 
-// AI writing, and TypeSafe for decisions, with the owner's own provider keys. The keys live in the
-// server's environment and are only ever used here: errors are scrubbed of them. The database
-// keeps the choice of provider and model, workspace-wide, and each account's voice.
+// AI writing, and decision models from TypeSafe, OpenAI and OpenRouter, with the owner's own
+// provider keys. The keys live in the server's environment and are only ever used here: errors are
+// scrubbed of them. The database keeps the choice of provider and model, workspace-wide, and each
+// account's voice.
 
 function readSetting<T>(key: string, schema: z.ZodType<T>): T | null {
   const row = getDb().select().from(settings).where(eq(settings.key, key)).get();
@@ -65,9 +73,18 @@ function writingConfig(): WritingConfig | null {
   return { provider, model: PROVIDERS[provider].defaultModel, apiKey: requireKey(provider) };
 }
 
-function decisionModel(): ModelOption | null {
-  if (!keyFor('typesafe')) return null;
-  return readSetting('decision', SaveDecisionInput)?.model ?? DEFAULT_DECISION_MODEL;
+/** The decision provider and model saved, while its key is set, else the first provider with one. */
+type DecisionConfig = { provider: DecisionProvider; model: ModelOption };
+
+function availableDecisionProviders(): DecisionProvider[] {
+  return DECISION_PROVIDER_IDS.filter((provider) => keyFor(provider));
+}
+
+function decisionConfig(): DecisionConfig | null {
+  const saved = readSetting('decision', SaveDecisionInput);
+  if (saved && keyFor(saved.provider)) return saved;
+  const [provider] = availableDecisionProviders();
+  return provider ? { provider, model: DECISION_PROVIDERS[provider].defaultModel } : null;
 }
 
 // Provider error text can echo the key back: it reaches the browser scrubbed.
@@ -82,7 +99,8 @@ export function getAiSettings(): AiSettingsDto {
   return {
     available: availableProviders(),
     writing: writing && { provider: writing.provider, model: writing.model },
-    decision: decisionModel(),
+    decisionProviders: availableDecisionProviders(),
+    decision: decisionConfig(),
   };
 }
 
@@ -109,16 +127,19 @@ export async function listModelsFor({
 
 export function saveDecisionModel(input: z.infer<typeof SaveDecisionInput>): AiSettingsDto {
   const saved = parseInput(SaveDecisionInput, input);
-  requireKey('typesafe');
+  requireKey(saved.provider);
   writeSetting('decision', saved);
   return getAiSettings();
 }
 
-/** TypeSafe's models for TYPESAFE_API_KEY; doubles as a check of the key. */
-export async function listDecisionModelsFor(): Promise<ModelOption[]> {
-  const key = requireKey('typesafe');
+/** The provider's decision models; doubles as a check of the key. */
+export async function listDecisionModelsFor(
+  input: z.infer<typeof ListDecisionModelsInput>,
+): Promise<ModelOption[]> {
+  const { provider } = parseInput(ListDecisionModelsInput, input);
+  const key = requireKey(provider);
   try {
-    return await listDecisionModels(key);
+    return await listDecisionModels(provider, key);
   } catch (error) {
     throw providerError(error, key);
   }

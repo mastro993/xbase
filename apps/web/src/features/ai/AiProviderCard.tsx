@@ -16,11 +16,8 @@ import { SavedStatus } from '@/features/shell/SavedStatus';
 import { SectionCard } from '@/features/shell/SectionCard';
 import { readableError } from '@/lib/readable-error';
 import { listModelsFn, saveAiSettingsFn } from './ai.functions';
+import { either } from './either';
 import { ModelField } from './ModelField';
-
-/** "A, B or C". */
-const either = (items: string[]) =>
-  items.length < 2 ? items.join('') : `${items.slice(0, -1).join(', ')} or ${items.at(-1)}`;
 
 /**
  * The provider and model Refine with AI uses. Only providers with a key in the server's

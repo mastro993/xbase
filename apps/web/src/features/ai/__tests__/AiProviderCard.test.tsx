@@ -28,6 +28,7 @@ const SETTINGS: AiSettingsDto = {
     provider: 'openrouter',
     model: model('anthropic/claude-haiku-5.5', 'Anthropic: Claude Haiku 5.5'),
   },
+  decisionProviders: [],
   decision: null,
 };
 
@@ -41,7 +42,11 @@ afterEach(cleanup);
 const modelInput = () => screen.getByRole('combobox', { name: 'Model' }) as HTMLInputElement;
 
 it('says which variables to set while no provider has a key', () => {
-  render(<AiProviderCard settings={{ available: [], writing: null, decision: null }} />);
+  render(
+    <AiProviderCard
+      settings={{ available: [], writing: null, decisionProviders: [], decision: null }}
+    />,
+  );
   expect(screen.getByRole('note').textContent).toContain(
     'Set OPENAI_API_KEY, ANTHROPIC_API_KEY, XAI_API_KEY or OPENROUTER_API_KEY',
   );

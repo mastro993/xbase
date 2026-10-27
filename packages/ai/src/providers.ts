@@ -53,6 +53,62 @@ export const PROVIDERS: Record<ProviderId, ProviderInfo> = {
   },
 };
 
+// Decision models answer typed questions (yes/no, choice, score) with probabilities instead of
+// writing text. TypeSafe serves Jev directly; OpenAI's Decisions API has one fixed model;
+// OpenRouter carries it and other makers' models through the same API.
+
+export const DECISION_PROVIDER_IDS = ['typesafe', 'openai', 'openrouter'] as const;
+export type DecisionProvider = (typeof DECISION_PROVIDER_IDS)[number];
+
+export interface DecisionProviderInfo {
+  label: string;
+  defaultModel: ModelOption;
+  /** The provider serves one fixed model, so there is nothing to choose. */
+  fixedModel?: boolean;
+}
+
+/** The OpenRouter alias for Jev, which follows TypeSafe's newest release. */
+const OPENROUTER_JEV_LATEST: ModelOption = {
+  id: '~typesafe/jev-latest',
+  label: 'TypeSafe: Jev Latest',
+  lowEffort: false,
+};
+
+/** OpenRouter lists dozens of decision models; XBase offers this curated set, Jev first. */
+export const OPENROUTER_DECISION_MODELS: ModelOption[] = [
+  OPENROUTER_JEV_LATEST,
+  { id: 'openai/gpt-6-luna-decisions', label: 'OpenAI: Decisions', lowEffort: false },
+  { id: 'cloudflare/clef-flash', label: 'Cloudflare: Clef Flash', lowEffort: false },
+  { id: 'perplexity/pplx-decider-v1.2', label: 'Perplexity: Decider V1.2', lowEffort: false },
+  {
+    id: 'microsoft/microsoft-decision-1',
+    label: 'Microsoft: Microsoft-Decision-1',
+    lowEffort: false,
+  },
+  { id: 'liquid/d1', label: 'LiquidAI: d1', lowEffort: false },
+  { id: 'inception/mercury-decide', label: 'Inception: Mercury Decide', lowEffort: false },
+  { id: 'upstage/solar-decide', label: 'Upstage: Solar Decide', lowEffort: false },
+];
+
+export const DECISION_PROVIDERS: Record<DecisionProvider, DecisionProviderInfo> = {
+  typesafe: {
+    label: 'TypeSafe',
+    // The alias follows the newest stable Jev; a numbered version stays put.
+    defaultModel: { id: 'jev-latest', label: 'jev-latest', lowEffort: false },
+  },
+  openai: {
+    label: 'OpenAI',
+    // The Decisions API's fixed wire model. XBase only uses it through POST /v1/decisions,
+    // never OpenAI's chat model of the same name, and there is no list to choose from.
+    defaultModel: { id: 'gpt-6-luna', label: 'Decisions API', lowEffort: false },
+    fixedModel: true,
+  },
+  openrouter: {
+    label: 'OpenRouter',
+    defaultModel: OPENROUTER_JEV_LATEST,
+  },
+};
+
 /** Warn-only check. A longer matching prefix is another provider's: sk-ant- isn't an OpenAI sk- key. */
 export function looksLikeKeyFor(provider: ProviderId, key: string): boolean {
   const own = PROVIDERS[provider].keyPrefix;

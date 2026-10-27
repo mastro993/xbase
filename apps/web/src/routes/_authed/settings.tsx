@@ -55,7 +55,7 @@ function SettingsPage() {
       <AiProviderCard settings={ai} />
       {/* Keyed by account: switching accounts loads another voice into a fresh form. */}
       <VoiceCard key={accounts.current.id} voice={voice} username={accounts.current.username} />
-      <DecisionCard model={ai.decision} />
+      <DecisionCard settings={ai} />
       {/* Also per account: another account loads its own niches, thresholds, filters and caps. */}
       <DiscoverySettings key={accounts.current.id} settings={discovery} usage={currentUsage} />
       <ApiKeysCard keys={apiKeys} />

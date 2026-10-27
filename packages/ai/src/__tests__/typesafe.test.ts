@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { listDecisionModels } from '../typesafe';
+import { listTypeSafeModels } from '../typesafe';
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
 
@@ -14,7 +14,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe('listDecisionModels', () => {
+describe('listTypeSafeModels', () => {
   it('lists the models the key can use, sorted with numbers in order', async () => {
     const fn = mockFetch(
       json({
@@ -25,7 +25,7 @@ describe('listDecisionModels', () => {
         ],
       }),
     );
-    await expect(listDecisionModels('ts-123')).resolves.toEqual([
+    await expect(listTypeSafeModels('ts-123')).resolves.toEqual([
       { id: 'jev-2', label: 'jev-2', lowEffort: false },
       { id: 'jev-10', label: 'jev-10', lowEffort: false },
       { id: 'jev-latest', label: 'jev-latest', lowEffort: false },
@@ -39,11 +39,11 @@ describe('listDecisionModels', () => {
 
   it('treats a reply without models as an empty list', async () => {
     mockFetch(json({}));
-    await expect(listDecisionModels('ts-123')).resolves.toEqual([]);
+    await expect(listTypeSafeModels('ts-123')).resolves.toEqual([]);
   });
 
   it('reports a rejected key', async () => {
     mockFetch(json({ error: { message: 'Unauthorized' } }, 401));
-    await expect(listDecisionModels('bad')).rejects.toThrow('Invalid API key');
+    await expect(listTypeSafeModels('bad')).rejects.toThrow('Invalid API key');
   });
 });

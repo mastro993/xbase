@@ -1,5 +1,4 @@
-import { PROVIDERS } from '@xbase/ai/providers';
-import { DEFAULT_DECISION_MODEL } from '@xbase/ai/typesafe';
+import { DECISION_PROVIDERS, OPENROUTER_DECISION_MODELS, PROVIDERS } from '@xbase/ai/providers';
 import { AI_NOT_CONFIGURED, VoiceInput } from '@xbase/core/ai';
 import { InvalidStateError, ValidationError } from '@xbase/core/errors';
 import { settings } from '@xbase/db/schema';
@@ -23,6 +22,7 @@ vi.mock('../env', () => ({ getEnv: () => env.vars }));
 
 const OPENAI_KEY = 'sk-test-openai-0000000000001234';
 const XAI_KEY = 'xai-test-0000000000005678';
+const OPENROUTER_KEY = 'sk-or-test-0000000000003456';
 const TYPESAFE_KEY = 'ts-test-0000000000009012';
 const gpt = PROVIDERS.openai.defaultModel;
 const grok = PROVIDERS.xai.defaultModel;
@@ -51,14 +51,20 @@ afterEach(() => {
 
 describe('AI settings', () => {
   it('offers the providers with a key, and never returns a key', () => {
-    expect(getAiSettings()).toEqual({ available: [], writing: null, decision: null });
+    expect(getAiSettings()).toEqual({
+      available: [],
+      writing: null,
+      decisionProviders: [],
+      decision: null,
+    });
 
     env.vars = { XAI_API_KEY: XAI_KEY, OPENAI_API_KEY: OPENAI_KEY };
     const ai = getAiSettings();
     expect(ai).toEqual({
       available: ['openai', 'xai'],
       writing: { provider: 'openai', model: gpt },
-      decision: null,
+      decisionProviders: ['openai'],
+      decision: { provider: 'openai', model: DECISION_PROVIDERS.openai.defaultModel },
     });
     expect(JSON.stringify(ai)).not.toMatch(/sk-test|xai-test/);
   });
@@ -109,21 +115,67 @@ describe('AI settings', () => {
 
 describe('decision model', () => {
   const jev = { id: 'jev-2', label: 'jev-2', lowEffort: false };
+  const jevLatest = DECISION_PROVIDERS.typesafe.defaultModel;
 
-  it('is null without TYPESAFE_API_KEY, which saving it needs', () => {
-    expect(() => saveDecisionModel({ model: jev })).toThrow(
+  it('is null without a decision key, which saving it needs', () => {
+    expect(() => saveDecisionModel({ provider: 'typesafe', model: jev })).toThrow(
       new ValidationError('Set TYPESAFE_API_KEY in the server’s environment first.'),
     );
     expect(getAiSettings().decision).toBeNull();
+    expect(getAiSettings().decisionProviders).toEqual([]);
   });
 
-  it('is the saved model, else the default, while the key is set', () => {
+  it('is the saved model, else the provider’s default, while its key is set', () => {
     env.vars = { TYPESAFE_API_KEY: TYPESAFE_KEY };
-    expect(getAiSettings().decision).toEqual(DEFAULT_DECISION_MODEL);
-    expect(saveDecisionModel({ model: jev }).decision).toEqual(jev);
+    expect(getAiSettings().decision).toEqual({ provider: 'typesafe', model: jevLatest });
+    expect(saveDecisionModel({ provider: 'typesafe', model: jev }).decision).toEqual({
+      provider: 'typesafe',
+      model: jev,
+    });
+    expect(db.select().from(settings).all()).toEqual([
+      expect.objectContaining({ key: 'decision', value: { provider: 'typesafe', model: jev } }),
+    ]);
 
     delete env.vars.TYPESAFE_API_KEY;
     expect(getAiSettings().decision).toBeNull();
+  });
+
+  it('offers OpenAI’s Decisions API and OpenRouter’s Jev with their own keys', () => {
+    env.vars = { OPENAI_API_KEY: OPENAI_KEY };
+    expect(getAiSettings().decision).toEqual({
+      provider: 'openai',
+      model: DECISION_PROVIDERS.openai.defaultModel,
+    });
+
+    env.vars = { OPENROUTER_API_KEY: OPENROUTER_KEY };
+    expect(getAiSettings().decision).toEqual({
+      provider: 'openrouter',
+      model: DECISION_PROVIDERS.openrouter.defaultModel,
+    });
+  });
+
+  it('falls back in provider order once the saved provider loses its key', () => {
+    env.vars = {
+      TYPESAFE_API_KEY: TYPESAFE_KEY,
+      OPENAI_API_KEY: OPENAI_KEY,
+      OPENROUTER_API_KEY: OPENROUTER_KEY,
+    };
+    expect(getAiSettings().decisionProviders).toEqual(['typesafe', 'openai', 'openrouter']);
+
+    saveDecisionModel({
+      provider: 'openrouter',
+      model: { id: 'cloudflare/clef-flash', label: 'Cloudflare: Clef Flash', lowEffort: false },
+    });
+    delete env.vars.OPENROUTER_API_KEY;
+    expect(getAiSettings().decision).toEqual({ provider: 'typesafe', model: jevLatest });
+  });
+
+  it('treats a decision stored without a provider as unset', () => {
+    env.vars = { TYPESAFE_API_KEY: TYPESAFE_KEY };
+    db.insert(settings)
+      .values({ key: 'decision', value: { model: jev } })
+      .run();
+    expect(getAiSettings().decision).toEqual({ provider: 'typesafe', model: jevLatest });
   });
 });
 
@@ -162,22 +214,41 @@ describe('listModelsFor', () => {
 
 describe('listDecisionModelsFor', () => {
   it('lists TypeSafe’s models with TYPESAFE_API_KEY', async () => {
-    await expect(listDecisionModelsFor()).rejects.toThrow(ValidationError);
+    await expect(listDecisionModelsFor({ provider: 'typesafe' })).rejects.toThrow(ValidationError);
     expect(fetchMock).not.toHaveBeenCalled();
 
     env.vars = { TYPESAFE_API_KEY: TYPESAFE_KEY };
     fetchMock.mockReturnValueOnce(reply({ models: [{ name: 'jev-latest' }, { name: 'jev-2' }] }));
-    await expect(listDecisionModelsFor()).resolves.toEqual([
+    await expect(listDecisionModelsFor({ provider: 'typesafe' })).resolves.toEqual([
       { id: 'jev-2', label: 'jev-2', lowEffort: false },
       { id: 'jev-latest', label: 'jev-latest', lowEffort: false },
     ]);
     expect(sentKey()).toBe(TYPESAFE_KEY);
   });
 
+  it('offers the fixed Decisions API model for OpenAI, without listing', async () => {
+    env.vars = { OPENAI_API_KEY: OPENAI_KEY };
+    await expect(listDecisionModelsFor({ provider: 'openai' })).resolves.toEqual([
+      DECISION_PROVIDERS.openai.defaultModel,
+    ]);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('offers OpenRouter’s curated decision models, Jev first, checking the key', async () => {
+    env.vars = { OPENROUTER_API_KEY: OPENROUTER_KEY };
+    fetchMock.mockReturnValueOnce(reply({ data: { label: 'test' } }));
+    await expect(listDecisionModelsFor({ provider: 'openrouter' })).resolves.toEqual(
+      OPENROUTER_DECISION_MODELS,
+    );
+    expect(fetchMock.mock.calls[0]?.[0]).toBe('https://openrouter.ai/api/v1/key');
+    expect(sentKey()).toBe(OPENROUTER_KEY);
+    expect(OPENROUTER_DECISION_MODELS[0]?.id).toBe('~typesafe/jev-latest');
+  });
+
   it('reports a failure without echoing the key', async () => {
     env.vars = { TYPESAFE_API_KEY: TYPESAFE_KEY };
     fetchMock.mockReturnValueOnce(reply({ error: { message: `No ${TYPESAFE_KEY}` } }, 500));
-    await expect(listDecisionModelsFor()).rejects.toThrow(/^500: No …$/);
+    await expect(listDecisionModelsFor({ provider: 'typesafe' })).rejects.toThrow(/^500: No …$/);
   });
 });
 

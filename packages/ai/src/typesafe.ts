@@ -8,15 +8,8 @@ import type { ModelOption } from './providers';
 
 const BASE = 'https://api.typesafe.ai/v1';
 
-/** The alias that follows the newest stable Jev. */
-export const DEFAULT_DECISION_MODEL: ModelOption = {
-  id: 'jev-latest',
-  label: 'jev-latest',
-  lowEffort: false,
-};
-
 /** The models and aliases the key can use, sorted. Throws Error('Invalid API key') on a 401. */
-export async function listDecisionModels(apiKey: string): Promise<ModelOption[]> {
+export async function listTypeSafeModels(apiKey: string): Promise<ModelOption[]> {
   const { models } = await fetchJson<{ models?: { name: string }[] }>(
     `${BASE}/models`,
     { headers: { authorization: `Bearer ${apiKey}` } },
