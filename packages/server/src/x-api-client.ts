@@ -213,7 +213,9 @@ export async function getPosts(
   const cached =
     fresh || windowMinutes === 0
       ? []
-      : readCachedPosts(accountId, wanted, new Date(Date.now() - windowMinutes * 60_000));
+      : chunks(wanted, X_POSTS_PER_CALL).flatMap((chunk) =>
+          readCachedPosts(accountId, chunk, new Date(Date.now() - windowMinutes * 60_000)),
+        );
   const cachedIds = new Set(cached.map(({ id }) => id));
   const missing = wanted.filter((id) => !cachedIds.has(id));
 
