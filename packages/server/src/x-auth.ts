@@ -6,7 +6,10 @@ import { getEnv } from './env';
 
 // Signing in with X: OAuth 2.0 authorization code with PKCE, through the owner's X app
 // (X_CLIENT_ID, X_CLIENT_SECRET). The web app runs the browser's side of the flow; this is X's
-// side, and who may get in.
+// side, and who may get in. These two calls (token, users/me) are the only X requests outside the
+// read layer (x-api-client.ts and x-api-http.ts): signing in happens before an account exists, so
+// there is no account token, budget or cache to go through. Every read a feature makes goes
+// through that layer.
 
 const AUTHORIZE_URL = 'https://x.com/i/oauth2/authorize';
 const TOKEN_URL = 'https://api.x.com/2/oauth2/token';
@@ -84,6 +87,34 @@ const MeResponse = z.object({
     profile_image_url: z.string().optional(),
   }),
 });
+
+/**
+ * Renews an account's access with its refresh token. X rotates the refresh token, so the caller
+ * saves both; a response without one keeps the stored token.
+ */
+export async function refreshXTokens(refreshToken: string): Promise<XTokens> {
+  const { X_CLIENT_ID, X_CLIENT_SECRET } = getEnv();
+  const credentials = `${encodeURIComponent(X_CLIENT_ID)}:${encodeURIComponent(X_CLIENT_SECRET)}`;
+  const body = TokenResponse.parse(
+    await xJson(TOKEN_URL, {
+      method: 'POST',
+      headers: {
+        authorization: `Basic ${Buffer.from(credentials).toString('base64')}`,
+        'content-type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        grant_type: 'refresh_token',
+        refresh_token: refreshToken,
+      }),
+    }),
+  );
+  return {
+    accessToken: body.access_token,
+    refreshToken: body.refresh_token ?? null,
+    expiresAt: new Date(Date.now() + body.expires_in * 1000),
+    scope: body.scope,
+  };
+}
 
 /** Who the access token belongs to. */
 export async function fetchXProfile(accessToken: string): Promise<XProfile> {

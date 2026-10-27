@@ -11,7 +11,7 @@ It is a Node server built with [TanStack Start](https://tanstack.com/start) and 
 - **Queue**: schedule a draft at a time in your browser's time zone. The queue lists scheduled posts by day; reschedule them, edit them or move them back to the drafts.
 - **Discover**: keep the X searches you'd run by hand, in X's search syntax, and open any of them on x.com.
 - **Stats**: a placeholder for now: engagement rate, the best times to post and follower growth arrive with the X API.
-- **Settings**: the X accounts; the AI provider and model; each account's voice for the AI; the decision model; reply discovery's niches, watch list, thresholds, exclusions and language; API keys; MCP; sessions. Provider keys come from the environment, never from the page.
+- **Settings**: the X accounts; X API spend and caps; the AI provider and model; each account's voice for the AI; the decision model; reply discovery's niches, watch list, thresholds, exclusions and language; API keys; MCP; sessions. Provider keys come from the environment, never from the page.
 - **For other apps**: a [REST API](#rest-api) for drafts, with API keys, and an [MCP server](#mcp) with OAuth, so assistants such as Claude can write and schedule.
 
 It signs in with X, keeps sessions on the server so signing out ends them, migrates its SQLite database at startup, and ships with a health check and a Docker image.
@@ -27,6 +27,18 @@ Two facts about the X API shape what comes next (as of October 2026; check X's d
 
 - **It's pay-per-use**, with no free tier: you buy credits. Creating a post costs $0.015, or $0.20 with a link; reading someone else's post $0.005; reading your own posts and followers $0.001 each.
 - **Apps can't reply to other people's posts.** Since February 2026 the API accepts a reply only when the post's author mentioned or quoted you. Replying from Discover will therefore open the post on x.com.
+
+## X API reads
+
+Every read goes through one layer, `packages/server/src/x-api-client.ts`: posts by id, users, recent search and the home timeline. No feature calls X on its own. The layer:
+
+- uses the tokens of the account the read is for, and renews them when they are about to expire, saving X's rotated refresh token;
+- logs each call in `x_api_calls` with its endpoint, the feature that asked, the number of items, its estimated cost and the time; the price table lives in `packages/core/src/x-api.ts` beside the code that uses it;
+- caches posts per account for an hour by default, and serves them from the database instead of paying again; `fresh: true` skips the cache for current engagement numbers;
+- stops paid reads at the daily and monthly caps set in **Settings → X API**, naming the cap and its reset time; a running job finishes its current page and then stops;
+- stores the rate-limit headers X returns, and after a 429 waits for the reported reset time instead of retrying in a loop.
+
+Home timeline runs fetch one page by default. Raising the page count in Settings shows the extra cost before you save: up to $0.125 per page of 25 posts. Settings also shows spend for today, this week and this month, each account's remaining rate-limit window and the latest calls.
 
 ## Set up your X app
 

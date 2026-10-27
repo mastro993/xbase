@@ -1,5 +1,13 @@
 import { getDb } from '@xbase/db/client';
-import { oauthClients, oauthCodes, oauthGrants, oauthTokens, sessions } from '@xbase/db/schema';
+import {
+  oauthClients,
+  oauthCodes,
+  oauthGrants,
+  oauthTokens,
+  sessions,
+  xApiCalls,
+  xPosts,
+} from '@xbase/db/schema';
 import { and, eq, lt, notExists, or } from 'drizzle-orm';
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -10,6 +18,8 @@ type HousekeepingResult = {
   tokens: number;
   grants: number;
   clients: number;
+  apiCalls: number;
+  cachedPosts: number;
 };
 
 /** Deletes rows nothing can use any more. Safe to run at any time. */
@@ -50,6 +60,20 @@ export function runHousekeeping(now: Date): HousekeepingResult {
             ),
           ),
         )
+        .run(),
+    ),
+    // The usage log is a spending record, not an archive: a quarter covers any billing question.
+    apiCalls: count(
+      tx
+        .delete(xApiCalls)
+        .where(lt(xApiCalls.createdAt, ago(90)))
+        .run(),
+    ),
+    // Cached posts are paid for again when asked; a month-old copy is never worth keeping.
+    cachedPosts: count(
+      tx
+        .delete(xPosts)
+        .where(lt(xPosts.fetchedAt, ago(30)))
         .run(),
     ),
   }));
