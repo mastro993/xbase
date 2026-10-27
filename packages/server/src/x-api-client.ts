@@ -1,4 +1,9 @@
-import { BudgetExceededError, RateLimitedError, ValidationError } from '@xbase/core/errors';
+import {
+  BudgetExceededError,
+  RateLimitedError,
+  ReconnectRequiredError,
+  ValidationError,
+} from '@xbase/core/errors';
 import {
   type XApiFeature,
   X_HOME_TIMELINE_MAX_PAGES,
@@ -10,6 +15,7 @@ import { getDb } from '@xbase/db/client';
 import { type CachedPost, xPosts } from '@xbase/db/schema';
 import { and, eq, gte, inArray } from 'drizzle-orm';
 import { z } from 'zod';
+import { getDiscoverySettings } from './discovery-settings';
 import { xRequest } from './x-api-http';
 import { getXApiSettings } from './x-api-settings';
 
@@ -18,21 +24,35 @@ import { getXApiSettings } from './x-api-settings';
 // cost, and uses the same per-account post cache. Tokens are the account's own (x-auth.ts renews
 // them); the HTTP plumbing is x-api-http.ts.
 
+/** The fields that make a post readable in full: its long body, its quotes and its engagement. */
 const TWEET_FIELDS =
-  'created_at,public_metrics,author_id,conversation_id,lang,attachments,referenced_tweets';
+  'created_at,public_metrics,author_id,conversation_id,lang,attachments,referenced_tweets,note_tweet';
 const USER_FIELDS = 'profile_image_url,public_metrics';
+/** Authors, the posts they quote, and those posts' authors: a quote never arrives without one. */
+const EXPANSIONS = 'author_id,referenced_tweets.id,referenced_tweets.id.author_id';
+
+/** A quoted post, with the full body and author a feature needs to read it. */
+export type XQuotedPost = {
+  id: string;
+  authorId: string;
+  authorUsername: string | null;
+  text: string;
+};
 
 /** One post as the read layer returns it. `data` keeps X's response for later normalization. */
 export type XPost = {
   id: string;
   authorId: string;
   authorUsername: string | null;
+  /** The full body: X's `note_tweet` text for a long post, otherwise `text`. */
   text: string;
   createdAt: string | null;
   metrics: Record<string, number> | null;
+  /** The post this one quotes, with its own full text and author; null when it quotes none. */
+  quotedPost: XQuotedPost | null;
   /** When this copy was read from X; a cache hit keeps the earlier time. */
   fetchedAt: string;
-  /** The raw tweet: full text, quoted posts and edit history stay available to features. */
+  /** The raw tweet, as X returned it. */
   data: unknown;
 };
 
@@ -53,8 +73,15 @@ export type XPostsResult = XPage & {
 
 /** Why a timeline run stopped after a page instead of finishing every page the owner asked for. */
 export type XTimelineStop =
-  | { reason: 'budget'; cap: 'daily' | 'monthly'; resetAt: string; message: string }
-  | { reason: 'rate_limit'; resetAt: string; message: string };
+  | {
+      reason: 'budget';
+      scope: 'account' | 'workspace';
+      cap: 'daily' | 'monthly';
+      resetAt: string;
+      message: string;
+    }
+  | { reason: 'rate_limit'; resetAt: string; message: string }
+  | { reason: 'reconnect'; message: string };
 
 export type XTimelineRun = XPage & {
   pagesFetched: number;
@@ -67,6 +94,9 @@ const TweetSchema = z.looseObject({
   author_id: z.string().optional(),
   created_at: z.string().optional(),
   public_metrics: z.record(z.string(), z.number()).optional(),
+  /** A long post's body; `text` is then only its truncated preview. */
+  note_tweet: z.looseObject({ text: z.string() }).optional(),
+  referenced_tweets: z.array(z.looseObject({ type: z.string(), id: z.string() })).optional(),
 });
 
 const UserSchema = z.looseObject({
@@ -77,9 +107,27 @@ const UserSchema = z.looseObject({
   public_metrics: z.record(z.string(), z.number()).optional(),
 });
 
+const QuotedPostSchema = z.object({
+  id: z.string(),
+  authorId: z.string(),
+  authorUsername: z.string().nullable(),
+  text: z.string(),
+});
+
+/** What x_posts keeps: the tweet as X returned it and the quote resolved when it was read. */
+const CachedPostData = z.object({
+  tweet: TweetSchema,
+  quotedPost: QuotedPostSchema.nullable(),
+});
+
 const TweetPage = z.looseObject({
   data: z.array(TweetSchema).optional(),
-  includes: z.looseObject({ users: z.array(UserSchema).optional() }).optional(),
+  includes: z
+    .looseObject({
+      users: z.array(UserSchema).optional(),
+      tweets: z.array(TweetSchema).optional(),
+    })
+    .optional(),
   meta: z.looseObject({ next_token: z.string().optional() }).optional(),
 });
 
@@ -90,6 +138,9 @@ const UserPage = z.looseObject({
 type RawTweet = z.infer<typeof TweetSchema>;
 type RawUser = z.infer<typeof UserSchema>;
 
+/** One post and the tweet it came from, so it can be cached as X returned it. */
+type ParsedPost = { post: XPost; tweet: RawTweet };
+
 const toUser = (user: RawUser): XUser => ({
   id: user.id,
   username: user.username,
@@ -98,30 +149,85 @@ const toUser = (user: RawUser): XUser => ({
   metrics: user.public_metrics ?? null,
 });
 
-const toPost = (tweet: RawTweet, users: Map<string, XUser>, fetchedAt: Date): XPost => ({
-  id: tweet.id,
-  authorId: tweet.author_id ?? '',
-  authorUsername: tweet.author_id ? (users.get(tweet.author_id)?.username ?? null) : null,
-  text: tweet.text,
-  createdAt: tweet.created_at ?? null,
-  metrics: tweet.public_metrics ?? null,
-  fetchedAt: fetchedAt.toISOString(),
-  data: tweet,
-});
+/** A long post's body lives in `note_tweet`; `text` is only its truncated preview. */
+const fullText = (tweet: RawTweet): string => tweet.note_tweet?.text ?? tweet.text;
 
-/** X's answer as posts, authors and the next page; a shape XBase can't read is an error. */
+/** The post `tweet` quotes, looked up among the response's included posts and their authors. */
+function quotedPostOf(
+  tweet: RawTweet,
+  included: Map<string, RawTweet>,
+  users: Map<string, XUser>,
+): XQuotedPost | null {
+  const id = tweet.referenced_tweets?.find(({ type }) => type === 'quoted')?.id;
+  const quoted = id === undefined ? undefined : included.get(id);
+  if (!quoted) return null;
+  return {
+    id: quoted.id,
+    authorId: quoted.author_id ?? '',
+    authorUsername: quoted.author_id ? (users.get(quoted.author_id)?.username ?? null) : null,
+    text: fullText(quoted),
+  };
+}
+
+function toParsedPost(
+  tweet: RawTweet,
+  included: Map<string, RawTweet>,
+  users: Map<string, XUser>,
+  fetchedAt: Date,
+): ParsedPost {
+  return {
+    post: {
+      id: tweet.id,
+      authorId: tweet.author_id ?? '',
+      authorUsername: tweet.author_id ? (users.get(tweet.author_id)?.username ?? null) : null,
+      text: fullText(tweet),
+      createdAt: tweet.created_at ?? null,
+      metrics: tweet.public_metrics ?? null,
+      quotedPost: quotedPostOf(tweet, included, users),
+      fetchedAt: fetchedAt.toISOString(),
+      data: tweet,
+    },
+    tweet,
+  };
+}
+
+const emptyIncluded = new Map<string, RawTweet>();
+
+/** Whether a post quotes another: X expands one level, so an include can't resolve its own. */
+const quotesAnother = (tweet: RawTweet): boolean =>
+  tweet.referenced_tweets?.some(({ type }) => type === 'quoted') ?? false;
+
+/**
+ * X's answer as posts, authors and the next page; a shape XBase can't read is an error. Quoted
+ * posts arrive in `includes.tweets` and come back on the post, so no feature has to fetch them.
+ */
 function parsePostPage(
   body: unknown,
   fetchedAt = new Date(),
-): XPage & { nextToken: string | null } {
+): XPage & { nextToken: string | null; rows: ParsedPost[] } {
   const parsed = TweetPage.safeParse(body);
   if (!parsed.success) throw new Error('X answered in a shape XBase doesn’t understand.');
   const users = (parsed.data.includes?.users ?? []).map(toUser);
   const byId = new Map(users.map((user) => [user.id, user]));
+  const included = parsed.data.includes?.tweets ?? [];
+  const quotes = new Map(included.map((tweet) => [tweet.id, tweet]));
+  const posts = (parsed.data.data ?? []).map((tweet) =>
+    toParsedPost(tweet, quotes, byId, fetchedAt),
+  );
+  // Cache the quotes too, so asking for one by id is a cache hit rather than a new read. An
+  // include that quotes another can't resolve that quote here: caching it would answer a later
+  // read with no quote, and would overwrite the copy a direct read already resolved.
+  const returned = new Set(posts.map(({ tweet }) => tweet.id));
+  const rows = [...posts];
+  for (const tweet of included) {
+    if (returned.has(tweet.id) || quotesAnother(tweet)) continue;
+    rows.push(toParsedPost(tweet, emptyIncluded, byId, fetchedAt));
+  }
   return {
-    posts: (parsed.data.data ?? []).map((tweet) => toPost(tweet, byId, fetchedAt)),
+    posts: posts.map(({ post }) => post),
     users,
     nextToken: parsed.data.meta?.next_token ?? null,
+    rows,
   };
 }
 
@@ -136,17 +242,20 @@ const postCost = (accountId: string, posts: XPost[]) => {
 
 /** A post is cached per account, so one account's reads never answer another's. */
 function cachedPost(row: CachedPost): XPost | null {
-  const parsed = TweetSchema.safeParse(row.data);
+  const parsed = CachedPostData.safeParse(row.data);
+  // A row written before full text and quotes were kept has no `tweet`: read it again once.
   if (!parsed.success) return null;
+  const { tweet, quotedPost } = parsed.data;
   return {
     id: row.postId,
-    authorId: row.authorId ?? parsed.data.author_id ?? '',
+    authorId: row.authorId ?? tweet.author_id ?? '',
     authorUsername: row.authorUsername,
     text: row.text,
-    createdAt: parsed.data.created_at ?? null,
-    metrics: parsed.data.public_metrics ?? null,
+    createdAt: tweet.created_at ?? null,
+    metrics: tweet.public_metrics ?? null,
+    quotedPost,
     fetchedAt: row.fetchedAt.toISOString(),
-    data: parsed.data,
+    data: tweet,
   };
 }
 
@@ -167,18 +276,18 @@ function readCachedPosts(accountId: string, ids: string[], cutoff: Date): XPost[
     .filter((post): post is XPost => post !== null);
 }
 
-function cachePosts(accountId: string, posts: XPost[], fetchedAt: Date): void {
-  if (posts.length === 0) return;
+function cachePosts(accountId: string, rows: ParsedPost[], fetchedAt: Date): void {
+  if (rows.length === 0) return;
   const db = getDb();
   db.transaction((tx) => {
-    for (const post of posts) {
+    for (const { post, tweet } of rows) {
       const values = {
         accountId,
         postId: post.id,
         authorId: post.authorId || null,
         authorUsername: post.authorUsername,
         text: post.text,
-        data: post.data,
+        data: { tweet, quotedPost: post.quotedPost },
         fetchedAt,
       };
       tx.insert(xPosts)
@@ -227,13 +336,13 @@ export async function getPosts(
       accountId,
       endpoint: 'GET /2/tweets',
       path: '/tweets',
-      params: { ids: chunk.join(','), 'tweet.fields': TWEET_FIELDS, expansions: 'author_id' },
+      params: { ids: chunk.join(','), 'tweet.fields': TWEET_FIELDS, expansions: EXPANSIONS },
       feature,
       cost: (payload) => postCost(accountId, parsePostPage(payload).posts),
     });
     const fetchedAt = new Date();
     const page = parsePostPage(body, fetchedAt);
-    cachePosts(accountId, page.posts, fetchedAt);
+    cachePosts(accountId, page.rows, fetchedAt);
     fetched.push(...page.posts);
     users.push(...page.users);
   }
@@ -261,14 +370,14 @@ export async function searchRecent(
       query: query.trim(),
       max_results: String(X_SEARCH_RESULTS_PER_CALL),
       'tweet.fields': TWEET_FIELDS,
-      expansions: 'author_id',
+      expansions: EXPANSIONS,
     },
     feature,
     cost: (payload) => postCost(accountId, parsePostPage(payload).posts),
   });
   const fetchedAt = new Date();
   const page = parsePostPage(body, fetchedAt);
-  cachePosts(accountId, page.posts, fetchedAt);
+  cachePosts(accountId, page.rows, fetchedAt);
   return { posts: page.posts, users: page.users };
 }
 
@@ -339,16 +448,16 @@ export async function getUsersByUsername(
 }
 
 /**
- * The home timeline, one paid page at a time. `pages` defaults to the owner's setting (one page
- * unless raised). A cap or a 429 after the first page returns what was read with `stop` set, so a
- * running job finishes its page and then stops instead of losing it.
+ * The home timeline, one paid page at a time. `pages` defaults to the account's setting (one page
+ * unless raised). A cap, a 429 or a rejected token after the first page returns what was read with
+ * `stop` set, so a running job finishes its page and then stops instead of losing it.
  */
 export async function homeTimeline(
   accountId: string,
   { feature, pages }: { feature: XApiFeature; pages?: number },
 ): Promise<XTimelineRun> {
   const wanted = Math.min(
-    Math.max(1, Math.trunc(pages ?? getXApiSettings().sources.homeTimelinePages)),
+    Math.max(1, Math.trunc(pages ?? getDiscoverySettings(accountId).sources.homeTimelinePages)),
     X_HOME_TIMELINE_MAX_PAGES,
   );
   const posts: XPost[] = [];
@@ -367,7 +476,7 @@ export async function homeTimeline(
         params: {
           max_results: String(X_SEARCH_RESULTS_PER_CALL),
           'tweet.fields': TWEET_FIELDS,
-          expansions: 'author_id',
+          expansions: EXPANSIONS,
           ...(nextToken ? { pagination_token: nextToken } : {}),
         },
         feature,
@@ -375,7 +484,7 @@ export async function homeTimeline(
       });
       const fetchedAt = new Date();
       const parsed = parsePostPage(body, fetchedAt);
-      cachePosts(accountId, parsed.posts, fetchedAt);
+      cachePosts(accountId, parsed.rows, fetchedAt);
       posts.push(...parsed.posts);
       users.push(...parsed.users);
       pagesFetched += 1;
@@ -386,6 +495,7 @@ export async function homeTimeline(
       if (error instanceof BudgetExceededError) {
         stop = {
           reason: 'budget',
+          scope: error.scope,
           cap: error.cap,
           resetAt: error.resetAt.toISOString(),
           message: error.message,
@@ -398,6 +508,10 @@ export async function homeTimeline(
           resetAt: error.resetAt.toISOString(),
           message: error.message,
         };
+        break;
+      }
+      if (error instanceof ReconnectRequiredError) {
+        stop = { reason: 'reconnect', message: error.message };
         break;
       }
       throw error;

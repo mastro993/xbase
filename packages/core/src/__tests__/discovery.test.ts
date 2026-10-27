@@ -182,6 +182,35 @@ describe('exclusions and language', () => {
   });
 });
 
+describe('sources and budget', () => {
+  it('fetch one home timeline page unless the account raises it, up to the ceiling', () => {
+    expect(DEFAULT_DISCOVERY_SETTINGS.sources.homeTimelinePages).toBe(1);
+    expect(parseDiscoverySection('sources', { homeTimelinePages: 3 })).toEqual({
+      homeTimelinePages: 3,
+    });
+    expect(() => parseDiscoverySection('sources', { homeTimelinePages: 0 })).toThrow(
+      /Fetch at least one page/,
+    );
+    expect(() => parseDiscoverySection('sources', { homeTimelinePages: 11 })).toThrow(
+      /Fetch at most 10 pages/,
+    );
+  });
+
+  it('start every account without spend caps, with the same rules as the workspace’s', () => {
+    expect(DEFAULT_DISCOVERY_SETTINGS.budget).toEqual({
+      dailyCapUsd: null,
+      monthlyCapUsd: null,
+    });
+    expect(parseDiscoverySection('budget', { dailyCapUsd: 0.5, monthlyCapUsd: null })).toEqual({
+      dailyCapUsd: 0.5,
+      monthlyCapUsd: null,
+    });
+    expect(() => parseDiscoverySection('budget', { dailyCapUsd: -1, monthlyCapUsd: null })).toThrow(
+      /Use zero or more/,
+    );
+  });
+});
+
 describe('SaveDiscoverySectionInput', () => {
   it('checks the section name, and leaves its value to that section', () => {
     expect(

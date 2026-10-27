@@ -19,10 +19,19 @@ vi.mock('@/features/auth/auth.functions', () => ({ logoutFn: { url: '/_serverFn/
 vi.mock('@/features/accounts/accounts.functions', () => ({ switchAccountFn: vi.fn() }));
 vi.mock('@tanstack/react-start', () => ({ useServerFn: <T,>(fn: T) => fn }));
 
-const me = { id: '1001', username: 'xbase', name: 'XBase', avatarUrl: null };
+const me = {
+  id: '1001',
+  username: 'xbase',
+  name: 'XBase',
+  avatarUrl: null,
+  reconnectRequired: false,
+};
 const accounts: AccountsDto = {
   current: me,
-  accounts: [me, { id: '2002', username: 'other', name: 'Other', avatarUrl: null }],
+  accounts: [
+    me,
+    { id: '2002', username: 'other', name: 'Other', avatarUrl: null, reconnectRequired: false },
+  ],
 };
 
 afterEach(cleanup);

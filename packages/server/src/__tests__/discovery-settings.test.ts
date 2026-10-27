@@ -83,6 +83,21 @@ describe('saveDiscoverySettings', () => {
     expect(getDiscoverySettings(other)).toEqual(DEFAULT_DISCOVERY_SETTINGS);
     expect(getDiscoverySettings(other).niches.keywords).toEqual([]);
   });
+
+  it('keeps the spend caps and the page count with the account that set them', () => {
+    saveDiscoverySettings(accountId, 'budget', { dailyCapUsd: 0.5, monthlyCapUsd: null });
+    saveDiscoverySettings(accountId, 'sources', { homeTimelinePages: 3 });
+
+    expect(getDiscoverySettings(accountId).budget).toEqual({
+      dailyCapUsd: 0.5,
+      monthlyCapUsd: null,
+    });
+    expect(getDiscoverySettings(accountId).sources).toEqual({ homeTimelinePages: 3 });
+
+    const other = seedAccount({ id: '2002' });
+    expect(getDiscoverySettings(other).budget.dailyCapUsd).toBeNull();
+    expect(getDiscoverySettings(other).sources.homeTimelinePages).toBe(1);
+  });
 });
 
 describe('resetDiscoverySection', () => {

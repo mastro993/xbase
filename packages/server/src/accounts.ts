@@ -20,11 +20,12 @@ export type XTokens = {
   scope: string;
 };
 
-const toDto = ({ id, username, name, avatarUrl }: XAccount): AccountDto => ({
+const toDto = ({ id, username, name, avatarUrl, reconnectRequiredAt }: XAccount): AccountDto => ({
   id,
   username,
   name,
   avatarUrl,
+  reconnectRequired: reconnectRequiredAt !== null,
 });
 
 /** Oldest first: the first is the account that claimed this XBase. */
@@ -60,6 +61,8 @@ export type XAccountCredentials = {
   refreshToken: string | null;
   expiresAt: Date;
   scope: string;
+  /** Set when X refused the account's access; no read may go out until it signs in again. */
+  reconnectRequiredAt: Date | null;
 };
 
 /** The row a read works with; null when the account was removed. */
@@ -73,6 +76,7 @@ export function getAccountCredentials(id: string): XAccountCredentials | null {
         refreshToken: row.refreshToken,
         expiresAt: row.tokenExpiresAt,
         scope: row.scope,
+        reconnectRequiredAt: row.reconnectRequiredAt,
       }
     : null;
 }
@@ -98,9 +102,22 @@ export function saveAccountTokens(id: string, tokens: XTokens): void {
 }
 
 /**
+ * Stops every read for the account until the owner signs in again: X refused its access (a 401 or
+ * a refresh token X no longer honours). Signing in clears the flag through saveAccount.
+ */
+export function requireReconnect(id: string): void {
+  getDb()
+    .update(xAccounts)
+    .set({ reconnectRequiredAt: new Date() })
+    .where(eq(xAccounts.id, id))
+    .run();
+}
+
+/**
  * Links a new account, or refreshes the profile and tokens of a linked one. Tokens are stored
  * encrypted (token-crypto.ts). An answer without a refresh token keeps the stored one, so a
- * later sign-in can't take away the scheduler's way to renew access.
+ * later sign-in can't take away the scheduler's way to renew access. Signing in also clears a
+ * "needs reconnecting" flag: X accepted the account again.
  */
 export function saveAccount(profile: XProfile, tokens: XTokens): void {
   const values = {
@@ -110,6 +127,7 @@ export function saveAccount(profile: XProfile, tokens: XTokens): void {
     accessToken: encryptToken(tokens.accessToken, `${profile.id}:access`),
     tokenExpiresAt: tokens.expiresAt,
     scope: tokens.scope,
+    reconnectRequiredAt: null,
   };
   const refreshToken =
     tokens.refreshToken === null

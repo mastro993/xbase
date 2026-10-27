@@ -45,6 +45,17 @@ async function xJson(url: string, init: RequestInit): Promise<unknown> {
   return body;
 }
 
+/**
+ * X refused a token grant: a refresh token is expired or revoked, and only signing in again
+ * gives the account a working one.
+ */
+export class XTokenRejectedError extends Error {
+  constructor(detail: string) {
+    super(`X refused the token: ${detail}`);
+    this.name = 'XTokenRejectedError';
+  }
+}
+
 const TokenResponse = z.object({
   access_token: z.string().min(1),
   refresh_token: z.string().min(1).optional(),
@@ -52,31 +63,52 @@ const TokenResponse = z.object({
   scope: z.string(),
 });
 
-/** A confidential client: the app's credentials go in a Basic header (RFC 6749 §2.3.1). */
-export async function exchangeXCode(code: string, verifier: string): Promise<XTokens> {
+const isInvalidGrant = (body: unknown): boolean =>
+  typeof body === 'object' && body !== null && 'error' in body && body.error === 'invalid_grant';
+
+const toTokens = (body: z.infer<typeof TokenResponse>): XTokens => ({
+  accessToken: body.access_token,
+  refreshToken: body.refresh_token ?? null,
+  expiresAt: new Date(Date.now() + body.expires_in * 1000),
+  scope: body.scope,
+});
+
+/**
+ * POSTs one token grant as a confidential client: the app's credentials go in a Basic header
+ * (RFC 6749 §2.3.1). A 401 or `invalid_grant` means the grant itself is dead, which is a
+ * different answer from a request X could not serve, so the caller can flag the account.
+ */
+async function requestTokens(form: URLSearchParams): Promise<XTokens> {
   const { X_CLIENT_ID, X_CLIENT_SECRET } = getEnv();
   const credentials = `${encodeURIComponent(X_CLIENT_ID)}:${encodeURIComponent(X_CLIENT_SECRET)}`;
-  const body = TokenResponse.parse(
-    await xJson(TOKEN_URL, {
-      method: 'POST',
-      headers: {
-        authorization: `Basic ${Buffer.from(credentials).toString('base64')}`,
-        'content-type': 'application/x-www-form-urlencoded',
-      },
-      body: new URLSearchParams({
-        grant_type: 'authorization_code',
-        code,
-        redirect_uri: callbackUrl(),
-        code_verifier: verifier,
-      }),
+  const response = await fetch(TOKEN_URL, {
+    method: 'POST',
+    headers: {
+      authorization: `Basic ${Buffer.from(credentials).toString('base64')}`,
+      'content-type': 'application/x-www-form-urlencoded',
+    },
+    body: form,
+    signal: AbortSignal.timeout(TIMEOUT_MS),
+  });
+  const body: unknown = await response.json().catch(() => null);
+  if (!response.ok) {
+    const detail = JSON.stringify(body)?.slice(0, 300) ?? '';
+    if (response.status === 401 || isInvalidGrant(body)) throw new XTokenRejectedError(detail);
+    throw new Error(`X answered ${response.status}: ${detail}`);
+  }
+  return toTokens(TokenResponse.parse(body));
+}
+
+/** The authorization code's tokens, for a first sign-in or an account added later. */
+export async function exchangeXCode(code: string, verifier: string): Promise<XTokens> {
+  return requestTokens(
+    new URLSearchParams({
+      grant_type: 'authorization_code',
+      code,
+      redirect_uri: callbackUrl(),
+      code_verifier: verifier,
     }),
   );
-  return {
-    accessToken: body.access_token,
-    refreshToken: body.refresh_token ?? null,
-    expiresAt: new Date(Date.now() + body.expires_in * 1000),
-    scope: body.scope,
-  };
 }
 
 const MeResponse = z.object({
@@ -90,30 +122,13 @@ const MeResponse = z.object({
 
 /**
  * Renews an account's access with its refresh token. X rotates the refresh token, so the caller
- * saves both; a response without one keeps the stored token.
+ * saves both; a response without one keeps the stored token. Throws XTokenRejectedError when X
+ * no longer honours the refresh token.
  */
 export async function refreshXTokens(refreshToken: string): Promise<XTokens> {
-  const { X_CLIENT_ID, X_CLIENT_SECRET } = getEnv();
-  const credentials = `${encodeURIComponent(X_CLIENT_ID)}:${encodeURIComponent(X_CLIENT_SECRET)}`;
-  const body = TokenResponse.parse(
-    await xJson(TOKEN_URL, {
-      method: 'POST',
-      headers: {
-        authorization: `Basic ${Buffer.from(credentials).toString('base64')}`,
-        'content-type': 'application/x-www-form-urlencoded',
-      },
-      body: new URLSearchParams({
-        grant_type: 'refresh_token',
-        refresh_token: refreshToken,
-      }),
-    }),
+  return requestTokens(
+    new URLSearchParams({ grant_type: 'refresh_token', refresh_token: refreshToken }),
   );
-  return {
-    accessToken: body.access_token,
-    refreshToken: body.refresh_token ?? null,
-    expiresAt: new Date(Date.now() + body.expires_in * 1000),
-    scope: body.scope,
-  };
 }
 
 /** Who the access token belongs to. */

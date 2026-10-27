@@ -11,7 +11,7 @@ It is a Node server built with [TanStack Start](https://tanstack.com/start) and 
 - **Queue**: schedule a draft at a time in your browser's time zone. The queue lists scheduled posts by day; reschedule them, edit them or move them back to the drafts.
 - **Discover**: keep the X searches you'd run by hand, in X's search syntax, and open any of them on x.com.
 - **Stats**: a placeholder for now: engagement rate, the best times to post and follower growth arrive with the X API.
-- **Settings**: the X accounts; X API spend and caps; the AI provider and model; each account's voice for the AI; the decision model; reply discovery's niches, watch list, thresholds, exclusions and language; API keys; MCP; sessions. Provider keys come from the environment, never from the page.
+- **Settings**: the X accounts; X API spend and caps; the AI provider and model; each account's voice for the AI; the decision model; reply discovery's niches, watch list, thresholds, exclusions, language, sources and budget; API keys; MCP; sessions. Provider keys come from the environment, never from the page.
 - **For other apps**: a [REST API](#rest-api) for drafts, with API keys, and an [MCP server](#mcp) with OAuth, so assistants such as Claude can write and schedule.
 
 It signs in with X, keeps sessions on the server so signing out ends them, migrates its SQLite database at startup, and ships with a health check and a Docker image.
@@ -33,12 +33,14 @@ Two facts about the X API shape what comes next (as of October 2026; check X's d
 Every read goes through one layer, `packages/server/src/x-api-client.ts`: posts by id, users, recent search and the home timeline. No feature calls X on its own. The layer:
 
 - uses the tokens of the account the read is for, and renews them when they are about to expire, saving X's rotated refresh token;
+- returns long posts in full (`note_tweet`), and brings quoted posts with their own full text and author, so a feature never reads a truncated preview;
 - logs each call in `x_api_calls` with its endpoint, the feature that asked, the number of items, its estimated cost and the time; the price table lives in `packages/core/src/x-api.ts` beside the code that uses it;
 - caches posts per account for an hour by default, and serves them from the database instead of paying again; `fresh: true` skips the cache for current engagement numbers;
-- stops paid reads at the daily and monthly caps set in **Settings → X API**, naming the cap and its reset time; a running job finishes its current page and then stops;
-- stores the rate-limit headers X returns, and after a 429 waits for the reported reset time instead of retrying in a loop.
+- stops paid reads at the daily and monthly caps set in **Settings → X API**, naming the cap and its reset time; a running job finishes its current page and then stops. The caps there cover every account together and are the hard limit; each account can set lower caps of its own under **Settings → Discovery → Budget**;
+- stores the rate-limit headers X returns, and after a 429 waits for the reported reset time instead of retrying in a loop;
+- flags an account as **needs reconnecting** when X refuses its access (a 401 or a dead refresh token), makes no further reads for it, and clears the flag when it signs in again.
 
-Home timeline runs fetch one page by default. Raising the page count in Settings shows the extra cost before you save: up to $0.125 per page of 25 posts. Settings also shows spend for today, this week and this month, each account's remaining rate-limit window and the latest calls.
+Home timeline runs fetch one page per account by default. Raising the page count in **Settings → Discovery → Sources** shows the extra cost before you save: up to $0.125 per page of 25 posts. Settings also shows spend for today, this week and this month, each account's remaining rate-limit window and the latest calls.
 
 ## Set up your X app
 
@@ -63,7 +65,7 @@ Keys never reach the browser or the database. Changing one takes a restart.
 
 ## Discovery settings
 
-Reply discovery has its own rules. **Settings → Niches and keywords, Watch list, Thresholds, Exclusions and Language** holds them for the account you work as; each section saves on its own and resets to its defaults behind a confirmation. A saved section keeps whatever it has, so a default that changes in a later version still reaches the sections you never edited.
+Reply discovery has its own rules. **Settings → Discovery** holds them for the account you work as: niches and keywords, the watch list, thresholds, exclusions, language, sources and the budget. Each section saves on its own and resets to its defaults behind a confirmation. A saved section keeps whatever it has, so a default that changes in a later version still reaches the sections you never edited.
 
 They start at what suits most accounts, so a first run needs no setup:
 
@@ -72,6 +74,8 @@ They start at what suits most accounts, so a first run needs no setup:
 - **Thresholds** are the author's size (5,000 followers), the post's age (best under 6 hours, never older than 24), replies (ideal under 20, crowded from 40, never more than 60), an author cooldown of 3 days, one post per author and 15 per batch. Combinations that can't work — a hard cap below the best age, a crowded penalty at the ideal — are rejected with the reason.
 - **Exclusions** drop engagement bait, giveaways, promotions, politics, crypto, image-only posts and long threads, with a keyword list for each of the first five. Switch one off to let those posts through again, keywords and all.
 - **Language** is the language a run looks for posts in and the one it writes your replies in; both default to English.
+- **Sources** is the home timeline page count: one page of up to 25 posts per run by default, with the extra cost shown before you save it.
+- **Budget** is this account's own daily and monthly cap, inside the workspace's hard cap in **Settings → X API**. Both are blank (no cap) until you set one, and spend resets at midnight UTC and on the first of the month.
 
 A saved change applies from the next run. Runs themselves arrive with the X API client and the batch runner; until then, the settings are stored and the rules are ready for them.
 

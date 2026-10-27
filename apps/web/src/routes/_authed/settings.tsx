@@ -43,6 +43,8 @@ function SettingsPage() {
   const { ai, voice, discovery, apiKeys, mcp, xApi } = Route.useLoaderData();
   const { accountError } = Route.useSearch();
   const accounts = authed.useLoaderData();
+  // The budget card sits in the discovery section, next to the caps it edits.
+  const currentUsage = xApi.accounts.find(({ id }) => id === accounts.current.id);
   return (
     <FullWidthPage
       title="Settings"
@@ -54,8 +56,8 @@ function SettingsPage() {
       {/* Keyed by account: switching accounts loads another voice into a fresh form. */}
       <VoiceCard key={accounts.current.id} voice={voice} username={accounts.current.username} />
       <DecisionCard model={ai.decision} />
-      {/* Also per account: another account loads its own niches, thresholds and filters. */}
-      <DiscoverySettings key={accounts.current.id} settings={discovery} />
+      {/* Also per account: another account loads its own niches, thresholds, filters and caps. */}
+      <DiscoverySettings key={accounts.current.id} settings={discovery} usage={currentUsage} />
       <ApiKeysCard keys={apiKeys} />
       <McpCard settings={mcp} />
       <SessionsCard />

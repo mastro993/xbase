@@ -1,6 +1,16 @@
-import { InvalidStateError, NotFoundError, RateLimitedError } from '@xbase/core/errors';
+import {
+  InvalidStateError,
+  NotFoundError,
+  RateLimitedError,
+  ReconnectRequiredError,
+} from '@xbase/core/errors';
 import type { XApiFeature } from '@xbase/core/x-api';
-import { type XAccountCredentials, getAccountCredentials, saveAccountTokens } from './accounts';
+import {
+  type XAccountCredentials,
+  getAccountCredentials,
+  requireReconnect,
+  saveAccountTokens,
+} from './accounts';
 import { decryptToken } from './token-crypto';
 import {
   assertBudget,
@@ -9,7 +19,7 @@ import {
   recordXApiCall,
   saveRateLimits,
 } from './x-api-usage';
-import { refreshXTokens } from './x-auth';
+import { refreshXTokens, XTokenRejectedError } from './x-auth';
 
 // The HTTP and token plumbing behind x-api-client.ts: one GET to X, the stored 429 wait, the spend
 // caps, the account's own token and the usage log. Kept apart from the typed reads so the reads
@@ -50,13 +60,19 @@ async function renewNow(accountId: string): Promise<void> {
     ? decryptToken(account.refreshToken, `${accountId}:refresh`)
     : null;
   if (!refreshToken) {
-    throw new InvalidStateError(`X access for @${account.username} expired. Sign in again.`);
+    requireReconnect(accountId);
+    throw new ReconnectRequiredError({ accountId, username: account.username });
   }
   try {
     saveAccountTokens(accountId, await refreshXTokens(refreshToken));
-  } catch {
+  } catch (error) {
+    // X refused the grant itself: the account has to sign in again before any other read.
+    if (error instanceof XTokenRejectedError) {
+      requireReconnect(accountId);
+      throw new ReconnectRequiredError({ accountId, username: account.username });
+    }
     throw new InvalidStateError(
-      `X could not renew access for @${account.username}. Sign in again.`,
+      `X could not renew access for @${account.username}. Try again in a moment.`,
     );
   }
 }
@@ -115,10 +131,14 @@ export async function xRequest({
 }: RequestOptions): Promise<unknown> {
   const account = getAccountCredentials(accountId);
   if (!account) throw new NotFoundError('Account not found.');
+  // X refused this account's access: no read may go out again until it signs in.
+  if (account.reconnectRequiredAt) {
+    throw new ReconnectRequiredError({ accountId, username: account.username });
+  }
 
   const blocked = rateLimitedUntil(accountId, endpoint);
   if (blocked) throw new RateLimitedError({ endpoint, resetAt: blocked });
-  assertBudget();
+  assertBudget(accountId);
 
   const token = await callToken(account);
   const startedAt = new Date();
@@ -194,7 +214,8 @@ export async function xRequest({
       at: startedAt,
     });
     if (response.status === 401) {
-      throw new InvalidStateError(`X rejected @${account.username}’s access. Sign in again.`);
+      requireReconnect(accountId);
+      throw new ReconnectRequiredError({ accountId, username: account.username });
     }
     throw new Error(`X answered ${response.status}${detail ? `: ${detail}` : ''}`);
   }
