@@ -35,7 +35,7 @@ cp apps/web/.env.example apps/web/.env
 Start an app's dev server:
 
 ```sh
-pnpm --filter @xbase/web dev         # http://127.0.0.1:5173
+pnpm --filter @xbase/web dev         # http://127.0.0.1:5173, or the next free port
 pnpm --filter @xbase/extension dev   # opens Chrome with the extension loaded
 ```
 

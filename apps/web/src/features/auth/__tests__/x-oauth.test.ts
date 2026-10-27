@@ -77,6 +77,7 @@ async function signIn(options: { intent?: 'sign_in' | 'add'; cookie?: string } =
 
 let db: ReturnType<typeof createTestDb>;
 beforeEach(() => {
+  env.APP_URL = 'https://xbase.test';
   env.X_OWNER_USERNAME = undefined;
   db = createTestDb();
 });
@@ -113,6 +114,14 @@ describe('startXSignIn', () => {
     );
     expect(url.searchParams.get('state')).toBe(flow.state);
     expect(url.searchParams.has('code_verifier')).toBe(false);
+  });
+
+  it('puts the plain-HTTP port in the flow cookie name', async () => {
+    env.APP_URL = 'http://127.0.0.1:5174';
+    const { response } = await inRequest(new Request('http://127.0.0.1:5174/'), () =>
+      startXSignIn({ intent: 'sign_in', next: '/' }),
+    );
+    expect(response.headers.get('set-cookie')).toMatch(/^xbase_x_oauth_5174=/);
   });
 });
 

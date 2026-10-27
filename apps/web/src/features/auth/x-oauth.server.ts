@@ -2,11 +2,10 @@ import { randomBytes } from 'node:crypto';
 import { deleteCookie, getCookie, setCookie } from '@tanstack/react-start/server';
 import { type SignInError, safeNext } from '@xbase/core/auth';
 import { saveAccount, type XProfile, type XTokens } from '@xbase/server/accounts';
-import { getEnv } from '@xbase/server/env';
 import { setSessionAccount } from '@xbase/server/sessions';
 import { exchangeXCode, fetchXProfile, signInRefusal, xAuthorizeUrl } from '@xbase/server/x-auth';
 import { z } from 'zod';
-import { issueSession, readSession } from './session.server';
+import { authCookie, issueSession, readSession } from './session.server';
 
 // The browser side of signing in with X (x-auth.ts in @xbase/server talks to X): the flow's state
 // and PKCE verifier wait in a cookie between /auth/x/start and X's redirect to /auth/x/callback.
@@ -25,13 +24,9 @@ const Flow = z.object({
 });
 type Flow = z.infer<typeof Flow>;
 
-/** Like the session cookie: `__Host-` and Secure over HTTPS. Lax, so X's redirect carries it. */
+/** The flow cookie. Same name rules as the session cookie, so two dev ports don't mix flows. */
 function flowCookie() {
-  const secure = new URL(getEnv().APP_URL).protocol === 'https:';
-  return {
-    name: secure ? '__Host-xbase_x_oauth' : 'xbase_x_oauth',
-    options: { httpOnly: true, secure, sameSite: 'lax', path: '/' } as const,
-  };
+  return authCookie('xbase_x_oauth');
 }
 
 /** Takes the pending flow out of its cookie: a flow is used once. */
