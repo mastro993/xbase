@@ -1,4 +1,4 @@
-import { oauthGrants, posts } from '@xbase/db/schema';
+import { oauthGrants, posts, savedSearches } from '@xbase/db/schema';
 import { createTestDb, seedAccount } from '@xbase/db/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { serveMcp } from '../endpoint';
@@ -167,6 +167,30 @@ describe('tools', () => {
     const queue = await callTool('list_scheduled', {});
     expect(queue.structuredContent.items.map((item: { id: string }) => item.id)).toEqual([id]);
     expect((await callTool('list_saved_searches')).structuredContent).toEqual({ items: [] });
+  });
+
+  it('lists saved searches with whether they run and when they last did', async () => {
+    db.insert(savedSearches)
+      .values({
+        id: 's1',
+        name: 'Makers',
+        query: 'buildinpublic',
+        lastRunAt: new Date('2026-10-27T12:00:00.000Z'),
+        lastCandidateCount: 4,
+      })
+      .run();
+
+    const list = await callTool('list_saved_searches');
+    expect(list.structuredContent.items).toEqual([
+      expect.objectContaining({
+        id: 's1',
+        name: 'Makers',
+        query: 'buildinpublic',
+        enabled: true,
+        lastRunAt: '2026-10-27T12:00:00.000Z',
+        lastCandidateCount: 4,
+      }),
+    ]);
   });
 
   it('needs the account for a new draft once several are linked, and filters lists by it', async () => {

@@ -64,6 +64,9 @@ export type XUser = {
   metrics: Record<string, number> | null;
 };
 
+/** One account someone follows: enough for the follow flag a discovery run stores. */
+export type XFollow = { id: string; username: string };
+
 export type XPage = { posts: XPost[]; users: XUser[] };
 
 export type XPostsResult = XPage & {
@@ -133,6 +136,11 @@ const TweetPage = z.looseObject({
 
 const UserPage = z.looseObject({
   data: z.array(UserSchema).optional(),
+});
+
+const FollowPage = z.looseObject({
+  data: z.array(z.looseObject({ id: z.string().min(1), username: z.string().min(1) })).optional(),
+  meta: z.looseObject({ next_token: z.string().optional() }).optional(),
 });
 
 type RawTweet = z.infer<typeof TweetSchema>;
@@ -355,11 +363,14 @@ export async function getPosts(
   };
 }
 
-/** One page of recent search, newest first, at most the tier's 25 results. */
+/**
+ * One page of recent search, newest first, at most the tier's 25 results. `since` is sent as
+ * `start_time`, so X never bills posts a caller would throw away as too old.
+ */
 export async function searchRecent(
   accountId: string,
   query: string,
-  { feature }: { feature: XApiFeature },
+  { feature, since }: { feature: XApiFeature; since?: Date },
 ): Promise<XPage> {
   if (!query.trim()) throw new ValidationError('Write a search query first.');
   const body = await xRequest({
@@ -369,6 +380,8 @@ export async function searchRecent(
     params: {
       query: query.trim(),
       max_results: String(X_SEARCH_RESULTS_PER_CALL),
+      sort_order: 'recency',
+      ...(since ? { start_time: since.toISOString() } : {}),
       'tweet.fields': TWEET_FIELDS,
       expansions: EXPANSIONS,
     },
@@ -447,14 +460,61 @@ export async function getUsersByUsername(
   return users;
 }
 
+/** The follow list's ceiling: ten pages of 1,000 accounts is far more than a run needs. */
+const MAX_FOLLOWING_PAGES = 10;
+
+/**
+ * Every account `accountId` follows, in pages of 1,000. Needs the follows.read scope, which an
+ * account linked before that scope existed doesn't have: the caller checks first and treats the
+ * list as unknown rather than asking X. Follower reads are the cheapest kind, at $0.001 each, so
+ * 1,000 follows cost about a dollar; discovery caches the list for a day.
+ */
+export async function getFollowing(
+  accountId: string,
+  { feature }: { feature: XApiFeature },
+): Promise<XFollow[]> {
+  const follows: XFollow[] = [];
+  let nextToken: string | undefined;
+  for (let page = 0; page < MAX_FOLLOWING_PAGES; page += 1) {
+    // oxlint-disable-next-line no-await-in-loop -- pages are paid calls: each passes the cap check before the next sends
+    const body = await xRequest({
+      accountId,
+      endpoint: 'GET /2/users/:id/following',
+      path: `/users/${encodeURIComponent(accountId)}/following`,
+      params: {
+        max_results: '1000',
+        'user.fields': USER_FIELDS,
+        ...(nextToken ? { pagination_token: nextToken } : {}),
+      },
+      feature,
+      cost: (payload) => {
+        const parsed = FollowPage.safeParse(payload);
+        const read = parsed.success ? (parsed.data.data ?? []) : [];
+        return {
+          itemCount: read.length,
+          costMicros: estimateReadCostMicros({ ownItems: read.length }),
+        };
+      },
+    });
+    const parsed = FollowPage.safeParse(body);
+    if (!parsed.success) throw new Error('X answered in a shape XBase doesn’t understand.');
+    follows.push(...(parsed.data.data ?? []).map(({ id, username }) => ({ id, username })));
+    nextToken = parsed.data.meta?.next_token ?? undefined;
+    if (!nextToken) break;
+  }
+  return follows;
+}
+
 /**
  * The home timeline, one paid page at a time. `pages` defaults to the account's setting (one page
  * unless raised). A cap, a 429 or a rejected token after the first page returns what was read with
- * `stop` set, so a running job finishes its page and then stops instead of losing it.
+ * `stop` set, so a running job finishes its page and then stops instead of losing it. Replies and
+ * plain reposts are excluded at X: discovery never keeps them, so they should never be billed.
+ * `since` is sent as `start_time`.
  */
 export async function homeTimeline(
   accountId: string,
-  { feature, pages }: { feature: XApiFeature; pages?: number },
+  { feature, pages, since }: { feature: XApiFeature; pages?: number; since?: Date },
 ): Promise<XTimelineRun> {
   const wanted = Math.min(
     Math.max(1, Math.trunc(pages ?? getDiscoverySettings(accountId).sources.homeTimelinePages)),
@@ -475,6 +535,8 @@ export async function homeTimeline(
         path: `/users/${encodeURIComponent(accountId)}/timelines/reverse_chronological`,
         params: {
           max_results: String(X_SEARCH_RESULTS_PER_CALL),
+          exclude: 'replies,retweets',
+          ...(since ? { start_time: since.toISOString() } : {}),
           'tweet.fields': TWEET_FIELDS,
           expansions: EXPANSIONS,
           ...(nextToken ? { pagination_token: nextToken } : {}),

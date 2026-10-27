@@ -1,3 +1,4 @@
+import { CANDIDATE_SOURCES } from '@xbase/core/discover';
 import { OAUTH_CLIENT_KINDS } from '@xbase/core/mcp';
 import { POST_ORIGINS, POST_STATUSES } from '@xbase/core/posts/schema';
 import { X_API_CALL_STATUSES, X_API_FEATURES } from '@xbase/core/x-api';
@@ -10,6 +11,7 @@ import {
   primaryKey,
   snakeCase,
   text,
+  uniqueIndex,
 } from 'drizzle-orm/sqlite-core';
 
 // Drizzle 1.0 sets the casing per table: camelCase keys become snake_case columns.
@@ -54,6 +56,8 @@ export const xAccounts = snakeCase.table('x_accounts', {
   voice: text({ mode: 'json' }).$type<unknown>(),
   /** The account's reply-discovery settings, one key per section; null until one is saved. */
   discovery: text({ mode: 'json' }).$type<unknown>(),
+  /** When the account's follow list was last read; null until discovery reads it once. */
+  followingRefreshedAt: timestamp(),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
 });
@@ -181,9 +185,86 @@ export const savedSearches = snakeCase.table('saved_searches', {
   id: id(),
   name: text().notNull(),
   query: text().notNull(),
+  /** A disabled search is kept, and skipped by every run. */
+  enabled: integer({ mode: 'boolean' }).notNull().default(true),
+  /** When the last run read it; null until one does. */
+  lastRunAt: timestamp(),
+  /** How many candidates that run produced. */
+  lastCandidateCount: integer().notNull().default(0),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
 });
+
+/**
+ * The accounts the user follows, cached per account so a run doesn't read the follow list on
+ * every pass. `x_accounts.following_refreshed_at` is the cache's clock, so an account that
+ * follows nobody still remembers when it last looked.
+ */
+export const followedAccounts = snakeCase.table(
+  'followed_accounts',
+  {
+    accountId: text()
+      .notNull()
+      .references(() => xAccounts.id, { onDelete: 'cascade' }),
+    /** X's user id. */
+    userId: text().notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.accountId, t.userId] })],
+);
+
+/**
+ * Posts a discovery run kept as reply candidates: fresh original or quote posts, with their full
+ * body and the post they quote. One row per post per account; `fetchedAt` is when X was read, so
+ * a post read again inside the cache window keeps the earlier time.
+ */
+export const discoveryCandidates = snakeCase.table(
+  'discovery_candidates',
+  {
+    id: id(),
+    accountId: text()
+      .notNull()
+      .references(() => xAccounts.id, { onDelete: 'cascade' }),
+    /** X's post id; unique within an account. */
+    xPostId: text().notNull(),
+    source: text({ enum: CANDIDATE_SOURCES }).notNull(),
+    /** The saved search that found it; null for the home timeline, and when the search is gone. */
+    savedSearchId: text().references(() => savedSearches.id, { onDelete: 'set null' }),
+    /** The post on x.com. */
+    url: text().notNull(),
+    authorId: text(),
+    authorHandle: text(),
+    authorName: text(),
+    authorFollowers: integer(),
+    /** Whether the account follows the author; null when the follow list can't be read. */
+    authorFollowing: integer({ mode: 'boolean' }),
+    /** The full body, never X's truncated preview. */
+    text: text().notNull(),
+    lang: text(),
+    postedAt: timestamp().notNull(),
+    views: integer(),
+    likes: integer(),
+    replies: integer(),
+    reposts: integer(),
+    quotes: integer(),
+    hasMedia: integer({ mode: 'boolean' }).notNull().default(false),
+    isQuote: integer({ mode: 'boolean' }).notNull().default(false),
+    conversationId: text(),
+    quotedPostId: text(),
+    quotedText: text(),
+    quotedAuthorId: text(),
+    quotedAuthorHandle: text(),
+    fetchedAt: timestamp().notNull(),
+  },
+  (t) => [
+    check('discovery_candidates_source_ck', oneOf(t.source, CANDIDATE_SOURCES)),
+    uniqueIndex('discovery_candidates_account_post_uq').on(t.accountId, t.xPostId),
+    index('discovery_candidates_account_search_posted_at_idx').on(
+      t.accountId,
+      t.savedSearchId,
+      t.postedAt,
+    ),
+  ],
+);
 
 /**
  * Every read sent to X, with its estimated cost: the usage log in Settings and the source of the
@@ -266,6 +347,7 @@ export const xPosts = snakeCase.table(
 
 export type ApiKey = typeof apiKeys.$inferSelect;
 export type CachedPost = typeof xPosts.$inferSelect;
+export type DiscoveryCandidate = typeof discoveryCandidates.$inferSelect;
 export type OAuthClient = typeof oauthClients.$inferSelect;
 export type OAuthCode = typeof oauthCodes.$inferSelect;
 export type Post = typeof posts.$inferSelect;
