@@ -22,6 +22,9 @@ const TABLES = [
   'sessions',
   'settings',
   'x_accounts',
+  'x_api_calls',
+  'x_posts',
+  'x_rate_limits',
 ];
 
 let dir: string | undefined;

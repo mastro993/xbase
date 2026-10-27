@@ -14,6 +14,8 @@ import { getMcpSettingsFn } from '@/features/mcp/mcp.functions';
 import { McpCard } from '@/features/settings/McpCard';
 import { SessionsCard } from '@/features/settings/SessionsCard';
 import { FullWidthPage } from '@/features/shell/FullWidthPage';
+import { getXApiUsageFn } from '@/features/x-api/x-api.functions';
+import { XApiCard } from '@/features/x-api/XApiCard';
 
 const authed = getRouteApi('/_authed');
 
@@ -24,28 +26,30 @@ export const Route = createFileRoute('/_authed/settings')({
   validateSearch: z.object({ accountError: z.enum(SIGN_IN_ERRORS).optional().catch(undefined) }),
   head: () => ({ meta: [{ title: 'Settings · XBase' }] }),
   loader: async () => {
-    const [ai, voice, discovery, apiKeys, mcp] = await Promise.all([
+    const [ai, voice, discovery, apiKeys, mcp, xApi] = await Promise.all([
       getAiSettingsFn(),
       getVoiceFn(),
       getDiscoverySettingsFn(),
       listApiKeysFn(),
       getMcpSettingsFn(),
+      getXApiUsageFn(),
     ]);
-    return { ai, voice, discovery, apiKeys, mcp };
+    return { ai, voice, discovery, apiKeys, mcp, xApi };
   },
   component: SettingsPage,
 });
 
 function SettingsPage() {
-  const { ai, voice, discovery, apiKeys, mcp } = Route.useLoaderData();
+  const { ai, voice, discovery, apiKeys, mcp, xApi } = Route.useLoaderData();
   const { accountError } = Route.useSearch();
   const accounts = authed.useLoaderData();
   return (
     <FullWidthPage
       title="Settings"
-      description="Your X accounts, AI writing, reply discovery, access for other apps, and where you’re signed in."
+      description="Your X accounts, X API spend, AI writing, reply discovery, access for other apps, and where you’re signed in."
     >
       <AccountsCard data={accounts} error={accountError} />
+      <XApiCard usage={xApi} />
       <AiProviderCard settings={ai} />
       {/* Keyed by account: switching accounts loads another voice into a fresh form. */}
       <VoiceCard key={accounts.current.id} voice={voice} username={accounts.current.username} />

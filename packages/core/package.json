@@ -19,7 +19,8 @@
     "./posts/schema": "./src/posts/schema.ts",
     "./posts/text": "./src/posts/text.ts",
     "./posts/weighted-length": "./src/posts/weighted-length.ts",
-    "./validate": "./src/validate.ts"
+    "./validate": "./src/validate.ts",
+    "./x-api": "./src/x-api.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
