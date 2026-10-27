@@ -96,17 +96,23 @@ describe('thresholds', () => {
     expect(saved.crowdedFrom).toBe(20);
   });
 
-  it('stay within their limits, and say which', () => {
+  it('stay within their limits, and name the field they are about', () => {
     // A batch is 5 to 30 posts: the range the batch runner shares.
     expect(
       messages(() => parseDiscoverySection('thresholds', thresholds({ maxPostsPerBatch: 31 }))),
-    ).toContain('Use 30 or less');
+    ).toContain('Posts per batch: use 30 or less');
     expect(
       messages(() => parseDiscoverySection('thresholds', thresholds({ maxPostsPerBatch: 4 }))),
-    ).toContain('Use 5 or more');
+    ).toContain('Posts per batch: use 5 or more');
+    // readableError drops the "at field" line, so the message has to carry the name itself.
     expect(
       messages(() => parseDiscoverySection('thresholds', thresholds({ bestAgeHours: 2.5 }))),
-    ).toContain('whole number');
+    ).toContain('Best post age (hours): use a whole number');
+    expect(
+      messages(() =>
+        parseDiscoverySection('thresholds', thresholds({ minAuthorFollowers: 10_000_001 })),
+      ),
+    ).toContain('Minimum author followers: use 10,000,000 or less');
   });
 });
 

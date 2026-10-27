@@ -69,3 +69,21 @@ it('drops an entry when its chip is removed', async () => {
 
   expect(entries()).toEqual(['@shl']);
 });
+
+it('takes a list longer than a single paste of 600 characters, uncut', async () => {
+  const user = userEvent.setup();
+  render(<Handles initial={[]} max={100} />);
+  // A full watch list is about 1,600 characters: the field must not cap what it accepts, or the
+  // cut at the end lands as a valid handle nobody typed.
+  const handles = Array.from(
+    { length: 80 },
+    (_, index) => `user_${String(index).padStart(3, '0')}`,
+  );
+
+  await user.click(field());
+  await user.paste(handles.join('\n'));
+  await user.click(add());
+
+  expect(entries()).toHaveLength(80);
+  expect(entries().at(-1)).toBe('@user_079');
+});

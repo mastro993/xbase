@@ -109,7 +109,6 @@ export function KeywordEditor({
         autoResize
         maxRows={6}
         spellCheck="false"
-        maxLength={MAX_KEYWORD_LENGTH * 10}
       />
       {error && (
         <p role="alert" className="text-body-regular text-text-error-primary">

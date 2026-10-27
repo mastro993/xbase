@@ -83,28 +83,31 @@ const DiscoveryWatchInput = z.object({
   blocked: handleList(MAX_WATCH_HANDLES),
 });
 
-/** What each threshold accepts. */
-const THRESHOLD_LIMITS = {
-  minAuthorFollowers: { min: 0, max: 10_000_000 },
-  bestAgeHours: { min: 1, max: 72 },
-  hardMaxAgeHours: { min: 1, max: 168 },
-  idealReplies: { min: 0, max: 500 },
-  crowdedFrom: { min: 1, max: 500 },
-  hardReplyCap: { min: 1, max: 1000 },
-  authorCooldownDays: { min: 0, max: 90 },
-  maxPostsPerAuthor: { min: 1, max: 3 },
-  maxPostsPerBatch: { min: 5, max: 30 },
+/**
+ * What each threshold is called and what it accepts: the schema's messages and the page's fields
+ * both read it, so a range error names the box it came from.
+ */
+export const DISCOVERY_THRESHOLDS = {
+  minAuthorFollowers: { label: 'Minimum author followers', min: 0, max: 10_000_000 },
+  bestAgeHours: { label: 'Best post age (hours)', min: 1, max: 72 },
+  hardMaxAgeHours: { label: 'Hard age cap (hours)', min: 1, max: 168 },
+  idealReplies: { label: 'Ideal replies', min: 0, max: 500 },
+  crowdedFrom: { label: 'Crowded from (replies)', min: 1, max: 500 },
+  hardReplyCap: { label: 'Hard reply cap (replies)', min: 1, max: 1000 },
+  authorCooldownDays: { label: 'Author cooldown (days)', min: 0, max: 90 },
+  maxPostsPerAuthor: { label: 'Posts per author, per batch', min: 1, max: 3 },
+  maxPostsPerBatch: { label: 'Posts per batch', min: 5, max: 30 },
 } as const;
 
-export type DiscoveryThreshold = keyof typeof THRESHOLD_LIMITS;
+export type DiscoveryThreshold = keyof typeof DISCOVERY_THRESHOLDS;
 
 const threshold = (field: DiscoveryThreshold) => {
-  const { min, max } = THRESHOLD_LIMITS[field];
+  const { label, min, max } = DISCOVERY_THRESHOLDS[field];
   return z
     .number()
-    .int('Use a whole number')
-    .min(min, `Use ${min} or more`)
-    .max(max, `Use ${max.toLocaleString('en-US')} or less`);
+    .int(`${label}: use a whole number`)
+    .min(min, `${label}: use ${min} or more`)
+    .max(max, `${label}: use ${max.toLocaleString('en-US')} or less`);
 };
 
 /** What makes a post a good pick. The rules between them are checked here, not in the page. */
