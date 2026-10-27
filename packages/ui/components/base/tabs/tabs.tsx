@@ -2,8 +2,9 @@
 
 import { useDirection } from '@xbase/ui/components/foundations/direction/direction';
 import { cx } from '@xbase/ui/utils/cx';
+import { IconGlyph, type IconReference } from '@xbase/ui/utils/icon';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import type { ComponentType, ReactNode, Ref } from 'react';
+import type { ReactNode, Ref } from 'react';
 import {
   Tab as AriaTab,
   TabList as AriaTabList,
@@ -41,11 +42,6 @@ const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffec
  *   - the strip scrolls sideways when its tabs don't fit (WCAG 1.4.10
  *     reflow), and a tab's focus ring is inset so the scroller can't clip it.
  */
-
-type IconComponent = ComponentType<{
-  className?: string;
-  'aria-hidden'?: boolean | 'true' | 'false';
-}>;
 
 export interface TabsProps extends AriaTabsProps {
   ref?: Ref<HTMLDivElement>;
@@ -142,13 +138,13 @@ export function TabList<T extends object>({ className, ref, ...props }: TabListP
 export interface TabProps extends Omit<AriaTabProps, 'children'> {
   children?: ReactNode;
   /** Optional leading icon (16px). Inherits the label color. */
-  icon?: IconComponent;
+  icon?: IconReference;
   /** Optional trailing count badge. */
   count?: ReactNode;
   ref?: Ref<HTMLDivElement>;
 }
 
-export function Tab({ className, children, icon: Icon, count, ref, ...props }: TabProps) {
+export function Tab({ className, children, icon, count, ref, ...props }: TabProps) {
   return (
     <AriaTab
       ref={ref}
@@ -175,7 +171,7 @@ export function Tab({ className, children, icon: Icon, count, ref, ...props }: T
                 : 'text-body-regular text-text-primary',
             )}
           >
-            {Icon && <Icon className="size-4 shrink-0" aria-hidden />}
+            {icon && <IconGlyph icon={icon} className="size-4 shrink-0" aria-hidden />}
             {children}
           </span>
           {count != null && (

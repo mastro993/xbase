@@ -12,7 +12,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@remixicon/react": "catalog:",
+    "@hugeicons/core-free-icons": "catalog:",
+    "@hugeicons/react": "catalog:",
     "react-aria-components": "catalog:",
     "tailwind-merge": "^3.7.0"
   },

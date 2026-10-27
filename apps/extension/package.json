@@ -13,7 +13,7 @@
     "postinstall": "wxt prepare"
   },
   "dependencies": {
-    "@remixicon/react": "catalog:",
+    "@hugeicons/core-free-icons": "catalog:",
     "@xbase/ai": "workspace:*",
     "@xbase/ui": "workspace:*",
     "react": "catalog:",

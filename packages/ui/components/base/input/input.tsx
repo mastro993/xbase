@@ -1,14 +1,8 @@
 'use client';
 
 import { cx, sortCx } from '@xbase/ui/utils/cx';
-import {
-  createContext,
-  useContext,
-  useMemo,
-  type ComponentType,
-  type ReactNode,
-  type Ref,
-} from 'react';
+import { IconGlyph, type IconReference } from '@xbase/ui/utils/icon';
+import { createContext, useContext, useMemo, type ReactNode, type Ref } from 'react';
 import {
   Group as AriaGroup,
   Input as AriaInput,
@@ -48,11 +42,6 @@ import { Label } from './label';
  */
 
 export type InputSize = 'medium' | 'small';
-
-type IconComponent = ComponentType<{
-  className?: string;
-  'aria-hidden'?: boolean | 'true' | 'false';
-}>;
 
 /* -------------------------------------------------------------------------- */
 /*  TextFieldContext                                                           */
@@ -122,8 +111,8 @@ TextField.displayName = 'TextField';
 export interface InputBaseProps extends Omit<AriaInputProps, 'size' | 'className'> {
   size?: InputSize;
   className?: string;
-  leadingIcon?: IconComponent;
-  trailingIcon?: IconComponent;
+  leadingIcon?: IconReference;
+  trailingIcon?: IconReference;
   /** Custom element rendered in the leading slot (Phone basic uses this). */
   leadingAddon?: ReactNode;
   /** Class for the field shell. */
@@ -212,7 +201,7 @@ export function InputBase({
           {hasAddon ? (
             leadingAddon
           ) : Leading ? (
-            <Leading className={inputStyles.icon} aria-hidden />
+            <IconGlyph icon={Leading} className={inputStyles.icon} aria-hidden />
           ) : null}
           <AriaInput
             ref={ref}
@@ -226,7 +215,7 @@ export function InputBase({
             )}
           />
         </div>
-        {Trailing ? <Trailing className={inputStyles.icon} aria-hidden /> : null}
+        {Trailing ? <IconGlyph icon={Trailing} className={inputStyles.icon} aria-hidden /> : null}
       </div>
     </AriaGroup>
   );

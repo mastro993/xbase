@@ -1,12 +1,7 @@
 import { cx, sortCx } from '@xbase/ui/utils/cx';
 import { directionalIconClass } from '@xbase/ui/utils/directional-icon';
-import type {
-  AnchorHTMLAttributes,
-  ButtonHTMLAttributes,
-  ComponentType,
-  ReactNode,
-  Ref,
-} from 'react';
+import { IconGlyph, type IconReference } from '@xbase/ui/utils/icon';
+import type { AnchorHTMLAttributes, ButtonHTMLAttributes, ReactNode, Ref } from 'react';
 
 /**
  * Figma source: Board UI → Buttons (node 3656:13819).
@@ -35,10 +30,11 @@ import type {
  *
  * Icons are rendered by the component itself via the `leadingIcon` /
  * `trailingIcon` props so the consumer can't pass the wrong size. Pass
- * a Remix Icon component reference (`RiAddLine`, not `<RiAddLine />`).
+ * a Hugeicons definition (`Add01Icon`, from `@hugeicons/core-free-icons`,
+ * not `<Add01Icon />`).
  *
  * For icon-only buttons:
- *   <Button iconOnly leadingIcon={RiAddLine} aria-label="Add" />
+ *   <Button iconOnly leadingIcon={Add01Icon} aria-label="Add" />
  *
  * The HTML `type` prop is preserved; Figma's "Type" enum is renamed to
  * `variant` to avoid the clash.
@@ -47,17 +43,12 @@ import type {
 type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 type ButtonSize = 'medium' | 'small' | 'xs';
 
-type IconComponent = ComponentType<{
-  className?: string;
-  'aria-hidden'?: boolean | 'true' | 'false';
-}>;
-
 export interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'> {
   variant?: ButtonVariant;
   size?: ButtonSize;
   iconOnly?: boolean;
-  leadingIcon?: IconComponent;
-  trailingIcon?: IconComponent;
+  leadingIcon?: IconReference;
+  trailingIcon?: IconReference;
   children?: ReactNode;
   ref?: Ref<HTMLButtonElement>;
 }
@@ -66,8 +57,8 @@ export interface ButtonLinkProps extends Omit<AnchorHTMLAttributes<HTMLAnchorEle
   variant?: ButtonVariant;
   size?: ButtonSize;
   iconOnly?: boolean;
-  leadingIcon?: IconComponent;
-  trailingIcon?: IconComponent;
+  leadingIcon?: IconReference;
+  trailingIcon?: IconReference;
   children?: ReactNode;
   ref?: Ref<HTMLAnchorElement>;
 }
@@ -166,13 +157,21 @@ export function Button({
       {...props}
     >
       {Leading ? (
-        <Leading className={cx(styles.icon[size], directionalIconClass(Leading))} aria-hidden />
+        <IconGlyph
+          icon={Leading}
+          className={cx(styles.icon[size], directionalIconClass(Leading))}
+          aria-hidden
+        />
       ) : null}
       {!iconOnly && children !== undefined && children !== null && (
         <span className={styles.label[size]}>{children}</span>
       )}
       {!iconOnly && Trailing ? (
-        <Trailing className={cx(styles.icon[size], directionalIconClass(Trailing))} aria-hidden />
+        <IconGlyph
+          icon={Trailing}
+          className={cx(styles.icon[size], directionalIconClass(Trailing))}
+          aria-hidden
+        />
       ) : null}
     </button>
   );
@@ -203,13 +202,21 @@ export function ButtonLink({
       {...props}
     >
       {Leading ? (
-        <Leading className={cx(styles.icon[size], directionalIconClass(Leading))} aria-hidden />
+        <IconGlyph
+          icon={Leading}
+          className={cx(styles.icon[size], directionalIconClass(Leading))}
+          aria-hidden
+        />
       ) : null}
       {!iconOnly && children !== undefined && children !== null && (
         <span className={styles.label[size]}>{children}</span>
       )}
       {!iconOnly && Trailing ? (
-        <Trailing className={cx(styles.icon[size], directionalIconClass(Trailing))} aria-hidden />
+        <IconGlyph
+          icon={Trailing}
+          className={cx(styles.icon[size], directionalIconClass(Trailing))}
+          aria-hidden
+        />
       ) : null}
     </a>
   );

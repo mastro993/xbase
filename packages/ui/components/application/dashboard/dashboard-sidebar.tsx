@@ -1,13 +1,13 @@
 'use client';
 
-import { RiCloseLine } from '@remixicon/react';
+import { Cancel01Icon } from '@hugeicons/core-free-icons';
 import { Tooltip, TooltipTrigger } from '@xbase/ui/components/base/tooltip/tooltip';
 import { cx, sortCx } from '@xbase/ui/utils/cx';
+import { IconGlyph, type IconReference } from '@xbase/ui/utils/icon';
 import {
   createContext,
   useContext,
   type AnchorHTMLAttributes,
-  type ComponentType,
   type DOMAttributes,
   type ReactElement,
   type ReactNode,
@@ -41,14 +41,9 @@ import {
  * screens, where BoardUI's `mobile` mode expects a drawer.
  *
  *   <DashboardSidebar collapsed logo={<Mark />} footer={<AccountMenu />}>
- *     <NavLink to="/drafts" icon={RiDraftLine} label="Drafts" />
+ *     <NavLink to="/drafts" icon={FileEditIcon} label="Drafts" />
  *   </DashboardSidebar>
  */
-
-type IconComponent = ComponentType<{
-  className?: string;
-  'aria-hidden'?: boolean | 'true' | 'false';
-}>;
 
 const SidebarContext = createContext({ collapsed: false });
 
@@ -89,17 +84,17 @@ const styles = sortCx({
 });
 
 function RowContent({
-  icon: Icon,
+  icon,
   label,
   collapsed,
 }: {
-  icon: IconComponent;
+  icon: IconReference;
   label: string;
   collapsed: boolean;
 }) {
   return (
     <span className={styles.content}>
-      <Icon className={styles.icon} aria-hidden />
+      <IconGlyph icon={icon} className={styles.icon} aria-hidden />
       <Collapsible collapsed={collapsed}>
         <span className={styles.label}>{label}</span>
       </Collapsible>
@@ -130,7 +125,7 @@ export interface SidebarNavItemProps extends Omit<
   AnchorHTMLAttributes<HTMLAnchorElement>,
   'children'
 > {
-  icon: IconComponent;
+  icon: IconReference;
   label: string;
   ref?: Ref<HTMLAnchorElement>;
 }
@@ -208,7 +203,7 @@ export function DashboardSidebar({
                 onClick={onClose}
                 className="flex size-9 cursor-pointer items-center justify-center rounded-2lg text-foreground-icon-secondary outline-none hover:bg-background-secondary-hover focus-visible:ring-2 focus-visible:ring-border-focus-ring"
               >
-                <RiCloseLine className="size-5" aria-hidden />
+                <IconGlyph icon={Cancel01Icon} className="size-5" aria-hidden />
               </button>
             )}
           </div>

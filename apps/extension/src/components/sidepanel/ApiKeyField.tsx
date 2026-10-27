@@ -1,6 +1,7 @@
-import { RiArrowRightUpLine, RiCheckLine } from '@remixicon/react';
+import { ArrowUpRight01Icon, Tick02Icon } from '@hugeicons/core-free-icons';
 import { PROVIDERS, type ProviderId } from '@xbase/ai/providers';
 import { LinkButton } from '@xbase/ui/components/base/buttons/link-button';
+import { IconGlyph } from '@xbase/ui/utils/icon';
 import { KeyRow } from './KeyRow';
 
 interface Props {
@@ -34,7 +35,7 @@ export function ApiKeyField({ provider, savedKey, checking, error, modelCount, o
           target="_blank"
           rel="noreferrer"
           size="xs"
-          trailingIcon={RiArrowRightUpLine}
+          trailingIcon={ArrowUpRight01Icon}
         >
           Get your {label} key
         </LinkButton>
@@ -47,7 +48,11 @@ export function ApiKeyField({ provider, savedKey, checking, error, modelCount, o
             : !error &&
               modelCount !== null && (
                 <>
-                  <RiCheckLine className="size-4 text-status-lime-text" aria-hidden />
+                  <IconGlyph
+                    icon={Tick02Icon}
+                    className="size-4 text-status-lime-text"
+                    aria-hidden
+                  />
                   Key verified · {modelCount} {modelCount === 1 ? 'model' : 'models'}
                 </>
               )}

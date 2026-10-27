@@ -1,4 +1,4 @@
-import { RiAddLine } from '@remixicon/react';
+import { Add01Icon } from '@hugeicons/core-free-icons';
 import { useRouter } from '@tanstack/react-router';
 import { useServerFn } from '@tanstack/react-start';
 import { MAX_API_KEY_NAME } from '@xbase/core/api-keys';
@@ -59,7 +59,7 @@ export function NewApiKeyDialog() {
 
   return (
     <>
-      <Button leadingIcon={RiAddLine} aria-haspopup="dialog" onClick={start}>
+      <Button leadingIcon={Add01Icon} aria-haspopup="dialog" onClick={start}>
         New API key
       </Button>
       <Modal

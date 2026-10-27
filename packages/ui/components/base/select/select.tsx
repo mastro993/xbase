@@ -1,6 +1,6 @@
 'use client';
 
-import { RiCheckLine } from '@remixicon/react';
+import { ChevronDownIcon, Tick02Icon } from '@hugeicons/core-free-icons';
 import {
   MENU_ITEM,
   MENU_ITEM_ACTIVE,
@@ -9,8 +9,8 @@ import {
   MENU_POPOVER_WIDTH,
 } from '@xbase/ui/components/base/dropdown/menu-styles';
 import { Label } from '@xbase/ui/components/base/input/label';
-import { ChevronDownSmall } from '@xbase/ui/components/foundations/icons/chevrons';
 import { cx } from '@xbase/ui/utils/cx';
+import { IconGlyph } from '@xbase/ui/utils/icon';
 import {
   useDismissOnOutsidePress,
   useTriggerToggle,
@@ -142,7 +142,9 @@ export function Select<T extends object>({
             >
               {renderValue as never /* RAC accepts node or render-prop */}
             </AriaSelectValue>
-            <ChevronDownSmall
+            <IconGlyph
+              icon={ChevronDownIcon}
+              aria-hidden
               className={cx(
                 'ease shrink-0 text-text-secondary transition-transform duration-200',
                 size === 'sm' ? 'size-3.5' : 'size-4',
@@ -202,7 +204,11 @@ export function SelectItem({ className, children, textValue, ...props }: SelectI
         <>
           {children}
           {isSelected && (
-            <RiCheckLine aria-hidden className="ms-auto size-4 shrink-0 text-text-accent" />
+            <IconGlyph
+              icon={Tick02Icon}
+              aria-hidden
+              className="ms-auto size-4 shrink-0 text-text-accent"
+            />
           )}
         </>
       )}
