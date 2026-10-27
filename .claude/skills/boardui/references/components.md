@@ -497,6 +497,7 @@ Usage:
 ```tsx
 import { useState } from "react";
 import { Add01Icon, Attachment01Icon, FocusIcon, ListChecksIcon } from "@hugeicons/core-free-icons";
+import { IconGlyph } from "@xbase/ui/utils/icon";
 import {
   Dropdown,
   DropdownGroup,
@@ -521,7 +522,8 @@ export function Example() {
         aria-label="Add to chat"
         className="flex size-9 items-center justify-center rounded-full bg-background-secondary-default p-2 transition-colors hover:bg-background-secondary-hover"
       >
-        <Add01Icon
+        <IconGlyph
+          icon={Add01Icon}
           className={cx(
             "size-5 text-foreground-icon-secondary transition-transform duration-200",
             isOpen && "rotate-45",
@@ -534,7 +536,11 @@ export function Example() {
         <DropdownGroup label="Add">
           {ROWS.map(({ icon: Icon, label, description }) => (
             <DropdownItem key={label} onSelect={() => setIsOpen(false)} className="px-2 py-1.5">
-              <Icon className="size-5 shrink-0 text-foreground-icon-secondary" aria-hidden />
+              <IconGlyph
+                icon={Icon}
+                className="size-5 shrink-0 text-foreground-icon-secondary"
+                aria-hidden
+              />
               <span className="truncate text-body-medium whitespace-nowrap">
                 <span className="text-text-primary">{label}</span>
                 {description && <span className="ml-1.5 text-text-secondary">{description}</span>}

@@ -14,13 +14,14 @@ import type { ButtonHTMLAttributes, Ref } from 'react';
  * stroke a literal CSS pixel value at every size, instead of scaling with the
  * icon.
  *
- * Sizes (px):
- *   2xs = 16 container, 14px glyph, 1.6px stroke   (compact floating surfaces)
- *   xs = 20 container, 20px glyph, 2px stroke      (Announcement dismiss corner)
- *   sm = 24 container, 24px glyph, 2px stroke
- *   md = 32 container, 32px glyph, 2.5px stroke    (modal header close — a touch
- *                                                    bolder to hold its own at
- *                                                    the larger size)
+ * Sizes (px). `Cancel01Icon` draws its X across the middle half of the 24px
+ * box, so the box is twice the X span it replaces:
+ *   2xs = 16 container, 11.3px box (5.7px X), 1.6px stroke   (compact floating surfaces)
+ *   xs = 20 container, 13.6px box (6.8px X), 2px stroke      (Announcement dismiss corner)
+ *   sm = 24 container, 17.2px box (8.6px X), 2px stroke
+ *   md = 32 container, 24.4px box (12.2px X), 2.5px stroke   (modal header close — a touch
+ *                                                             bolder to hold its own at
+ *                                                             the larger size)
  */
 
 type CloseButtonSize = '2xs' | 'xs' | 'sm' | 'md';
@@ -36,10 +37,10 @@ export interface CloseButtonProps extends Omit<
 }
 
 const GLYPH_SIZE: Record<CloseButtonSize, number> = {
-  '2xs': 14,
-  xs: 20,
-  sm: 24,
-  md: 32,
+  '2xs': 11.3,
+  xs: 13.6,
+  sm: 17.2,
+  md: 24.4,
 };
 
 const STROKE_WIDTH: Record<CloseButtonSize, number> = {

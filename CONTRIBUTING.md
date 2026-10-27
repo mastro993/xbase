@@ -119,8 +119,10 @@ packages/ui/
   ```sh
   cd packages/ui
   npx boardui@latest add <name> -y
-  pnpm remove @tailwindcss/postcss
+  pnpm remove @tailwindcss/postcss @remixicon/react
   ```
+
+  The CLI may write Remix Icon imports and install `@remixicon/react`; replace them with Hugeicons definitions from `@hugeicons/core-free-icons` before committing.
 
   A new folder of TypeScript files also goes in the `include` of `packages/ui/tsconfig.json`: Vite resolves `@xbase/ui` imports only in the files it lists.
 
@@ -130,7 +132,7 @@ packages/ui/
   - Colour only with semantic tokens, such as `text-text-secondary`, `bg-background-primary-default` or `border-border-button-default`, never raw palette classes, hex or OKLCH values. Accent text and links use `text-text-accent`.
   - Set type only with the composite utilities, such as `text-body-regular` or `text-title-3-semibold`, never `text-sm font-medium`.
   - Cards are `rounded-3xl border border-border-button-default bg-background-primary-default`. Space things with `gap`, not margins.
-  - Pass icons as components, such as `leadingIcon={RiAddLine}`, and merge classes with `cx()` from `@xbase/ui/utils/cx`.
+  - Pass icon definitions, such as `leadingIcon={Add01Icon}`, and merge classes with `cx()` from `@xbase/ui/utils/cx`.
   - Build fields from BoardUI's React Aria inputs, never a raw `<input>` or `<select>`.
   - Focus shows as `outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring`, plus `focus-visible:ring-offset-2` on an accent fill, so the ring doesn't merge into it. Animations reuse the skill's motion recipes.
 - **Mind BoardUI's plain buttons**: `Button`, `IconButton` and `CloseButton` are HTML buttons, not React Aria ones. Use `onClick` and `disabled`, wrap them in React Aria's `<Focusable>` inside a `TooltipTrigger`, and in `<Pressable>` inside a `DialogTrigger`. On the website, their link versions become TanStack Router links in `apps/web/src/features/shell/router-links.ts` (`ButtonRouterLink` and friends), and React Aria's own links navigate through the `RouterProvider` in `apps/web/src/routes/__root.tsx`.
