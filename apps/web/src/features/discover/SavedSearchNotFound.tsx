@@ -1,4 +1,4 @@
-import { RiSearchLine } from '@remixicon/react';
+import { Search01Icon } from '@hugeicons/core-free-icons';
 import { EmptyState } from '@/features/shell/EmptyState';
 import { ButtonRouterLink } from '@/features/shell/router-links';
 
@@ -7,7 +7,7 @@ export function SavedSearchNotFound() {
   return (
     <div className="p-6">
       <EmptyState
-        icon={RiSearchLine}
+        icon={Search01Icon}
         title="This saved search doesn’t exist"
         description="It may have been deleted."
         action={

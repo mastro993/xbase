@@ -1,4 +1,4 @@
-import { RiAddLine } from '@remixicon/react';
+import { Add01Icon } from '@hugeicons/core-free-icons';
 import { ButtonRouterLink } from '@/features/shell/router-links';
 
 /**
@@ -7,7 +7,7 @@ import { ButtonRouterLink } from '@/features/shell/router-links';
  */
 export function NewDraftButton({ size = 'medium' }: { size?: 'small' | 'medium' }) {
   return (
-    <ButtonRouterLink to="/drafts/new" size={size} leadingIcon={RiAddLine}>
+    <ButtonRouterLink to="/drafts/new" size={size} leadingIcon={Add01Icon}>
       New draft
     </ButtonRouterLink>
   );

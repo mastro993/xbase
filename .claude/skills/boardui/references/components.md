@@ -120,14 +120,14 @@ Primary, secondary, ghost, and danger buttons in three sizes with icon support.
 Usage:
 
 ```tsx
-import { RiArrowRightLine } from "@remixicon/react";
+import { ArrowRight01Icon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/base/buttons/button";
 
 export function Example() {
   return (
     <div className="flex items-center gap-3">
       <Button>Get started</Button>
-      <Button variant="secondary" trailingIcon={RiArrowRightLine}>
+      <Button variant="secondary" trailingIcon={ArrowRight01Icon}>
         Continue
       </Button>
       <Button variant="ghost">Mark as done</Button>
@@ -148,14 +148,14 @@ Square icon-only button in two sizes.
 Usage:
 
 ```tsx
-import { RiEditLine, RiNotificationLine } from "@remixicon/react";
+import { Edit02Icon, Notification01Icon } from "@hugeicons/core-free-icons";
 import { IconButton } from "@/components/base/buttons/icon-button";
 
 export function Example() {
   return (
     <div className="flex items-center gap-3">
-      <IconButton icon={RiNotificationLine} aria-label="Notifications" />
-      <IconButton icon={RiEditLine} aria-label="Edit" />
+      <IconButton icon={Notification01Icon} aria-label="Notifications" />
+      <IconButton icon={Edit02Icon} aria-label="Edit" />
     </div>
   );
 }
@@ -172,13 +172,13 @@ Inline text action styled like a link — primary/secondary variants, three size
 Usage:
 
 ```tsx
-import { RiArrowRightLine } from "@remixicon/react";
+import { ArrowRight01Icon } from "@hugeicons/core-free-icons";
 import { LinkButton } from "@/components/base/buttons/link-button";
 
 export function Example() {
   return (
     <>
-      <LinkButton href="/pricing" trailingIcon={RiArrowRightLine}>
+      <LinkButton href="/pricing" trailingIcon={ArrowRight01Icon}>
         Learn more
       </LinkButton>
       <LinkButton variant="secondary" onClick={() => {}}>
@@ -251,7 +251,7 @@ Usage:
 
 ```tsx
 import { Input } from "@/components/base/input/input";
-import { RiUserSmileLine, RiQuestionLine } from "@remixicon/react";
+import { QuestionIcon, UserIcon } from "@hugeicons/core-free-icons";
 
 export function Example() {
   return (
@@ -261,8 +261,8 @@ export function Example() {
       tooltip
       placeholder="Enter your email"
       hint="This is a hint about this input."
-      leadingIcon={RiUserSmileLine}
-      trailingIcon={RiQuestionLine}
+      leadingIcon={UserIcon}
+      trailingIcon={QuestionIcon}
     />
   );
 }
@@ -496,7 +496,8 @@ Usage:
 
 ```tsx
 import { useState } from "react";
-import { RiAddLine, RiAttachment2, RiFocus3Line, RiListCheck3 } from "@remixicon/react";
+import { Add01Icon, Attachment01Icon, FocusIcon, ListChecksIcon } from "@hugeicons/core-free-icons";
+import { IconGlyph } from "@xbase/ui/utils/icon";
 import {
   Dropdown,
   DropdownGroup,
@@ -507,9 +508,9 @@ import {
 import { cx } from "@/utils/cx";
 
 const ROWS = [
-  { icon: RiAttachment2, label: "Files and folders" },
-  { icon: RiFocus3Line, label: "Goal", description: "Set a goal for faster results" },
-  { icon: RiListCheck3, label: "Plan mode", description: "Manage complex tasks" },
+  { icon: Attachment01Icon, label: "Files and folders" },
+  { icon: FocusIcon, label: "Goal", description: "Set a goal for faster results" },
+  { icon: ListChecksIcon, label: "Plan mode", description: "Manage complex tasks" },
 ];
 
 export function Example() {
@@ -521,7 +522,8 @@ export function Example() {
         aria-label="Add to chat"
         className="flex size-9 items-center justify-center rounded-full bg-background-secondary-default p-2 transition-colors hover:bg-background-secondary-hover"
       >
-        <RiAddLine
+        <IconGlyph
+          icon={Add01Icon}
           className={cx(
             "size-5 text-foreground-icon-secondary transition-transform duration-200",
             isOpen && "rotate-45",
@@ -534,7 +536,11 @@ export function Example() {
         <DropdownGroup label="Add">
           {ROWS.map(({ icon: Icon, label, description }) => (
             <DropdownItem key={label} onSelect={() => setIsOpen(false)} className="px-2 py-1.5">
-              <Icon className="size-5 shrink-0 text-foreground-icon-secondary" aria-hidden />
+              <IconGlyph
+                icon={Icon}
+                className="size-5 shrink-0 text-foreground-icon-secondary"
+                aria-hidden
+              />
               <span className="truncate text-body-medium whitespace-nowrap">
                 <span className="text-text-primary">{label}</span>
                 {description && <span className="ml-1.5 text-text-secondary">{description}</span>}
@@ -607,17 +613,17 @@ Underline and pill tab variants built on React Aria.
 Usage:
 
 ```tsx
-import { RiImage2Line, RiArticleLine } from "@remixicon/react";
+import { Image01Icon, News01Icon } from "@hugeicons/core-free-icons";
 import { Tab, TabList, TabPanel, Tabs } from "@/components/base/tabs/tabs";
 
 export function Example() {
   return (
     <Tabs defaultSelectedKey="banners">
       <TabList aria-label="Content types">
-        <Tab id="banners" icon={RiImage2Line} count={152}>
+        <Tab id="banners" icon={Image01Icon} count={152}>
           Banners
         </Tab>
-        <Tab id="posts" icon={RiArticleLine} count={32}>
+        <Tab id="posts" icon={News01Icon} count={32}>
           Posts
         </Tab>
         <Tab id="settings">Settings</Tab>
@@ -789,7 +795,7 @@ Icon-capable breadcrumb trail.
 Usage:
 
 ```tsx
-import { RiHomeLine } from "@remixicon/react";
+import { Home01Icon } from "@hugeicons/core-free-icons";
 import { Breadcrumb, BreadcrumbItem } from "@/components/base/breadcrumb/breadcrumb";
 
 export function Example() {
@@ -797,7 +803,7 @@ export function Example() {
     <Breadcrumb aria-label="Pages">
       <BreadcrumbItem href="/dashboard">Dashboard</BreadcrumbItem>
       <BreadcrumbItem href="/projects">Projects</BreadcrumbItem>
-      <BreadcrumbItem current icon={RiHomeLine}>
+      <BreadcrumbItem current icon={Home01Icon}>
         BoardUI
       </BreadcrumbItem>
     </Breadcrumb>
@@ -1120,7 +1126,7 @@ Usage:
 "use client";
 
 import { useState } from "react";
-import { RiSettingsLine } from "@remixicon/react";
+import { Settings01Icon } from "@hugeicons/core-free-icons";
 import { SettingsModal } from "@/components/application/settings/settings-modal";
 import { Button } from "@/components/base/buttons/button";
 
@@ -1131,7 +1137,7 @@ export function SettingsTrigger() {
     <>
       <Button
         variant="secondary"
-        leadingIcon={RiSettingsLine}
+        leadingIcon={Settings01Icon}
         onClick={() => setIsOpen(true)}
       >
         Open settings
@@ -1371,11 +1377,11 @@ Usage:
 ```tsx
 "use client";
 
-import { RiGlobalLine } from "@remixicon/react";
+import { GlobalIcon } from "@hugeicons/core-free-icons";
 import { WebSearch } from "@/components/application/web-search/web-search";
 
 const steps = [
-  { label: "Ran 3 searches", icon: RiGlobalLine },
+  { label: "Ran 3 searches", icon: GlobalIcon },
   {
     label: "Searched X for",
     query: "react component library pricing",
@@ -1384,7 +1390,7 @@ const steps = [
   },
   {
     label: "Component library pricing",
-    icon: RiGlobalLine,
+    icon: GlobalIcon,
     meta: "5 results",
     sources: [
       {
@@ -1414,14 +1420,14 @@ Usage:
 ```tsx
 "use client";
 
-import { RiSearchLine } from "@remixicon/react";
+import { Search01Icon } from "@hugeicons/core-free-icons";
 import { TaskList } from "@/components/application/task-list/task-list";
 
 const tasks = [
   {
     title: "Found project files",
     runningTitle: "Searching project files",
-    icon: RiSearchLine,
+    icon: Search01Icon,
     steps: [
       { label: 'Searching "app/page.tsx, components structure"' },
       { label: "Read", chips: [{ label: "page.tsx" }] },

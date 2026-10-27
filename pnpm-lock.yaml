@@ -6,9 +6,12 @@ settings:
 
 catalogs:
   default:
-    '@remixicon/react':
-      specifier: ^4.9.0
-      version: 4.9.0
+    '@hugeicons/core-free-icons':
+      specifier: ^4.3.5
+      version: 4.3.5
+    '@hugeicons/react':
+      specifier: ^1.1.10
+      version: 1.1.10
     '@tailwindcss/vite':
       specifier: ^4.3.3
       version: 4.3.3
@@ -83,9 +86,9 @@ importers:
 
   apps/extension:
     dependencies:
-      '@remixicon/react':
+      '@hugeicons/core-free-icons':
         specifier: 'catalog:'
-        version: 4.9.0(react@19.3.1)
+        version: 4.3.5
       '@xbase/ai':
         specifier: workspace:*
         version: link:../../packages/ai
@@ -147,9 +150,9 @@ importers:
       '@fontsource-variable/inter':
         specifier: ^5.3.0
         version: 5.3.0
-      '@remixicon/react':
+      '@hugeicons/core-free-icons':
         specifier: 'catalog:'
-        version: 4.9.0(react@19.3.1)
+        version: 4.3.5
       '@tanstack/react-router':
         specifier: ^1.170.46
         version: 1.170.46(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -347,9 +350,12 @@ importers:
 
   packages/ui:
     dependencies:
-      '@remixicon/react':
+      '@hugeicons/core-free-icons':
         specifier: 'catalog:'
-        version: 4.9.0(react@19.3.1)
+        version: 4.3.5
+      '@hugeicons/react':
+        specifier: 'catalog:'
+        version: 1.1.10(react@19.3.1)
       react-aria-components:
         specifier: 'catalog:'
         version: 1.22.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -547,6 +553,14 @@ packages:
   '@fregante/relaxed-json@2.0.0':
     resolution: {integrity: sha512-PyUXQWB42s4jBli435TDiYuVsadwRHnMc27YaLouINktvTWsL3FcKrRMGawTayFk46X+n5bE23RjUTWQwrukWw==}
     engines: {node: '>= 0.10.0'}
+
+  '@hugeicons/core-free-icons@4.3.5':
+    resolution: {integrity: sha512-Sv+NjHRPnQk+yZsGCMcGznCHdTfJR9PMMOEKcJYAQU4gy90dmlc9PwdtvYOImBZIjiheMsTLL5eMn2DmHxUiUg==}
+
+  '@hugeicons/react@1.1.10':
+    resolution: {integrity: sha512-9tAsd92yMVVGP+E+d8cM+wc0VnXuYZHNbWQi7TOe8k2neawmhiaFmVFbzyruejhOMa197/LbgvSED32ayUo3ZA==}
+    peerDependencies:
+      react: '>=16.0.0'
 
   '@humanfs/core@0.19.2':
     resolution: {integrity: sha512-UhXNm+CFMWcbChXywFwkmhqjs3PRCmcSa/hfBgLIb7oQ5HNb1wS0icWsGtSAUNgefHeI+eBrA8I1fxmbHsGdvA==}
@@ -916,11 +930,6 @@ packages:
     resolution: {integrity: sha512-VNlZuifu4tHdxWPfHvoMfKsHA9kVTCGkduv5vKVTdinm8wHFJNhyVB5RzIMiRFj0q3RKoCbP68u2zaoBSiFueg==}
     peerDependencies:
       react: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0 || ^19.0.0-rc.1
-
-  '@remixicon/react@4.9.0':
-    resolution: {integrity: sha512-5/jLDD4DtKxH2B4QVXTobvV1C2uL8ab9D5yAYNtFt+w80O0Ys1xFOrspqROL3fjrZi+7ElFUWE37hBfaAl6U+Q==}
-    peerDependencies:
-      react: '>=18.2.0'
 
   '@rolldown/binding-android-arm-eabi@1.2.15':
     resolution: {integrity: sha512-aLcgK9gIJ3YRvrrtfSBbRa27F5WrpiTaPulnFpsHPxpUHgFlSgnU4854MHwoRGEBhfRJDWCS2WQ7lIjskE9Olw==}
@@ -3806,6 +3815,12 @@ snapshots:
 
   '@fregante/relaxed-json@2.0.0': {}
 
+  '@hugeicons/core-free-icons@4.3.5': {}
+
+  '@hugeicons/react@1.1.10(react@19.3.1)':
+    dependencies:
+      react: 19.3.1
+
   '@humanfs/core@0.19.2':
     dependencies:
       '@humanfs/types': 0.15.0
@@ -4030,10 +4045,6 @@ snapshots:
       config-chain: 1.1.13
 
   '@react-types/shared@3.37.0(react@19.3.1)':
-    dependencies:
-      react: 19.3.1
-
-  '@remixicon/react@4.9.0(react@19.3.1)':
     dependencies:
       react: 19.3.1
 

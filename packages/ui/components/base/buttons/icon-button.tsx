@@ -1,6 +1,7 @@
 import { cx, sortCx } from '@xbase/ui/utils/cx';
 import { directionalIconClass } from '@xbase/ui/utils/directional-icon';
-import type { AnchorHTMLAttributes, ButtonHTMLAttributes, ComponentType, Ref } from 'react';
+import { IconGlyph, type IconReference } from '@xbase/ui/utils/icon';
+import type { AnchorHTMLAttributes, ButtonHTMLAttributes, Ref } from 'react';
 
 /**
  * Figma source: Board UI → dashboard 1 icon-only buttons (notification button
@@ -19,13 +20,8 @@ import type { AnchorHTMLAttributes, ButtonHTMLAttributes, ComponentType, Ref } f
 
 type IconButtonSize = 'medium' | 'small';
 
-type IconComponent = ComponentType<{
-  className?: string;
-  'aria-hidden'?: boolean | 'true' | 'false';
-}>;
-
 export interface IconButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'> {
-  icon: IconComponent;
+  icon: IconReference;
   size?: IconButtonSize;
   /** Accessible name — required since there is no visible label. */
   'aria-label': string;
@@ -36,7 +32,7 @@ export interface IconLinkButtonProps extends Omit<
   AnchorHTMLAttributes<HTMLAnchorElement>,
   'children'
 > {
-  icon: IconComponent;
+  icon: IconReference;
   size?: IconButtonSize;
   /** Accessible name — required since there is no visible label. */
   'aria-label': string;
@@ -66,7 +62,7 @@ const styles = sortCx({
 });
 
 export function IconButton({
-  icon: Icon,
+  icon,
   size = 'medium',
   className,
   type = 'button',
@@ -80,14 +76,18 @@ export function IconButton({
       className={cx(styles.base, styles.size[size], className)}
       {...props}
     >
-      <Icon className={cx(styles.icon[size], directionalIconClass(Icon))} aria-hidden />
+      <IconGlyph
+        icon={icon}
+        className={cx(styles.icon[size], directionalIconClass(icon))}
+        aria-hidden
+      />
     </button>
   );
 }
 
 /** Anchor counterpart to IconButton for external and navigational actions. */
 export function IconLinkButton({
-  icon: Icon,
+  icon,
   size = 'medium',
   className,
   ref,
@@ -95,7 +95,11 @@ export function IconLinkButton({
 }: IconLinkButtonProps) {
   return (
     <a ref={ref} className={cx(styles.base, styles.size[size], className)} {...props}>
-      <Icon className={cx(styles.icon[size], directionalIconClass(Icon))} aria-hidden />
+      <IconGlyph
+        icon={icon}
+        className={cx(styles.icon[size], directionalIconClass(icon))}
+        aria-hidden
+      />
     </a>
   );
 }

@@ -71,7 +71,7 @@ The website's logic is layered: each package may import only the ones before it.
 
 ### Shared dependency versions
 
-Versions that every package must agree on, such as React, React Aria Components, Remix Icon, Tailwind CSS, Vite, Vitest and TypeScript, live in the `catalog` in `pnpm-workspace.yaml`. A package references them as `"catalog:"` in its `package.json`. Change the version there, then run `pnpm install`.
+Versions that every package must agree on, such as React, React Aria Components, Hugeicons, Tailwind CSS, Vite, Vitest and TypeScript, live in the `catalog` in `pnpm-workspace.yaml`. A package references them as `"catalog:"` in its `package.json`. Change the version there, then run `pnpm install`.
 
 pnpm doesn't run dependencies' install scripts unless `allowBuilds` in `pnpm-workspace.yaml` lists them, and `strictDepBuilds` makes the install fail when a new dependency needs one. Review the package's script before you allow it.
 
@@ -99,7 +99,7 @@ Never edit a migration that is already on `main`: databases that ran it won't ru
 
 ## Style the UI
 
-Both apps are built from [BoardUI](https://www.boardui.com) components: React and Tailwind CSS v4 source files on [React Aria Components](https://react-spectrum.adobe.com/react-aria/react-aria-components.html), with icons from [Remix Icon](https://remixicon.com) (`@remixicon/react`). BoardUI isn't an npm package: its CLI copies each component's source into `packages/ui` (`@xbase/ui`), and both apps import it from there by path, such as `import { Button } from '@xbase/ui/components/base/buttons/button'`. Each component file opens with a doc comment that lists its variants and sizes.
+Both apps are built from [BoardUI](https://www.boardui.com) components: React and Tailwind CSS v4 source files on [React Aria Components](https://react-spectrum.adobe.com/react-aria/react-aria-components.html), with icons from [Hugeicons](https://hugeicons.com) (`@hugeicons/core-free-icons`, rendered through `IconGlyph` in `@xbase/ui/utils/icon`). BoardUI isn't an npm package: its CLI copies each component's source into `packages/ui` (`@xbase/ui`), and both apps import it from there by path, such as `import { Button } from '@xbase/ui/components/base/buttons/button'`. Each component file opens with a doc comment that lists its variants and sizes.
 
 ```text
 packages/ui/
@@ -119,8 +119,10 @@ packages/ui/
   ```sh
   cd packages/ui
   npx boardui@latest add <name> -y
-  pnpm remove @tailwindcss/postcss
+  pnpm remove @tailwindcss/postcss @remixicon/react
   ```
+
+  The CLI may write Remix Icon imports and install `@remixicon/react`; replace them with Hugeicons definitions from `@hugeicons/core-free-icons` before committing.
 
   A new folder of TypeScript files also goes in the `include` of `packages/ui/tsconfig.json`: Vite resolves `@xbase/ui` imports only in the files it lists.
 
@@ -130,7 +132,7 @@ packages/ui/
   - Colour only with semantic tokens, such as `text-text-secondary`, `bg-background-primary-default` or `border-border-button-default`, never raw palette classes, hex or OKLCH values. Accent text and links use `text-text-accent`.
   - Set type only with the composite utilities, such as `text-body-regular` or `text-title-3-semibold`, never `text-sm font-medium`.
   - Cards are `rounded-3xl border border-border-button-default bg-background-primary-default`. Space things with `gap`, not margins.
-  - Pass icons as components, such as `leadingIcon={RiAddLine}`, and merge classes with `cx()` from `@xbase/ui/utils/cx`.
+  - Pass icon definitions, such as `leadingIcon={Add01Icon}`, and merge classes with `cx()` from `@xbase/ui/utils/cx`.
   - Build fields from BoardUI's React Aria inputs, never a raw `<input>` or `<select>`.
   - Focus shows as `outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring`, plus `focus-visible:ring-offset-2` on an accent fill, so the ring doesn't merge into it. Animations reuse the skill's motion recipes.
 - **Mind BoardUI's plain buttons**: `Button`, `IconButton` and `CloseButton` are HTML buttons, not React Aria ones. Use `onClick` and `disabled`, wrap them in React Aria's `<Focusable>` inside a `TooltipTrigger`, and in `<Pressable>` inside a `DialogTrigger`. On the website, their link versions become TanStack Router links in `apps/web/src/features/shell/router-links.ts` (`ButtonRouterLink` and friends), and React Aria's own links navigate through the `RouterProvider` in `apps/web/src/routes/__root.tsx`.

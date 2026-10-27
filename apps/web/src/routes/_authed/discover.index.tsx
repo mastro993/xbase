@@ -1,4 +1,4 @@
-import { RiCompass3Line } from '@remixicon/react';
+import { ChatSearchIcon } from '@hugeicons/core-free-icons';
 import { createFileRoute, getRouteApi } from '@tanstack/react-router';
 import { EmptyState } from '@/features/shell/EmptyState';
 
@@ -13,7 +13,7 @@ function NoSearchOpen() {
   return (
     <div className="p-6">
       <EmptyState
-        icon={RiCompass3Line}
+        icon={ChatSearchIcon}
         title={empty ? 'Find posts worth replying to' : 'Pick a saved search'}
         description={
           empty

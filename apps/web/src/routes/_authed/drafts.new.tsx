@@ -1,4 +1,4 @@
-import { RiFileAddLine } from '@remixicon/react';
+import { FileAddIcon } from '@hugeicons/core-free-icons';
 import { createFileRoute, useNavigate, useRouter } from '@tanstack/react-router';
 import { useServerFn } from '@tanstack/react-start';
 import { Button } from '@xbase/ui/components/base/buttons/button';
@@ -44,7 +44,7 @@ function NewDraft() {
     <div className="p-6">
       {error ? (
         <EmptyState
-          icon={RiFileAddLine}
+          icon={FileAddIcon}
           title="Couldn’t create a draft"
           description={error}
           action={<Button onClick={() => void create()}>Try again</Button>}

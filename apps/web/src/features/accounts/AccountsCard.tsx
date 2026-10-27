@@ -1,4 +1,4 @@
-import { RiAddLine } from '@remixicon/react';
+import { Add01Icon } from '@hugeicons/core-free-icons';
 import { useRouter } from '@tanstack/react-router';
 import { useServerFn } from '@tanstack/react-start';
 import type { AccountDto, AccountsDto } from '@xbase/core/accounts';
@@ -51,7 +51,7 @@ export function AccountsCard({ data, error }: { data: AccountsDto; error?: SignI
       description="Every linked account can sign in to this XBase. Drafts, the queue and the voice belong to the account you work as; switch it at the foot of the sidebar."
       hint="X adds the account you’re signed in to on x.com. To add another, switch accounts on x.com first."
       actions={
-        <ButtonLink href={ADD_ACCOUNT_HREF} variant="secondary" leadingIcon={RiAddLine}>
+        <ButtonLink href={ADD_ACCOUNT_HREF} variant="secondary" leadingIcon={Add01Icon}>
           Add account
         </ButtonLink>
       }

@@ -34,7 +34,7 @@ updates:
         update-types: [minor, patch]
         patterns:
           - react-aria-components
-          - '@remixicon/react'
+          - '@hugeicons/*'
           - tailwind-merge
           - tailwindcss
           - '@tailwindcss/*'

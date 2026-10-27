@@ -1,8 +1,9 @@
-import type { ComponentType, ReactNode } from 'react';
+import { IconGlyph, type IconReference } from '@xbase/ui/utils/icon';
+import type { ReactNode } from 'react';
 
 type EmptyStateProps = {
-  /** A Remix Icon component reference, e.g. `RiDraftLine`. */
-  icon?: ComponentType<{ className?: string; 'aria-hidden'?: boolean | 'true' | 'false' }>;
+  /** A Hugeicons definition, e.g. `FileEditIcon` from `@hugeicons/core-free-icons`. */
+  icon?: IconReference;
   /** An h2: the page's h1 sits above it. */
   title: string;
   description: ReactNode;
@@ -11,12 +12,12 @@ type EmptyStateProps = {
 };
 
 /** What a page or pane shows when it has nothing to show yet: a centred card. */
-export function EmptyState({ icon: Icon, title, description, action }: EmptyStateProps) {
+export function EmptyState({ icon, title, description, action }: EmptyStateProps) {
   return (
     <div className="mx-auto flex w-full max-w-md flex-col items-center gap-4 rounded-3xl border border-border-button-default bg-background-primary-default px-6 py-10 text-center">
-      {Icon && (
+      {icon && (
         <span className="flex size-12 items-center justify-center rounded-full bg-background-secondary-default">
-          <Icon aria-hidden className="size-6 text-foreground-icon-secondary" />
+          <IconGlyph icon={icon} aria-hidden className="size-6 text-foreground-icon-secondary" />
         </span>
       )}
       <div className="flex flex-col gap-1">

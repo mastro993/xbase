@@ -1,4 +1,4 @@
-import { RiCalendarScheduleLine } from '@remixicon/react';
+import { CalendarClockIcon } from '@hugeicons/core-free-icons';
 import {
   earliestPublishInput,
   formatDateTime,
@@ -97,7 +97,7 @@ export function ScheduleDialog({ label, publishAt, onConfirm }: ScheduleDialogPr
     <>
       <Button
         variant="secondary"
-        leadingIcon={RiCalendarScheduleLine}
+        leadingIcon={CalendarClockIcon}
         aria-haspopup="dialog"
         onClick={show}
       >

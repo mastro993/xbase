@@ -1,4 +1,4 @@
-import { RiCalendarCloseLine, RiFileUnknowLine } from '@remixicon/react';
+import { CalendarRemove01Icon, FileUnknownIcon } from '@hugeicons/core-free-icons';
 import { EmptyState } from '@/features/shell/EmptyState';
 import { ButtonRouterLink } from '@/features/shell/router-links';
 
@@ -10,7 +10,7 @@ export function DraftNotFound() {
   return (
     <div className="p-6">
       <EmptyState
-        icon={RiFileUnknowLine}
+        icon={FileUnknownIcon}
         title="This draft doesn’t exist"
         description="It may have been deleted, here or through the API or MCP."
         action={
@@ -28,7 +28,7 @@ export function NotQueued({ draftId }: { draftId?: string }) {
   return (
     <div className="p-6">
       <EmptyState
-        icon={RiCalendarCloseLine}
+        icon={CalendarRemove01Icon}
         title="This post isn’t in the queue"
         description={
           draftId

@@ -1,4 +1,4 @@
-import { RiDraftLine } from '@remixicon/react';
+import { QuillWrite01Icon } from '@hugeicons/core-free-icons';
 import { createFileRoute, getRouteApi } from '@tanstack/react-router';
 import { NewDraftButton } from '@/features/posts/NewDraftButton';
 import { EmptyState } from '@/features/shell/EmptyState';
@@ -14,7 +14,7 @@ function NoDraftOpen() {
   return (
     <div className="p-6">
       <EmptyState
-        icon={RiDraftLine}
+        icon={QuillWrite01Icon}
         title={hasDrafts ? 'Pick a draft to edit' : 'Write your first draft'}
         description="Write a post or a thread, refine it with AI, then schedule it. Drafts made through the API or MCP show up here too."
         action={<NewDraftButton />}

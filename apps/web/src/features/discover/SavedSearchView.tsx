@@ -1,9 +1,9 @@
 import {
-  RiDeleteBinLine,
-  RiExternalLinkLine,
-  RiPencilLine,
-  RiSearchEyeLine,
-} from '@remixicon/react';
+  Delete02Icon,
+  ExternalLinkIcon,
+  PencilEdit01Icon,
+  SearchFocusIcon,
+} from '@hugeicons/core-free-icons';
 import { useNavigate, useRouter } from '@tanstack/react-router';
 import { useServerFn } from '@tanstack/react-start';
 import type { SavedSearchDto } from '@xbase/core/discover';
@@ -43,7 +43,7 @@ export function SavedSearchView({ search }: { search: SavedSearchDto }) {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <ConfirmButton
-            leadingIcon={RiDeleteBinLine}
+            leadingIcon={Delete02Icon}
             title={`Delete “${search.name}”?`}
             description="The saved search is gone for good. This can’t be undone."
             action="Delete"
@@ -52,21 +52,21 @@ export function SavedSearchView({ search }: { search: SavedSearchDto }) {
           >
             Delete
           </ConfirmButton>
-          <SavedSearchDialog search={search} variant="secondary" leadingIcon={RiPencilLine}>
+          <SavedSearchDialog search={search} variant="secondary" leadingIcon={PencilEdit01Icon}>
             Edit
           </SavedSearchDialog>
           <ButtonLink
             href={xSearchUrl(search.query)}
             target="_blank"
             rel="noreferrer"
-            leadingIcon={RiExternalLinkLine}
+            leadingIcon={ExternalLinkIcon}
           >
             Search on X<span className="sr-only"> (opens in a new tab)</span>
           </ButtonLink>
         </div>
       </header>
       <EmptyState
-        icon={RiSearchEyeLine}
+        icon={SearchFocusIcon}
         title="Results need the X API"
         description="Once XBase is connected to your X developer app, fresh posts matching this search show up here, ready to reply to. Replies open on x.com: the X API no longer lets apps reply to other people’s posts."
       />

@@ -1,7 +1,8 @@
 'use client';
 
-import { RiInformationFill } from '@remixicon/react';
+import { InformationCircleIcon } from '@hugeicons/core-free-icons';
 import { cx } from '@xbase/ui/utils/cx';
+import { IconGlyph } from '@xbase/ui/utils/icon';
 import type { ReactNode, Ref } from 'react';
 import type { LabelProps as AriaLabelProps } from 'react-aria-components';
 import { Label as AriaLabel } from 'react-aria-components';
@@ -57,7 +58,8 @@ export function Label({
         </span>
       )}
       {tooltip && (
-        <RiInformationFill
+        <IconGlyph
+          icon={InformationCircleIcon}
           className="size-4 shrink-0 text-foreground-icon-quaternary"
           aria-hidden
         />

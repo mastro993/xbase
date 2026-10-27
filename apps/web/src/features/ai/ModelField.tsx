@@ -1,4 +1,4 @@
-import { RiRefreshLine } from '@remixicon/react';
+import { RefreshIcon } from '@hugeicons/core-free-icons';
 import type { ModelOption } from '@xbase/ai/providers';
 import { Button } from '@xbase/ui/components/base/buttons/button';
 import { Combobox, ComboboxItem } from '@xbase/ui/components/xbase/combobox';
@@ -31,7 +31,7 @@ export function ModelField({ model, models, loading, onChange, onLoad }: ModelFi
         <Button
           variant="secondary"
           size="xs"
-          leadingIcon={loading ? Spinner : RiRefreshLine}
+          leadingIcon={loading ? Spinner : RefreshIcon}
           aria-busy={loading || undefined}
           onClick={() => !loading && onLoad()}
         >

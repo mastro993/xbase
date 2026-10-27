@@ -1,4 +1,4 @@
-import { RiCalendarScheduleLine } from '@remixicon/react';
+import { CalendarClockIcon } from '@hugeicons/core-free-icons';
 import { createFileRoute, getRouteApi } from '@tanstack/react-router';
 import { EmptyState } from '@/features/shell/EmptyState';
 import { ButtonRouterLink } from '@/features/shell/router-links';
@@ -14,7 +14,7 @@ function NoPostOpen() {
   return (
     <div className="p-6">
       <EmptyState
-        icon={RiCalendarScheduleLine}
+        icon={CalendarClockIcon}
         title={empty ? 'Nothing scheduled' : 'Pick a scheduled post'}
         description={
           empty

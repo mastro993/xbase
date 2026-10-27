@@ -1,12 +1,7 @@
 import { cx, sortCx } from '@xbase/ui/utils/cx';
 import { directionalIconClass } from '@xbase/ui/utils/directional-icon';
-import type {
-  AnchorHTMLAttributes,
-  ButtonHTMLAttributes,
-  ComponentType,
-  ReactNode,
-  Ref,
-} from 'react';
+import { IconGlyph, type IconReference } from '@xbase/ui/utils/icon';
+import type { AnchorHTMLAttributes, ButtonHTMLAttributes, ReactNode, Ref } from 'react';
 
 /**
  * Link button — an inline text action styled like a link, sized on the same
@@ -22,22 +17,17 @@ import type {
  * Renders an `<a>` when `href` is passed, otherwise a `<button>` — the same
  * action can live in copy ("Learn more →") or trigger a handler. Icons are
  * rendered by the component itself via `leadingIcon` / `trailingIcon` (pass
- * the Remix Icon reference, e.g. `RiArrowRightLine`, not an element).
+ * a Hugeicons definition, e.g. `ArrowRight01Icon`, not an element).
  */
 
 type LinkButtonVariant = 'primary' | 'secondary';
 type LinkButtonSize = 'medium' | 'small' | 'xs';
 
-type IconComponent = ComponentType<{
-  className?: string;
-  'aria-hidden'?: boolean | 'true' | 'false';
-}>;
-
 interface LinkButtonBaseProps {
   variant?: LinkButtonVariant;
   size?: LinkButtonSize;
-  leadingIcon?: IconComponent;
-  trailingIcon?: IconComponent;
+  leadingIcon?: IconReference;
+  trailingIcon?: IconReference;
   children?: ReactNode;
   className?: string;
   disabled?: boolean;
@@ -113,11 +103,19 @@ export function LinkButton({
   const content = (
     <>
       {Leading ? (
-        <Leading className={cx(styles.icon[size], directionalIconClass(Leading))} aria-hidden />
+        <IconGlyph
+          icon={Leading}
+          className={cx(styles.icon[size], directionalIconClass(Leading))}
+          aria-hidden
+        />
       ) : null}
       {children !== undefined && children !== null && <span>{children}</span>}
       {Trailing ? (
-        <Trailing className={cx(styles.icon[size], directionalIconClass(Trailing))} aria-hidden />
+        <IconGlyph
+          icon={Trailing}
+          className={cx(styles.icon[size], directionalIconClass(Trailing))}
+          aria-hidden
+        />
       ) : null}
     </>
   );

@@ -1,4 +1,4 @@
-import { RiRefreshLine } from '@remixicon/react';
+import { RefreshIcon } from '@hugeicons/core-free-icons';
 import type { ModelOption } from '@xbase/ai/providers';
 import { Button } from '@xbase/ui/components/base/buttons/button';
 import { Combobox, ComboboxItem } from '@xbase/ui/components/xbase/combobox';
@@ -48,7 +48,7 @@ export function ModelPicker({ hasKey, value, models, loading, onChange, onRefres
           variant="secondary"
           size="xs"
           iconOnly
-          leadingIcon={loading ? Spinner : RiRefreshLine}
+          leadingIcon={loading ? Spinner : RefreshIcon}
           aria-label="Refresh models"
           // aria-disabled, not disabled: the button keeps focus while the list reloads.
           aria-disabled={refreshDisabled || undefined}
