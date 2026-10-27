@@ -555,6 +555,37 @@ describe('full text and quotes', () => {
     expect(quoted.posts[0]?.text).toBe('The quoted post in full.');
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
+
+  it('never replaces a resolved quote with an unresolved include', async () => {
+    const accountId = seed('1001', 'owner');
+
+    // A direct read resolves post 9's own quote.
+    fetchMock.mockResolvedValueOnce(
+      reply(
+        postPage([{ id: '9', author_id: '3003', quotes: '8' }], {
+          quoted: [{ id: '8', author_id: '4004', username: 'deeper', text: 'The deeper quote.' }],
+        }),
+      ),
+    );
+    const direct = await getPosts(accountId, ['9'], { feature: 'full_text' });
+    expect(direct.posts[0]?.quotedPost?.id).toBe('8');
+
+    // A search returns 9 only as someone's quote; X doesn't expand what 9 itself quotes.
+    fetchMock.mockResolvedValueOnce(
+      reply(
+        postPage([{ id: '1', author_id: '2002', quotes: '9' }], {
+          quoted: [{ id: '9', author_id: '3003', text: 'Nine', quotes: '8' }],
+        }),
+      ),
+    );
+    await searchRecent(accountId, 'nine', { feature: 'discovery' });
+
+    // The cached copy keeps the quote the direct read resolved.
+    const cached = await getPosts(accountId, ['9'], { feature: 'full_text' });
+    expect(cached.cached).toBe(1);
+    expect(cached.posts[0]?.quotedPost?.id).toBe('8');
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
 });
 
 describe('rate limits', () => {

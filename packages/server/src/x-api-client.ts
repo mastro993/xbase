@@ -193,6 +193,10 @@ function toParsedPost(
 
 const emptyIncluded = new Map<string, RawTweet>();
 
+/** Whether a post quotes another: X expands one level, so an include can't resolve its own. */
+const quotesAnother = (tweet: RawTweet): boolean =>
+  tweet.referenced_tweets?.some(({ type }) => type === 'quoted') ?? false;
+
 /**
  * X's answer as posts, authors and the next page; a shape XBase can't read is an error. Quoted
  * posts arrive in `includes.tweets` and come back on the post, so no feature has to fetch them.
@@ -210,11 +214,14 @@ function parsePostPage(
   const posts = (parsed.data.data ?? []).map((tweet) =>
     toParsedPost(tweet, quotes, byId, fetchedAt),
   );
-  // Cache every quoted post too, so asking for one by id is a cache hit rather than a new read.
+  // Cache the quotes too, so asking for one by id is a cache hit rather than a new read. An
+  // include that quotes another can't resolve that quote here: caching it would answer a later
+  // read with no quote, and would overwrite the copy a direct read already resolved.
   const returned = new Set(posts.map(({ tweet }) => tweet.id));
   const rows = [...posts];
   for (const tweet of included) {
-    if (!returned.has(tweet.id)) rows.push(toParsedPost(tweet, emptyIncluded, byId, fetchedAt));
+    if (returned.has(tweet.id) || quotesAnother(tweet)) continue;
+    rows.push(toParsedPost(tweet, emptyIncluded, byId, fetchedAt));
   }
   return {
     posts: posts.map(({ post }) => post),

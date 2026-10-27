@@ -72,7 +72,8 @@ const HINTS: Record<ServiceError['code'], string> = {
   invalid_state: 'Call get_draft to see the post’s status.',
   invalid_request: 'Fix the arguments and try again.',
   reconnect_required: 'Sign in to XBase with that X account again from Settings → X accounts.',
-  budget_exceeded: 'Raise the X API spend cap in Settings, or retry after it resets.',
+  budget_exceeded:
+    'Raise the account’s cap in Settings → Discovery → Budget, raise the workspace cap in Settings → X API, or retry after it resets.',
   rate_limited: 'Wait for X’s rate-limit window to reset, then try again.',
 };
 
