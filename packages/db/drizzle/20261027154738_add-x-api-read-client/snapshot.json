@@ -1,0 +1,1298 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "id": "f26a09e8-978f-48e6-bb07-1301930106e5",
+  "prevIds": ["cb11c95c-3399-4abe-9562-6f621b9a7002"],
+  "ddl": [
+    {
+      "name": "api_keys",
+      "entityType": "tables"
+    },
+    {
+      "name": "oauth_clients",
+      "entityType": "tables"
+    },
+    {
+      "name": "oauth_codes",
+      "entityType": "tables"
+    },
+    {
+      "name": "oauth_grants",
+      "entityType": "tables"
+    },
+    {
+      "name": "oauth_tokens",
+      "entityType": "tables"
+    },
+    {
+      "name": "posts",
+      "entityType": "tables"
+    },
+    {
+      "name": "saved_searches",
+      "entityType": "tables"
+    },
+    {
+      "name": "sessions",
+      "entityType": "tables"
+    },
+    {
+      "name": "settings",
+      "entityType": "tables"
+    },
+    {
+      "name": "x_accounts",
+      "entityType": "tables"
+    },
+    {
+      "name": "x_api_calls",
+      "entityType": "tables"
+    },
+    {
+      "name": "x_posts",
+      "entityType": "tables"
+    },
+    {
+      "name": "x_rate_limits",
+      "entityType": "tables"
+    },
+    {
+      "table": "api_keys",
+      "name": "id",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "api_keys",
+      "name": "name",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "api_keys",
+      "name": "prefix",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "api_keys",
+      "name": "token_hash",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "api_keys",
+      "name": "created_at",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "api_keys",
+      "name": "last_used_at",
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "oauth_clients",
+      "name": "client_id",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "oauth_clients",
+      "name": "kind",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "oauth_clients",
+      "name": "client_name",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "oauth_clients",
+      "name": "redirect_uris",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "oauth_clients",
+      "name": "fetched_at",
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "oauth_clients",
+      "name": "created_at",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "oauth_codes",
+      "name": "code_hash",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "oauth_codes",
+      "name": "client_id",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "oauth_codes",
+      "name": "redirect_uri",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "oauth_codes",
+      "name": "code_challenge",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "oauth_codes",
+      "name": "scope",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "oauth_codes",
+      "name": "resource",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "oauth_codes",
+      "name": "expires_at",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "oauth_codes",
+      "name": "used_at",
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "oauth_codes",
+      "name": "grant_id",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "oauth_grants",
+      "name": "id",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "oauth_grants",
+      "name": "client_id",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "oauth_grants",
+      "name": "scope",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "oauth_grants",
+      "name": "resource",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "oauth_grants",
+      "name": "created_at",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "oauth_grants",
+      "name": "last_used_at",
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "oauth_grants",
+      "name": "revoked_at",
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "oauth_tokens",
+      "name": "token_hash",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "oauth_tokens",
+      "name": "kind",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "oauth_tokens",
+      "name": "grant_id",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "oauth_tokens",
+      "name": "expires_at",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "oauth_tokens",
+      "name": "rotated_at",
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "oauth_tokens",
+      "name": "created_at",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "posts",
+      "name": "id",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "posts",
+      "name": "account_id",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "posts",
+      "name": "status",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "'draft'",
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "posts",
+      "name": "parts",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "posts",
+      "name": "publish_at",
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "posts",
+      "name": "published_at",
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "posts",
+      "name": "x_post_id",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "posts",
+      "name": "error",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "posts",
+      "name": "origin",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "posts",
+      "name": "created_at",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "posts",
+      "name": "updated_at",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "saved_searches",
+      "name": "id",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "saved_searches",
+      "name": "name",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "saved_searches",
+      "name": "query",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "saved_searches",
+      "name": "created_at",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "saved_searches",
+      "name": "updated_at",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "sessions",
+      "name": "id",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "sessions",
+      "name": "account_id",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "sessions",
+      "name": "created_at",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "sessions",
+      "name": "expires_at",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "sessions",
+      "name": "last_seen_at",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "settings",
+      "name": "key",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "settings",
+      "name": "value",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "settings",
+      "name": "updated_at",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "x_accounts",
+      "name": "id",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "x_accounts",
+      "name": "username",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "x_accounts",
+      "name": "name",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "x_accounts",
+      "name": "avatar_url",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "x_accounts",
+      "name": "access_token",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "x_accounts",
+      "name": "refresh_token",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "x_accounts",
+      "name": "token_expires_at",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "x_accounts",
+      "name": "scope",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "x_accounts",
+      "name": "voice",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "x_accounts",
+      "name": "created_at",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "x_accounts",
+      "name": "updated_at",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "x_api_calls",
+      "name": "id",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "x_api_calls",
+      "name": "account_id",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "x_api_calls",
+      "name": "endpoint",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "x_api_calls",
+      "name": "feature",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "x_api_calls",
+      "name": "item_count",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "0",
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "x_api_calls",
+      "name": "cost_micros",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "0",
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "x_api_calls",
+      "name": "status",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "x_api_calls",
+      "name": "error",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "x_api_calls",
+      "name": "created_at",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "x_posts",
+      "name": "account_id",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "x_posts",
+      "name": "post_id",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "x_posts",
+      "name": "author_id",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "x_posts",
+      "name": "author_username",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "x_posts",
+      "name": "text",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "x_posts",
+      "name": "data",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "x_posts",
+      "name": "fetched_at",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "x_rate_limits",
+      "name": "account_id",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "x_rate_limits",
+      "name": "endpoint",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "x_rate_limits",
+      "name": "limit",
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "x_rate_limits",
+      "name": "remaining",
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "x_rate_limits",
+      "name": "reset_at",
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "x_rate_limits",
+      "name": "day_limit",
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "x_rate_limits",
+      "name": "day_remaining",
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "x_rate_limits",
+      "name": "day_reset_at",
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "x_rate_limits",
+      "name": "updated_at",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "oauth_tokens",
+      "name": "oauth_tokens_grant_id_idx",
+      "columns": [
+        {
+          "value": "grant_id",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "entityType": "indexes"
+    },
+    {
+      "table": "posts",
+      "name": "posts_account_status_publish_at_idx",
+      "columns": [
+        {
+          "value": "account_id",
+          "isExpression": false
+        },
+        {
+          "value": "status",
+          "isExpression": false
+        },
+        {
+          "value": "publish_at",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "entityType": "indexes"
+    },
+    {
+      "table": "x_api_calls",
+      "name": "x_api_calls_account_created_at_idx",
+      "columns": [
+        {
+          "value": "account_id",
+          "isExpression": false
+        },
+        {
+          "value": "created_at",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "entityType": "indexes"
+    },
+    {
+      "table": "x_api_calls",
+      "name": "x_api_calls_created_at_idx",
+      "columns": [
+        {
+          "value": "created_at",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "entityType": "indexes"
+    },
+    {
+      "table": "x_posts",
+      "name": "x_posts_account_fetched_at_idx",
+      "columns": [
+        {
+          "value": "account_id",
+          "isExpression": false
+        },
+        {
+          "value": "fetched_at",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "entityType": "indexes"
+    },
+    {
+      "table": "oauth_grants",
+      "name": "fk_oauth_grants_client_id_oauth_clients_client_id_fk",
+      "columns": ["client_id"],
+      "tableTo": "oauth_clients",
+      "columnsTo": ["client_id"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "entityType": "fks"
+    },
+    {
+      "table": "oauth_tokens",
+      "name": "fk_oauth_tokens_grant_id_oauth_grants_id_fk",
+      "columns": ["grant_id"],
+      "tableTo": "oauth_grants",
+      "columnsTo": ["id"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "entityType": "fks"
+    },
+    {
+      "table": "posts",
+      "name": "fk_posts_account_id_x_accounts_id_fk",
+      "columns": ["account_id"],
+      "tableTo": "x_accounts",
+      "columnsTo": ["id"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "entityType": "fks"
+    },
+    {
+      "table": "sessions",
+      "name": "fk_sessions_account_id_x_accounts_id_fk",
+      "columns": ["account_id"],
+      "tableTo": "x_accounts",
+      "columnsTo": ["id"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "entityType": "fks"
+    },
+    {
+      "table": "x_api_calls",
+      "name": "fk_x_api_calls_account_id_x_accounts_id_fk",
+      "columns": ["account_id"],
+      "tableTo": "x_accounts",
+      "columnsTo": ["id"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "entityType": "fks"
+    },
+    {
+      "table": "x_posts",
+      "name": "fk_x_posts_account_id_x_accounts_id_fk",
+      "columns": ["account_id"],
+      "tableTo": "x_accounts",
+      "columnsTo": ["id"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "entityType": "fks"
+    },
+    {
+      "table": "x_rate_limits",
+      "name": "fk_x_rate_limits_account_id_x_accounts_id_fk",
+      "columns": ["account_id"],
+      "tableTo": "x_accounts",
+      "columnsTo": ["id"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "entityType": "fks"
+    },
+    {
+      "table": "x_posts",
+      "name": "x_posts_pk",
+      "columns": ["account_id", "post_id"],
+      "nameExplicit": false,
+      "entityType": "pks"
+    },
+    {
+      "table": "x_rate_limits",
+      "name": "x_rate_limits_pk",
+      "columns": ["account_id", "endpoint"],
+      "nameExplicit": false,
+      "entityType": "pks"
+    },
+    {
+      "table": "api_keys",
+      "name": "api_keys_pk",
+      "columns": ["id"],
+      "nameExplicit": false,
+      "entityType": "pks"
+    },
+    {
+      "table": "oauth_clients",
+      "name": "oauth_clients_pk",
+      "columns": ["client_id"],
+      "nameExplicit": false,
+      "entityType": "pks"
+    },
+    {
+      "table": "oauth_codes",
+      "name": "oauth_codes_pk",
+      "columns": ["code_hash"],
+      "nameExplicit": false,
+      "entityType": "pks"
+    },
+    {
+      "table": "oauth_grants",
+      "name": "oauth_grants_pk",
+      "columns": ["id"],
+      "nameExplicit": false,
+      "entityType": "pks"
+    },
+    {
+      "table": "oauth_tokens",
+      "name": "oauth_tokens_pk",
+      "columns": ["token_hash"],
+      "nameExplicit": false,
+      "entityType": "pks"
+    },
+    {
+      "table": "posts",
+      "name": "posts_pk",
+      "columns": ["id"],
+      "nameExplicit": false,
+      "entityType": "pks"
+    },
+    {
+      "table": "saved_searches",
+      "name": "saved_searches_pk",
+      "columns": ["id"],
+      "nameExplicit": false,
+      "entityType": "pks"
+    },
+    {
+      "table": "sessions",
+      "name": "sessions_pk",
+      "columns": ["id"],
+      "nameExplicit": false,
+      "entityType": "pks"
+    },
+    {
+      "table": "settings",
+      "name": "settings_pk",
+      "columns": ["key"],
+      "nameExplicit": false,
+      "entityType": "pks"
+    },
+    {
+      "table": "x_accounts",
+      "name": "x_accounts_pk",
+      "columns": ["id"],
+      "nameExplicit": false,
+      "entityType": "pks"
+    },
+    {
+      "table": "x_api_calls",
+      "name": "x_api_calls_pk",
+      "columns": ["id"],
+      "nameExplicit": false,
+      "entityType": "pks"
+    },
+    {
+      "table": "api_keys",
+      "name": "api_keys_token_hash_unique",
+      "columns": ["token_hash"],
+      "nameExplicit": false,
+      "entityType": "uniques"
+    },
+    {
+      "table": "oauth_clients",
+      "name": "oauth_clients_kind_ck",
+      "value": "\"kind\" in ('dcr', 'cimd')",
+      "entityType": "checks"
+    },
+    {
+      "table": "oauth_tokens",
+      "name": "oauth_tokens_kind_ck",
+      "value": "\"kind\" in ('access', 'refresh')",
+      "entityType": "checks"
+    },
+    {
+      "table": "posts",
+      "name": "posts_status_ck",
+      "value": "\"status\" in ('draft', 'scheduled', 'publishing', 'published', 'failed')",
+      "entityType": "checks"
+    },
+    {
+      "table": "posts",
+      "name": "posts_origin_ck",
+      "value": "\"origin\" in ('web', 'api', 'mcp')",
+      "entityType": "checks"
+    },
+    {
+      "table": "x_api_calls",
+      "name": "x_api_calls_feature_ck",
+      "value": "\"feature\" in ('discovery', 'full_text', 'performance', 'profile')",
+      "entityType": "checks"
+    },
+    {
+      "table": "x_api_calls",
+      "name": "x_api_calls_status_ck",
+      "value": "\"status\" in ('ok', 'error', 'rate_limited')",
+      "entityType": "checks"
+    }
+  ],
+  "renames": []
+}

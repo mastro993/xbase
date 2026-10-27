@@ -52,6 +52,51 @@ export function accountExists(id: string): boolean {
   );
 }
 
+/** An account's tokens as stored (still encrypted) and the fields a read needs. */
+export type XAccountCredentials = {
+  id: string;
+  username: string;
+  accessToken: string;
+  refreshToken: string | null;
+  expiresAt: Date;
+  scope: string;
+};
+
+/** The row a read works with; null when the account was removed. */
+export function getAccountCredentials(id: string): XAccountCredentials | null {
+  const row = getDb().select().from(xAccounts).where(eq(xAccounts.id, id)).get();
+  return row
+    ? {
+        id: row.id,
+        username: row.username,
+        accessToken: row.accessToken,
+        refreshToken: row.refreshToken,
+        expiresAt: row.tokenExpiresAt,
+        scope: row.scope,
+      }
+    : null;
+}
+
+/**
+ * Replaces an account's tokens after X refuses the old ones (a refresh rotates both). A response
+ * without a refresh token keeps the stored one, as saveAccount does.
+ */
+export function saveAccountTokens(id: string, tokens: XTokens): void {
+  const refreshToken =
+    tokens.refreshToken === null ? null : encryptToken(tokens.refreshToken, `${id}:refresh`);
+  getDb()
+    .update(xAccounts)
+    .set({
+      accessToken: encryptToken(tokens.accessToken, `${id}:access`),
+      refreshToken: refreshToken ?? sql`${xAccounts.refreshToken}`,
+      tokenExpiresAt: tokens.expiresAt,
+      scope: tokens.scope,
+      updatedAt: new Date(),
+    })
+    .where(eq(xAccounts.id, id))
+    .run();
+}
+
 /**
  * Links a new account, or refreshes the profile and tokens of a linked one. Tokens are stored
  * encrypted (token-crypto.ts). An answer without a refresh token keeps the stored one, so a

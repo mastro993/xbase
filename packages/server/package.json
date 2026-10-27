@@ -18,6 +18,9 @@
     "./scheduler": "./src/scheduler.ts",
     "./sessions": "./src/sessions.ts",
     "./token-crypto": "./src/token-crypto.ts",
+    "./x-api-client": "./src/x-api-client.ts",
+    "./x-api-settings": "./src/x-api-settings.ts",
+    "./x-api-usage": "./src/x-api-usage.ts",
     "./x-auth": "./src/x-auth.ts"
   },
   "scripts": {

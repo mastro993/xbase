@@ -1,4 +1,12 @@
-import { oauthClients, oauthCodes, oauthGrants, oauthTokens, sessions } from '@xbase/db/schema';
+import {
+  oauthClients,
+  oauthCodes,
+  oauthGrants,
+  oauthTokens,
+  sessions,
+  xApiCalls,
+  xPosts,
+} from '@xbase/db/schema';
 import { createTestDb, seedAccount } from '@xbase/db/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { runHousekeeping } from '../housekeeping';
@@ -106,6 +114,8 @@ describe('runHousekeeping', () => {
       tokens: 1,
       grants: 1,
       clients: 2,
+      apiCalls: 0,
+      cachedPosts: 0,
     });
     expect(ids(db.select().from(oauthTokens).all(), 'tokenHash')).toEqual(new Set(['live']));
     expect(ids(db.select().from(oauthGrants).all(), 'id')).toEqual(
@@ -114,5 +124,33 @@ describe('runHousekeeping', () => {
     expect(ids(db.select().from(oauthClients).all(), 'clientId')).toEqual(
       new Set(['dcr_new', 'dcr_used', 'https://app.example/client.json']),
     );
+  });
+
+  it('prunes the usage log after a quarter and cached posts after a month', () => {
+    const accountId = seedAccount();
+    const call = {
+      accountId,
+      endpoint: 'GET /2/tweets',
+      feature: 'discovery' as const,
+      itemCount: 1,
+      costMicros: 5_000,
+      status: 'ok' as const,
+    };
+    db.insert(xApiCalls)
+      .values([
+        { ...call, id: 'old', createdAt: at(-91) },
+        { ...call, id: 'recent', createdAt: at(-89) },
+      ])
+      .run();
+    db.insert(xPosts)
+      .values([
+        { accountId, postId: 'old', text: 'old', data: {}, fetchedAt: at(-31) },
+        { accountId, postId: 'recent', text: 'recent', data: {}, fetchedAt: at(-29) },
+      ])
+      .run();
+
+    expect(runHousekeeping(NOW)).toMatchObject({ apiCalls: 1, cachedPosts: 1 });
+    expect(ids(db.select().from(xApiCalls).all(), 'id')).toEqual(new Set(['recent']));
+    expect(ids(db.select().from(xPosts).all(), 'postId')).toEqual(new Set(['recent']));
   });
 });
