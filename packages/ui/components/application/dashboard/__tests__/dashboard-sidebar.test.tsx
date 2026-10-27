@@ -1,4 +1,4 @@
-import { RiDraftLine, RiSettings4Line } from '@remixicon/react';
+import { FileEditIcon, Settings01Icon } from '@hugeicons/core-free-icons';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
@@ -8,8 +8,8 @@ import { DashboardSidebar, SidebarDrawer, SidebarNavItem } from '../dashboard-si
 function Rows() {
   return (
     <>
-      <SidebarNavItem href="/drafts" icon={RiDraftLine} label="Drafts" aria-current="page" />
-      <SidebarNavItem href="/settings" icon={RiSettings4Line} label="Settings" />
+      <SidebarNavItem href="/drafts" icon={FileEditIcon} label="Drafts" aria-current="page" />
+      <SidebarNavItem href="/settings" icon={Settings01Icon} label="Settings" />
     </>
   );
 }

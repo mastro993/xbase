@@ -1,11 +1,11 @@
 import {
-  RiBarChartBoxLine,
-  RiCalendarScheduleLine,
-  RiCompass3Line,
-  RiDraftLine,
-  RiMenuLine,
-  RiSettings4Line,
-} from '@remixicon/react';
+  BarChartIcon,
+  CalendarClockIcon,
+  ChatSearchIcon,
+  Menu01Icon,
+  QuillWrite01Icon,
+  Settings01Icon,
+} from '@hugeicons/core-free-icons';
 import { createLink, Link } from '@tanstack/react-router';
 import type { AccountsDto } from '@xbase/core/accounts';
 import {
@@ -23,10 +23,10 @@ import { AppMark } from './AppMark';
 const NavLink = createLink(SidebarNavItem);
 
 const PAGES = [
-  { to: '/discover', label: 'Discover', icon: RiCompass3Line },
-  { to: '/drafts', label: 'Drafts', icon: RiDraftLine },
-  { to: '/queue', label: 'Queue', icon: RiCalendarScheduleLine },
-  { to: '/stats', label: 'Stats', icon: RiBarChartBoxLine },
+  { to: '/discover', label: 'Discover', icon: ChatSearchIcon },
+  { to: '/drafts', label: 'Drafts', icon: QuillWrite01Icon },
+  { to: '/queue', label: 'Queue', icon: CalendarClockIcon },
+  { to: '/stats', label: 'Stats', icon: BarChartIcon },
 ] as const;
 
 /** The sections, with Settings at the bottom. In the drawer, following a link closes it. */
@@ -44,7 +44,7 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
       ))}
       <NavLink
         to="/settings"
-        icon={RiSettings4Line}
+        icon={Settings01Icon}
         label="Settings"
         onClick={onNavigate}
         className="mt-auto"
@@ -83,7 +83,7 @@ export function AppShell({ accounts, children }: { accounts: AccountsDto; childr
     <div className="flex h-svh flex-col md:flex-row">
       <header className="flex h-14 shrink-0 items-center gap-3 border-b border-separator-border px-3 md:hidden">
         <IconButton
-          icon={RiMenuLine}
+          icon={Menu01Icon}
           aria-label="Open navigation"
           aria-haspopup="dialog"
           aria-expanded={drawerOpen}

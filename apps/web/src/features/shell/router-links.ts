@@ -7,7 +7,7 @@ import { LinkButton } from '@xbase/ui/components/base/buttons/link-button';
 // reach. As TanStack links they keep typed `to` and `params`, preload on intent, navigate
 // client-side, and mark the current page with data-status="active" and aria-current="page".
 
-/** BoardUI's ButtonLink: `<ButtonRouterLink to="/drafts/new" leadingIcon={RiAddLine}>`. */
+/** BoardUI's ButtonLink: `<ButtonRouterLink to="/drafts/new" leadingIcon={Add01Icon}>`. */
 export const ButtonRouterLink = createLink(ButtonLink);
 
 /** BoardUI's IconLinkButton: `icon` and `aria-label` are required. */

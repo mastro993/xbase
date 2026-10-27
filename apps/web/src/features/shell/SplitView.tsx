@@ -1,4 +1,4 @@
-import { RiArrowLeftLine } from '@remixicon/react';
+import { ArrowLeft01Icon } from '@hugeicons/core-free-icons';
 import type { LinkProps } from '@tanstack/react-router';
 import { cx } from '@xbase/ui/utils/cx';
 import type { ReactNode } from 'react';
@@ -49,7 +49,7 @@ export function SplitView({
               to={backTo}
               // A detail page sits under backTo, which would otherwise mark Back as the current page.
               activeOptions={{ exact: true }}
-              icon={RiArrowLeftLine}
+              icon={ArrowLeft01Icon}
               aria-label={`Back to ${title}`}
               size="small"
               className="lg:hidden"

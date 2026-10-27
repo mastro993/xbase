@@ -1,4 +1,4 @@
-import { RiAddLine, RiDeleteBinLine } from '@remixicon/react';
+import { Add01Icon, Delete02Icon } from '@hugeicons/core-free-icons';
 import { useNavigate, useRouter } from '@tanstack/react-router';
 import { useServerFn } from '@tanstack/react-start';
 import { AI_NOT_CONFIGURED } from '@xbase/core/ai';
@@ -225,7 +225,7 @@ export function Composer({ post, aiReady }: { post: PostDto; aiReady: boolean })
         {!frozen && (
           <div className="flex flex-wrap items-center gap-2">
             <ConfirmButton
-              leadingIcon={RiDeleteBinLine}
+              leadingIcon={Delete02Icon}
               title="Delete this post?"
               description={
                 queued
@@ -322,7 +322,7 @@ export function Composer({ post, aiReady }: { post: PostDto; aiReady: boolean })
         <div className="flex flex-col items-start gap-3">
           <Button
             variant="secondary"
-            leadingIcon={RiAddLine}
+            leadingIcon={Add01Icon}
             disabled={parts.length >= MAX_PARTS}
             onClick={addPart}
           >

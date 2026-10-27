@@ -71,7 +71,7 @@ The website's logic is layered: each package may import only the ones before it.
 
 ### Shared dependency versions
 
-Versions that every package must agree on, such as React, React Aria Components, Remix Icon, Tailwind CSS, Vite, Vitest and TypeScript, live in the `catalog` in `pnpm-workspace.yaml`. A package references them as `"catalog:"` in its `package.json`. Change the version there, then run `pnpm install`.
+Versions that every package must agree on, such as React, React Aria Components, Hugeicons, Tailwind CSS, Vite, Vitest and TypeScript, live in the `catalog` in `pnpm-workspace.yaml`. A package references them as `"catalog:"` in its `package.json`. Change the version there, then run `pnpm install`.
 
 pnpm doesn't run dependencies' install scripts unless `allowBuilds` in `pnpm-workspace.yaml` lists them, and `strictDepBuilds` makes the install fail when a new dependency needs one. Review the package's script before you allow it.
 
@@ -99,7 +99,7 @@ Never edit a migration that is already on `main`: databases that ran it won't ru
 
 ## Style the UI
 
-Both apps are built from [BoardUI](https://www.boardui.com) components: React and Tailwind CSS v4 source files on [React Aria Components](https://react-spectrum.adobe.com/react-aria/react-aria-components.html), with icons from [Remix Icon](https://remixicon.com) (`@remixicon/react`). BoardUI isn't an npm package: its CLI copies each component's source into `packages/ui` (`@xbase/ui`), and both apps import it from there by path, such as `import { Button } from '@xbase/ui/components/base/buttons/button'`. Each component file opens with a doc comment that lists its variants and sizes.
+Both apps are built from [BoardUI](https://www.boardui.com) components: React and Tailwind CSS v4 source files on [React Aria Components](https://react-spectrum.adobe.com/react-aria/react-aria-components.html), with icons from [Hugeicons](https://hugeicons.com) (`@hugeicons/core-free-icons`, rendered through `IconGlyph` in `@xbase/ui/utils/icon`). BoardUI isn't an npm package: its CLI copies each component's source into `packages/ui` (`@xbase/ui`), and both apps import it from there by path, such as `import { Button } from '@xbase/ui/components/base/buttons/button'`. Each component file opens with a doc comment that lists its variants and sizes.
 
 ```text
 packages/ui/

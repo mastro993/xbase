@@ -1,20 +1,20 @@
 import {
-  RiArrowLeftLine,
-  RiArrowLeftSLine,
-  RiArrowRightLine,
-  RiArrowRightSLine,
-  RiSidebarFoldLine,
-  RiSidebarUnfoldLine,
-} from '@remixicon/react';
+  ArrowLeft01Icon,
+  ArrowLeft02Icon,
+  ArrowRight01Icon,
+  ArrowRight02Icon,
+  SidebarLeft01Icon,
+  SidebarRight01Icon,
+} from '@hugeicons/core-free-icons';
 
 /** Navigation glyphs mirror; logos, media controls and trend arrows do not. */
 const directionalIcons: ReadonlySet<unknown> = new Set([
-  RiArrowLeftLine,
-  RiArrowLeftSLine,
-  RiArrowRightLine,
-  RiArrowRightSLine,
-  RiSidebarFoldLine,
-  RiSidebarUnfoldLine,
+  ArrowLeft01Icon,
+  ArrowLeft02Icon,
+  ArrowRight01Icon,
+  ArrowRight02Icon,
+  SidebarLeft01Icon,
+  SidebarRight01Icon,
 ]);
 
 export function directionalIconClass(icon: unknown): string | undefined {

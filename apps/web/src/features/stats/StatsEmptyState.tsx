@@ -1,27 +1,23 @@
-import {
-  RiCalendarScheduleLine,
-  RiLineChartLine,
-  RiPercentLine,
-  type RemixiconComponentType,
-} from '@remixicon/react';
+import { CalendarClockIcon, ChartLineIcon, PercentIcon } from '@hugeicons/core-free-icons';
+import { IconGlyph, type IconReference } from '@xbase/ui/utils/icon';
 import { ButtonRouterLink } from '@/features/shell/router-links';
 import { SectionCard } from '@/features/shell/SectionCard';
 
-const PLANNED: { icon: RemixiconComponentType; title: string; description: string }[] = [
+const PLANNED: { icon: IconReference; title: string; description: string }[] = [
   {
-    icon: RiPercentLine,
+    icon: PercentIcon,
     title: 'Engagement rate',
     description:
       'Replies, reposts, likes and bookmarks per impression, for each post and over time.',
   },
   {
-    icon: RiCalendarScheduleLine,
+    icon: CalendarClockIcon,
     title: 'Best times to post',
     description:
       'A heatmap of weekdays by hour, in your time zone, showing when your posts do best.',
   },
   {
-    icon: RiLineChartLine,
+    icon: ChartLineIcon,
     title: 'Follower growth',
     description: 'Your follower count day by day, next to what you posted.',
   },
@@ -41,10 +37,14 @@ export function StatsEmptyState() {
       }
     >
       <ul className="grid gap-6 sm:grid-cols-3">
-        {PLANNED.map(({ icon: Icon, title, description }) => (
+        {PLANNED.map(({ icon, title, description }) => (
           <li key={title} className="flex flex-col gap-2">
             <span className="flex size-9 items-center justify-center rounded-xl bg-background-secondary-default">
-              <Icon aria-hidden className="size-5 text-foreground-icon-secondary" />
+              <IconGlyph
+                icon={icon}
+                aria-hidden
+                className="size-5 text-foreground-icon-secondary"
+              />
             </span>
             <h3 className="text-body-medium text-text-primary">{title}</h3>
             <p className="text-body-regular text-text-secondary">{description}</p>

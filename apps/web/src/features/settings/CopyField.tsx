@@ -1,4 +1,4 @@
-import { RiCheckLine, RiFileCopyLine } from '@remixicon/react';
+import { Copy01Icon, Tick02Icon } from '@hugeicons/core-free-icons';
 import { IconButton } from '@xbase/ui/components/base/buttons/icon-button';
 import { Input } from '@xbase/ui/components/base/input/input';
 import { Tooltip, TooltipTrigger } from '@xbase/ui/components/base/tooltip/tooltip';
@@ -67,7 +67,7 @@ export function CopyField({ label, value, copyLabel, selectOnMount }: CopyFieldP
         <TooltipTrigger>
           <Focusable>
             <IconButton
-              icon={copy === 'copied' ? RiCheckLine : RiFileCopyLine}
+              icon={copy === 'copied' ? Tick02Icon : Copy01Icon}
               aria-label={copyLabel}
               onClick={() => void onCopy()}
             />

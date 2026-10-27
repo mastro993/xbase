@@ -1,11 +1,12 @@
 import {
-  RiAlertFill,
-  RiCheckboxCircleFill,
-  RiErrorWarningFill,
-  RiInformationFill,
-} from '@remixicon/react';
+  Alert02Icon,
+  AlertCircleIcon,
+  CheckmarkCircle02Icon,
+  InformationCircleIcon,
+} from '@hugeicons/core-free-icons';
 import { cx, sortCx } from '@xbase/ui/utils/cx';
-import type { ComponentType, HTMLAttributes, ReactNode, Ref } from 'react';
+import { IconGlyph, type IconReference } from '@xbase/ui/utils/icon';
+import type { HTMLAttributes, ReactNode, Ref } from 'react';
 
 /**
  * Why it exists: BoardUI's notification is a floating, dismissible toast with no warning tone, and
@@ -22,26 +23,21 @@ import type { ComponentType, HTMLAttributes, ReactNode, Ref } from 'react';
 
 export type CalloutTone = 'info' | 'success' | 'warning' | 'error';
 
-type IconComponent = ComponentType<{
-  className?: string;
-  'aria-hidden'?: boolean | 'true' | 'false';
-}>;
-
 export interface CalloutProps extends Omit<HTMLAttributes<HTMLDivElement>, 'title'> {
   tone?: CalloutTone;
   title?: ReactNode;
   /** A small control at the end, e.g. a secondary `Button size="small"`. */
   action?: ReactNode;
-  /** Replaces the tone's icon (a Remix Icon component reference). */
-  icon?: IconComponent;
+  /** Replaces the tone's icon (a Hugeicons definition). */
+  icon?: IconReference;
   ref?: Ref<HTMLDivElement>;
 }
 
-const ICONS: Record<CalloutTone, IconComponent> = {
-  info: RiInformationFill,
-  success: RiCheckboxCircleFill,
-  warning: RiAlertFill,
-  error: RiErrorWarningFill,
+const ICONS: Record<CalloutTone, IconReference> = {
+  info: InformationCircleIcon,
+  success: CheckmarkCircle02Icon,
+  warning: Alert02Icon,
+  error: AlertCircleIcon,
 };
 
 const styles = sortCx({
@@ -70,11 +66,11 @@ export function Callout({
   ref,
   ...props
 }: CalloutProps) {
-  const Icon = icon ?? ICONS[tone];
+  const glyph = icon ?? ICONS[tone];
   return (
     <div ref={ref} data-tone={tone} className={cx(styles.root, className)} {...props}>
       <span className={cx(styles.disc, styles.tone[tone])}>
-        <Icon className="size-4" aria-hidden />
+        <IconGlyph icon={glyph} className="size-4" aria-hidden />
       </span>
       <div className={styles.content}>
         {title && <p className={styles.title}>{title}</p>}

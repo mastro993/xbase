@@ -1,13 +1,14 @@
 'use client';
 
+import { ChevronDownIcon } from '@hugeicons/core-free-icons';
 import {
   MENU_ITEMS_CONTAINER,
   MENU_POPOVER_SURFACE,
 } from '@xbase/ui/components/base/dropdown/menu-styles';
 import { HintText } from '@xbase/ui/components/base/input/hint-text';
 import { Label } from '@xbase/ui/components/base/input/label';
-import { ChevronDownSmall } from '@xbase/ui/components/foundations/icons/chevrons';
 import { cx } from '@xbase/ui/utils/cx';
+import { IconGlyph } from '@xbase/ui/utils/icon';
 import type { ReactNode } from 'react';
 import {
   Button as AriaButton,
@@ -110,7 +111,9 @@ export function Combobox<T extends object>({
                 'disabled:cursor-not-allowed',
               )}
             >
-              <ChevronDownSmall
+              <IconGlyph
+                icon={ChevronDownIcon}
+                aria-hidden
                 className={cx(
                   'ease size-4 shrink-0 text-text-secondary transition-transform duration-200',
                   'group-data-[open]:rotate-180',

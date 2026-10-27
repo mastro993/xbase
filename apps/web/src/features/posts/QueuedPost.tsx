@@ -1,4 +1,4 @@
-import { RiPencilLine } from '@remixicon/react';
+import { PencilEdit01Icon } from '@hugeicons/core-free-icons';
 import { useNavigate, useRouter } from '@tanstack/react-router';
 import { useServerFn } from '@tanstack/react-start';
 import type { PostDto } from '@xbase/core/posts/schema';
@@ -65,7 +65,7 @@ export function QueuedPost({ post }: { post: PostDto }) {
               to="/drafts/$draftId"
               params={{ draftId: post.id }}
               variant="secondary"
-              leadingIcon={RiPencilLine}
+              leadingIcon={PencilEdit01Icon}
             >
               Edit
             </ButtonRouterLink>

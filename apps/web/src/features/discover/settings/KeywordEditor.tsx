@@ -1,4 +1,4 @@
-import { RiAddLine } from '@remixicon/react';
+import { Add01Icon } from '@hugeicons/core-free-icons';
 import { isHandle, MAX_KEYWORD_LENGTH, parseHandles, parseKeywords } from '@xbase/core/discovery';
 import { Chip } from '@xbase/ui/components/base/badges/chip';
 import { Button } from '@xbase/ui/components/base/buttons/button';
@@ -120,7 +120,7 @@ export function KeywordEditor({
           type="button"
           variant="secondary"
           size="small"
-          leadingIcon={RiAddLine}
+          leadingIcon={Add01Icon}
           disabled={!text.trim()}
           onClick={add}
         >

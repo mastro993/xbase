@@ -1,4 +1,4 @@
-import { RiArrowRightUpLine, RiShieldKeyholeFill } from '@remixicon/react';
+import { ArrowUpRight01Icon, ShieldKeyIcon } from '@hugeicons/core-free-icons';
 import { PROVIDER_IDS, PROVIDERS, type ProviderId } from '@xbase/ai/providers';
 import { LinkButton } from '@xbase/ui/components/base/buttons/link-button';
 import { Select, SelectItem } from '@xbase/ui/components/base/select/select';
@@ -42,7 +42,7 @@ export function ProviderTab({ settings }: { settings: Settings }) {
       <Callout
         role="note"
         tone="warning"
-        icon={RiShieldKeyholeFill}
+        icon={ShieldKeyIcon}
         title="Keys are stored in this browser"
       >
         They're saved unencrypted in your browser profile. Give each key a spending limit, and use
@@ -52,7 +52,7 @@ export function ProviderTab({ settings }: { settings: Settings }) {
           target="_blank"
           rel="noreferrer"
           size="small"
-          trailingIcon={RiArrowRightUpLine}
+          trailingIcon={ArrowUpRight01Icon}
         >
           How to limit a key
         </LinkButton>

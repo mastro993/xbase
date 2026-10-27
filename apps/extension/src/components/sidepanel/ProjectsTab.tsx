@@ -1,4 +1,4 @@
-import { RiAddLine } from '@remixicon/react';
+import { Add01Icon } from '@hugeicons/core-free-icons';
 import {
   MAX_PROJECT_FIELD_LENGTH,
   MAX_PROJECTS,
@@ -60,7 +60,7 @@ export function ProjectsTab({ settings }: { settings: Settings }) {
       <Button
         ref={addButton}
         variant="secondary"
-        leadingIcon={RiAddLine}
+        leadingIcon={Add01Icon}
         className="self-start"
         aria-disabled={full || undefined}
         onClick={() => !full && add()}

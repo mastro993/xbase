@@ -1,4 +1,4 @@
-import { RiAddLine } from '@remixicon/react';
+import { Add01Icon } from '@hugeicons/core-free-icons';
 import { createFileRoute, Outlet, useMatch, useNavigate } from '@tanstack/react-router';
 import { listSavedSearchesFn } from '@/features/discover/discover.functions';
 import { SavedSearchDialog } from '@/features/discover/SavedSearchDialog';
@@ -23,7 +23,7 @@ function DiscoverLayout() {
       action={
         <SavedSearchDialog
           size="small"
-          leadingIcon={RiAddLine}
+          leadingIcon={Add01Icon}
           onSaved={(search) =>
             navigate({ to: '/discover/$searchId', params: { searchId: search.id } })
           }

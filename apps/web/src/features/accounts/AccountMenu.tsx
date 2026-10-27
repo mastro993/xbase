@@ -1,4 +1,9 @@
-import { RiAddLine, RiCheckLine, RiExpandUpDownLine, RiLogoutBoxRLine } from '@remixicon/react';
+import {
+  Add01Icon,
+  LogoutSquare01Icon,
+  Tick02Icon,
+  UnfoldMoreIcon,
+} from '@hugeicons/core-free-icons';
 import { useRouter } from '@tanstack/react-router';
 import { useServerFn } from '@tanstack/react-start';
 import type { AccountDto, AccountsDto } from '@xbase/core/accounts';
@@ -15,6 +20,7 @@ import {
 import { MENU_ITEM, MENU_ITEM_INTERACTIVE } from '@xbase/ui/components/base/dropdown/menu-styles';
 import { Callout } from '@xbase/ui/components/xbase/callout';
 import { cx } from '@xbase/ui/utils/cx';
+import { IconGlyph } from '@xbase/ui/utils/icon';
 import { useState } from 'react';
 import { logoutFn } from '@/features/auth/auth.functions';
 import { readableError } from '@/lib/readable-error';
@@ -91,7 +97,8 @@ export function AccountMenu({ data, collapsed }: { data: AccountsDto; collapsed:
         {!collapsed && (
           <>
             <AccountName account={current} />
-            <RiExpandUpDownLine
+            <IconGlyph
+              icon={UnfoldMoreIcon}
               className="size-4 shrink-0 text-foreground-icon-secondary"
               aria-hidden
             />
@@ -115,7 +122,8 @@ export function AccountMenu({ data, collapsed }: { data: AccountsDto; collapsed:
               <AccountAvatar account={account} size="xs" />
               <AccountName account={account} />
               {account.id === current.id && (
-                <RiCheckLine
+                <IconGlyph
+                  icon={Tick02Icon}
                   className="size-4 shrink-0 text-foreground-icon-secondary"
                   aria-hidden
                 />
@@ -127,7 +135,7 @@ export function AccountMenu({ data, collapsed }: { data: AccountsDto; collapsed:
           href={ADD_ACCOUNT_HREF}
           variant="secondary"
           size="small"
-          leadingIcon={RiAddLine}
+          leadingIcon={Add01Icon}
           className="w-full"
         >
           Add account
@@ -138,7 +146,8 @@ export function AccountMenu({ data, collapsed }: { data: AccountsDto; collapsed:
             changes; a client-side sign-out would end the session before the composer could ask. */}
         <form method="post" action={logoutFn.url}>
           <button type="submit" className={cx(MENU_ITEM, MENU_ITEM_INTERACTIVE)}>
-            <RiLogoutBoxRLine
+            <IconGlyph
+              icon={LogoutSquare01Icon}
               className="size-5 shrink-0 text-foreground-icon-secondary"
               aria-hidden
             />

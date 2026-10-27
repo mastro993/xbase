@@ -1,4 +1,4 @@
-import { RiArrowGoBackLine, RiDeleteBinLine, RiSparkling2Line } from '@remixicon/react';
+import { ArrowTurnBackwardIcon, Delete02Icon, SparklesIcon } from '@hugeicons/core-free-icons';
 import { MAX_WEIGHTED_LENGTH, weightedLength } from '@xbase/core/posts/weighted-length';
 import { Button } from '@xbase/ui/components/base/buttons/button';
 import { TextField } from '@xbase/ui/components/base/input/input';
@@ -93,7 +93,7 @@ export function ThreadPartField({
           <Button
             variant="ghost"
             size="small"
-            leadingIcon={refining ? Spinner : RiSparkling2Line}
+            leadingIcon={refining ? Spinner : SparklesIcon}
             aria-busy={refining || undefined}
             aria-disabled={!refinable || undefined}
             aria-describedby={refineHintId}
@@ -106,7 +106,7 @@ export function ThreadPartField({
             <Button
               variant="secondary"
               size="small"
-              leadingIcon={RiArrowGoBackLine}
+              leadingIcon={ArrowTurnBackwardIcon}
               onClick={onUndo}
             >
               Undo refine
@@ -116,7 +116,7 @@ export function ThreadPartField({
             <Button
               variant="secondary"
               size="small"
-              leadingIcon={RiDeleteBinLine}
+              leadingIcon={Delete02Icon}
               className="ms-auto"
               onClick={onRemove}
             >
