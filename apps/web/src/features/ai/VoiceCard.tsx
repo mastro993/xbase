@@ -11,10 +11,10 @@ import { Textarea } from '@xbase/ui/components/base/textarea/textarea';
 import { Callout } from '@xbase/ui/components/xbase/callout';
 import { Spinner } from '@xbase/ui/components/xbase/spinner';
 import { type FormEvent, useId, useState } from 'react';
+import { SavedStatus } from '@/features/shell/SavedStatus';
 import { SectionCard } from '@/features/shell/SectionCard';
 import { readableError } from '@/lib/readable-error';
 import { saveVoiceFn } from './ai.functions';
-import { SavedStatus } from './SavedStatus';
 
 const FIELDS: Record<StyleField, { label: string; hint: string; placeholder: string }> = {
   persona: {

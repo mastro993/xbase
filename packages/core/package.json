@@ -10,6 +10,7 @@
     "./auth": "./src/auth.ts",
     "./consent": "./src/consent.ts",
     "./discover": "./src/discover.ts",
+    "./discovery": "./src/discovery.ts",
     "./errors": "./src/errors.ts",
     "./loopback": "./src/loopback.ts",
     "./mcp": "./src/mcp.ts",

@@ -9,6 +9,7 @@
     "./api-keys": "./src/api-keys.ts",
     "./client-ip": "./src/client-ip.ts",
     "./discover": "./src/discover.ts",
+    "./discovery-settings": "./src/discovery-settings.ts",
     "./env": "./src/env.ts",
     "./housekeeping": "./src/housekeeping.ts",
     "./http": "./src/http.ts",

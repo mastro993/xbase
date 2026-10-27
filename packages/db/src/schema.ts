@@ -48,6 +48,8 @@ export const xAccounts = snakeCase.table('x_accounts', {
   scope: text().notNull(),
   /** The account's style guide for AI writing; null until saved. */
   voice: text({ mode: 'json' }).$type<unknown>(),
+  /** The account's reply-discovery settings, one key per section; null until one is saved. */
+  discovery: text({ mode: 'json' }).$type<unknown>(),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
 });
