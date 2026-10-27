@@ -137,8 +137,8 @@ export function readRateLimit(accountId: string, endpoint: string) {
 }
 
 /**
- * When the endpoint is throttled, or null when a call may start. Only a window X says has no room
- * left blocks; a reset time with room left is just when the next window starts.
+ * When the endpoint is throttled, or null when a call may start. A window X says has no room
+ * left blocks until its reset; when both are empty, the later reset wins.
  */
 export function rateLimitedUntil(
   accountId: string,
@@ -146,8 +146,14 @@ export function rateLimitedUntil(
   now = new Date(),
 ): Date | null {
   const row = readRateLimit(accountId, endpoint);
-  if (row?.remaining !== 0 || !row.resetAt) return null;
-  return row.resetAt.getTime() > now.getTime() ? row.resetAt : null;
+  if (!row) return null;
+  const resets = [
+    row.remaining === 0 ? row.resetAt : null,
+    row.dayRemaining === 0 ? row.dayResetAt : null,
+  ].filter((date): date is Date => date !== null && date.getTime() > now.getTime());
+  let latest: Date | null = null;
+  for (const date of resets) if (!latest || date > latest) latest = date;
+  return latest;
 }
 
 const headerNumber = (headers: Headers, name: string): number | null => {
@@ -162,25 +168,50 @@ const headerDate = (headers: Headers, name: string): Date | null => {
   return seconds === null ? null : new Date(seconds * 1000);
 };
 
+/** X reports the per-user 24-hour window; fall back to the app's when an endpoint has only that. */
+const dayLimitPrefix = (headers: Headers): string =>
+  headers.has('x-user-limit-24hour-limit') || headers.has('x-user-limit-24hour-remaining')
+    ? 'x-user-limit-24hour'
+    : 'x-app-limit-24hour';
+
+/**
+ * When the window a 429 exhausted resets: the later of the empty windows. No empty window (or no
+ * headers) returns null, so the caller can fall back to a conservative wait.
+ */
+export function rateLimitReset(headers: Headers, now = new Date()): Date | null {
+  const prefix = dayLimitPrefix(headers);
+  const shortReset = headerDate(headers, 'x-rate-limit-reset');
+  const dayReset = headerDate(headers, `${prefix}-reset`);
+  const exhausted = [
+    headerNumber(headers, 'x-rate-limit-remaining') === 0 ? shortReset : null,
+    headerNumber(headers, `${prefix}-remaining`) === 0 ? dayReset : null,
+  ].filter((date): date is Date => date !== null && date.getTime() > now.getTime());
+  let latest: Date | null = null;
+  for (const date of exhausted) if (!latest || date > latest) latest = date;
+  if (latest) return latest;
+  // A 429 that doesn't say which limit it hit: keep the first future reset it reports.
+  for (const date of [shortReset, dayReset]) {
+    if (date && date.getTime() > now.getTime()) return date;
+  }
+  return null;
+}
+
 /** Stores X's rate-limit headers for the account's endpoint; missing ones become null. */
 export function saveRateLimits(
   accountId: string,
   endpoint: string,
   headers: Headers,
   now = new Date(),
-  /** A 429 may arrive without headers: its window still has no room left. */
+  /** A 429's blocking window wins over the headers, which may describe another window. */
   overrides: { remaining?: number; resetAt?: Date } = {},
 ): void {
-  // X reports the per-user 24-hour window; fall back to the app's when an endpoint has only that.
-  const dayPrefix = headers.has('x-user-limit-24hour-limit')
-    ? 'x-user-limit-24hour'
-    : 'x-app-limit-24hour';
+  const dayPrefix = dayLimitPrefix(headers);
   const values = {
     accountId,
     endpoint,
     limit: headerNumber(headers, 'x-rate-limit-limit'),
-    remaining: headerNumber(headers, 'x-rate-limit-remaining') ?? overrides.remaining ?? null,
-    resetAt: headerDate(headers, 'x-rate-limit-reset') ?? overrides.resetAt ?? null,
+    remaining: overrides.remaining ?? headerNumber(headers, 'x-rate-limit-remaining') ?? null,
+    resetAt: overrides.resetAt ?? headerDate(headers, 'x-rate-limit-reset') ?? null,
     dayLimit: headerNumber(headers, `${dayPrefix}-limit`),
     dayRemaining: headerNumber(headers, `${dayPrefix}-remaining`),
     dayResetAt: headerDate(headers, `${dayPrefix}-reset`),

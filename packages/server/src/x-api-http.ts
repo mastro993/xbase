@@ -2,7 +2,13 @@ import { InvalidStateError, NotFoundError, RateLimitedError } from '@xbase/core/
 import type { XApiFeature } from '@xbase/core/x-api';
 import { type XAccountCredentials, getAccountCredentials, saveAccountTokens } from './accounts';
 import { decryptToken } from './token-crypto';
-import { assertBudget, rateLimitedUntil, recordXApiCall, saveRateLimits } from './x-api-usage';
+import {
+  assertBudget,
+  rateLimitedUntil,
+  rateLimitReset,
+  recordXApiCall,
+  saveRateLimits,
+} from './x-api-usage';
 import { refreshXTokens } from './x-auth';
 
 // The HTTP and token plumbing behind x-api-client.ts: one GET to X, the stored 429 wait, the spend
@@ -70,15 +76,16 @@ const responseDetail = (body: unknown): string => {
   return text === undefined ? '' : text.slice(0, 300);
 };
 
-/** When X says the window resets: its header, Retry-After, or a conservative quarter hour. */
+/** When X says the window resets: the empty window's header, Retry-After, or a quarter hour. */
 function resetAt(response: Response, now: Date): Date {
-  const header = Number(response.headers.get('x-rate-limit-reset'));
-  if (Number.isFinite(header) && header > 0) return new Date(header * 1000);
   const retryAfter = Number(response.headers.get('retry-after'));
-  if (Number.isFinite(retryAfter) && retryAfter > 0) {
-    return new Date(now.getTime() + retryAfter * 1000);
-  }
-  return new Date(now.getTime() + RETRY_DEFAULT_MS);
+  return (
+    rateLimitReset(response.headers, now) ??
+    (Number.isFinite(retryAfter) && retryAfter > 0
+      ? new Date(now.getTime() + retryAfter * 1000)
+      : null) ??
+    new Date(now.getTime() + RETRY_DEFAULT_MS)
+  );
 }
 
 type RequestOptions = {
@@ -147,7 +154,8 @@ export async function xRequest({
   if (
     retryAt ||
     response.headers.has('x-rate-limit-limit') ||
-    response.headers.has('x-user-limit-24hour-limit')
+    response.headers.has('x-user-limit-24hour-limit') ||
+    response.headers.has('x-user-limit-24hour-remaining')
   ) {
     saveRateLimits(
       accountId,

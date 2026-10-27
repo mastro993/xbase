@@ -458,6 +458,65 @@ describe('rate limits', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
+  it('waits for the 24-hour reset when that is the empty window', async () => {
+    const accountId = seed('1001', 'owner');
+    const shortReset = new Date(NOW.getTime() + 15 * 60_000);
+    const dayReset = new Date(NOW.getTime() + 60 * 60_000);
+    fetchMock.mockResolvedValueOnce(
+      reply(
+        { title: 'Too Many Requests' },
+        {
+          status: 429,
+          headers: {
+            'x-rate-limit-limit': '300',
+            'x-rate-limit-remaining': '5',
+            'x-rate-limit-reset': String(shortReset.getTime() / 1000),
+            'x-user-limit-24hour-limit': '500',
+            'x-user-limit-24hour-remaining': '0',
+            'x-user-limit-24hour-reset': String(dayReset.getTime() / 1000),
+          },
+        },
+      ),
+    );
+
+    await expect(getPosts(accountId, ['1'], { feature: 'full_text' })).rejects.toMatchObject({
+      resetAt: dayReset,
+    });
+    expect(db.select().from(xRateLimits).get()).toMatchObject({
+      remaining: 0,
+      resetAt: dayReset,
+      dayRemaining: 0,
+      dayResetAt: dayReset,
+    });
+
+    await expect(getPosts(accountId, ['2'], { feature: 'full_text' })).rejects.toBeInstanceOf(
+      RateLimitedError,
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('blocks when the stored 24-hour window is empty even with short-window room', async () => {
+    const accountId = seed('1001', 'owner');
+    const dayReset = new Date(NOW.getTime() + 60 * 60_000);
+    saveRateLimits(
+      accountId,
+      'GET /2/tweets',
+      new Headers({
+        'x-rate-limit-limit': '300',
+        'x-rate-limit-remaining': '5',
+        'x-rate-limit-reset': String((NOW.getTime() + 15 * 60_000) / 1000),
+        'x-user-limit-24hour-limit': '500',
+        'x-user-limit-24hour-remaining': '0',
+        'x-user-limit-24hour-reset': String(dayReset.getTime() / 1000),
+      }),
+    );
+
+    await expect(getPosts(accountId, ['1'], { feature: 'full_text' })).rejects.toMatchObject({
+      resetAt: dayReset,
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('returns the pages already read and stops when a later page is throttled', async () => {
     const accountId = seed('1001', 'owner');
     saveXApiSection('sources', { homeTimelinePages: 3 });
