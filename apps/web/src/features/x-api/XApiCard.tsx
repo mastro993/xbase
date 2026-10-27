@@ -1,4 +1,4 @@
-import { RiTimeLine } from '@remixicon/react';
+import { Clock01Icon } from '@hugeicons/core-free-icons';
 import { useRouter } from '@tanstack/react-router';
 import { useServerFn } from '@tanstack/react-start';
 import {
@@ -13,6 +13,7 @@ import { Button } from '@xbase/ui/components/base/buttons/button';
 import { Input } from '@xbase/ui/components/base/input/input';
 import { Callout } from '@xbase/ui/components/xbase/callout';
 import { Spinner } from '@xbase/ui/components/xbase/spinner';
+import { IconGlyph } from '@xbase/ui/utils/icon';
 import { type FormEvent, useId, useState } from 'react';
 import { LocalTime } from '@/features/posts/LocalTime';
 import {
@@ -173,7 +174,7 @@ function SettingsForm({ settings }: { settings: XApiSettings }) {
         />
       </div>
       <p className="flex items-center gap-1.5 text-body-2-regular text-text-secondary">
-        <RiTimeLine aria-hidden className="size-4 shrink-0" />
+        <IconGlyph icon={Clock01Icon} aria-hidden className="size-4 shrink-0" />
         {pageCount >= 1 && Number.isInteger(pageCount)
           ? `${pageCount} page${pageCount === 1 ? '' : 's'} per run costs up to ${formatUsdMicros(estimate)} (${pageCount} × ${formatUsdMicros(estimateHomeTimelinePageMicros())}); cache hits cost nothing.`
           : 'Pick a whole number of pages.'}
