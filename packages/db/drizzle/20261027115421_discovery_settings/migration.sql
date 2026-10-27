@@ -1,0 +1,1 @@
+ALTER TABLE `x_accounts` ADD `discovery` text;

@@ -6,11 +6,11 @@ import { Button } from '@xbase/ui/components/base/buttons/button';
 import { Callout } from '@xbase/ui/components/xbase/callout';
 import { Spinner } from '@xbase/ui/components/xbase/spinner';
 import { type FormEvent, useId, useState } from 'react';
+import { SavedStatus } from '@/features/shell/SavedStatus';
 import { SectionCard } from '@/features/shell/SectionCard';
 import { readableError } from '@/lib/readable-error';
 import { listDecisionModelsFn, saveDecisionFn } from './ai.functions';
 import { ModelField } from './ModelField';
-import { SavedStatus } from './SavedStatus';
 
 const DESCRIPTION =
   'TypeSafe’s Jev answers yes/no, score and choice questions with probabilities instead of writing text, for features that decide rather than write.';

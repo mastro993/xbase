@@ -11,7 +11,7 @@ It is a Node server built with [TanStack Start](https://tanstack.com/start) and 
 - **Queue**: schedule a draft at a time in your browser's time zone. The queue lists scheduled posts by day; reschedule them, edit them or move them back to the drafts.
 - **Discover**: keep the X searches you'd run by hand, in X's search syntax, and open any of them on x.com.
 - **Stats**: a placeholder for now: engagement rate, the best times to post and follower growth arrive with the X API.
-- **Settings**: the X accounts; the AI provider and model; each account's voice for the AI; the decision model; API keys; MCP; sessions. Provider keys come from the environment, never from the page.
+- **Settings**: the X accounts; the AI provider and model; each account's voice for the AI; the decision model; reply discovery's niches, watch list, thresholds, exclusions and language; API keys; MCP; sessions. Provider keys come from the environment, never from the page.
 - **For other apps**: a [REST API](#rest-api) for drafts, with API keys, and an [MCP server](#mcp) with OAuth, so assistants such as Claude can write and schedule.
 
 It signs in with X, keeps sessions on the server so signing out ends them, migrates its SQLite database at startup, and ships with a health check and a Docker image.
@@ -48,6 +48,20 @@ Refine with AI uses OpenAI, Anthropic, xAI or OpenRouter with your own API key: 
 `TYPESAFE_API_KEY` adds [TypeSafe](https://docs.typesafe.ai)'s Jev, a decision model: it answers yes/no, score and choice questions with probabilities instead of writing text. **Settings → Decision model** picks its version (`jev-latest` by default). No feature uses it yet.
 
 Keys never reach the browser or the database. Changing one takes a restart.
+
+## Discovery settings
+
+Reply discovery has its own rules. **Settings → Niches and keywords, Watch list, Thresholds, Exclusions and Language** holds them for the account you work as; each section saves on its own and resets to its defaults behind a confirmation. A saved section keeps whatever it has, so a default that changes in a later version still reaches the sections you never edited.
+
+They start at what suits most accounts, so a first run needs no setup:
+
+- **Niches and keywords** is empty, which considers every topic. Fill it and a run drops posts outside the list, and builds its searches from the words.
+- **Watch list** boosts the accounts you always check, and never suggests the ones you block. Paste a list and it lands without the `@`, in lower case, once each.
+- **Thresholds** are the author's size (5,000 followers), the post's age (best under 6 hours, never older than 24), replies (ideal under 20, crowded from 40, never more than 60), an author cooldown of 3 days, one post per author and 15 per batch. Combinations that can't work — a hard cap below the best age, a crowded penalty at the ideal — are rejected with the reason.
+- **Exclusions** drop engagement bait, giveaways, promotions, politics, crypto, image-only posts and long threads, with a keyword list for each of the first five. Switch one off to let those posts through again, keywords and all.
+- **Language** is the language a run looks for posts in and the one it writes your replies in; both default to English.
+
+A saved change applies from the next run. Runs themselves arrive with the X API client and the batch runner; until then, the settings are stored and the rules are ready for them.
 
 ## Environment
 
