@@ -1,7 +1,7 @@
 {
   "version": "7",
   "dialect": "sqlite",
-  "id": "f919b4cc-886c-4ad2-9408-e783a40b6ba6",
+  "id": "2bea957a-d0b5-4cad-9bef-6a5a300f1a2d",
   "prevIds": ["18dd92e3-6452-4985-a6ce-5e39aa5cccee"],
   "ddl": [
     {
@@ -34,6 +34,10 @@
     },
     {
       "name": "posts",
+      "entityType": "tables"
+    },
+    {
+      "name": "saved_search_runs",
       "entityType": "tables"
     },
     {
@@ -805,6 +809,46 @@
       "entityType": "columns"
     },
     {
+      "table": "saved_search_runs",
+      "name": "account_id",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "saved_search_runs",
+      "name": "saved_search_id",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "saved_search_runs",
+      "name": "last_run_at",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "saved_search_runs",
+      "name": "last_candidate_count",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "0",
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
       "table": "saved_searches",
       "name": "id",
       "type": "text",
@@ -841,26 +885,6 @@
       "notNull": true,
       "autoincrement": false,
       "default": "true",
-      "generated": null,
-      "entityType": "columns"
-    },
-    {
-      "table": "saved_searches",
-      "name": "last_run_at",
-      "type": "integer",
-      "notNull": false,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "entityType": "columns"
-    },
-    {
-      "table": "saved_searches",
-      "name": "last_candidate_count",
-      "type": "integer",
-      "notNull": true,
-      "autoincrement": false,
-      "default": "0",
       "generated": null,
       "entityType": "columns"
     },
@@ -1547,6 +1571,28 @@
       "entityType": "fks"
     },
     {
+      "table": "saved_search_runs",
+      "name": "fk_saved_search_runs_account_id_x_accounts_id_fk",
+      "columns": ["account_id"],
+      "tableTo": "x_accounts",
+      "columnsTo": ["id"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "entityType": "fks"
+    },
+    {
+      "table": "saved_search_runs",
+      "name": "fk_saved_search_runs_saved_search_id_saved_searches_id_fk",
+      "columns": ["saved_search_id"],
+      "tableTo": "saved_searches",
+      "columnsTo": ["id"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "entityType": "fks"
+    },
+    {
       "table": "sessions",
       "name": "fk_sessions_account_id_x_accounts_id_fk",
       "columns": ["account_id"],
@@ -1594,6 +1640,13 @@
       "table": "followed_accounts",
       "name": "followed_accounts_pk",
       "columns": ["account_id", "user_id"],
+      "nameExplicit": false,
+      "entityType": "pks"
+    },
+    {
+      "table": "saved_search_runs",
+      "name": "saved_search_runs_pk",
+      "columns": ["account_id", "saved_search_id"],
       "nameExplicit": false,
       "entityType": "pks"
     },

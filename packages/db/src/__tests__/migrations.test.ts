@@ -20,6 +20,7 @@ const TABLES = [
   'oauth_grants',
   'oauth_tokens',
   'posts',
+  'saved_search_runs',
   'saved_searches',
   'sessions',
   'settings',

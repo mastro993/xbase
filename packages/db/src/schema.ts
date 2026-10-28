@@ -187,13 +187,30 @@ export const savedSearches = snakeCase.table('saved_searches', {
   query: text().notNull(),
   /** A disabled search is kept, and skipped by every run. */
   enabled: integer({ mode: 'boolean' }).notNull().default(true),
-  /** When the last run read it; null until one does. */
-  lastRunAt: timestamp(),
-  /** How many candidates that run produced. */
-  lastCandidateCount: integer().notNull().default(0),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
 });
+
+/**
+ * The last run of one saved search, per account. Saved searches belong to the workspace, but the
+ * candidates and their follow flags belong to one account, so each account reads its own run
+ * time and count rather than another's.
+ */
+export const savedSearchRuns = snakeCase.table(
+  'saved_search_runs',
+  {
+    accountId: text()
+      .notNull()
+      .references(() => xAccounts.id, { onDelete: 'cascade' }),
+    savedSearchId: text()
+      .notNull()
+      .references(() => savedSearches.id, { onDelete: 'cascade' }),
+    lastRunAt: timestamp().notNull(),
+    /** How many of that run's candidates the search holds for the account. */
+    lastCandidateCount: integer().notNull().default(0),
+  },
+  (t) => [primaryKey({ columns: [t.accountId, t.savedSearchId] })],
+);
 
 /**
  * The accounts the user follows, cached per account so a run doesn't read the follow list on
@@ -352,6 +369,7 @@ export type OAuthClient = typeof oauthClients.$inferSelect;
 export type OAuthCode = typeof oauthCodes.$inferSelect;
 export type Post = typeof posts.$inferSelect;
 export type SavedSearch = typeof savedSearches.$inferSelect;
+export type SavedSearchRun = typeof savedSearchRuns.$inferSelect;
 export type XAccount = typeof xAccounts.$inferSelect;
 export type XApiCall = typeof xApiCalls.$inferSelect;
 export type XRateLimit = typeof xRateLimits.$inferSelect;

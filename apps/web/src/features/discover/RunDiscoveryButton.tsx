@@ -11,11 +11,10 @@ import { runDiscoveryFn } from './discover.functions';
 type Run = Awaited<ReturnType<typeof runDiscoveryFn>>;
 
 /** What the run read, in one sentence: the counts the page then shows per search. */
-function summaryOf({ home, searches, stop }: Run): string {
+function summaryOf({ home, searches }: Run): string {
   const found = home + searches.reduce((total, search) => total + search.candidates, 0);
   const sources = searches.length === 1 ? '1 search' : `${searches.length} searches`;
-  const kept = `${found} candidate${found === 1 ? '' : 's'} from your home timeline and ${sources}`;
-  return stop ? `${kept} were stored before the run stopped.` : `${kept}.`;
+  return `${found} candidate${found === 1 ? '' : 's'} from your home timeline and ${sources}.`;
 }
 
 /**
@@ -67,7 +66,7 @@ export function RunDiscoveryButton() {
         </Callout>
       )}
       {stop && (
-        <Callout tone="warning" role="status" title="The run stopped early">
+        <Callout tone="warning" role="status" title="Part of the run didn’t finish">
           {stop.message} {stop.kept}
         </Callout>
       )}

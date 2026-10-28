@@ -77,14 +77,15 @@ export const MAX_SEARCH_QUERY = 512;
 export const SEARCH_FILTER_SUFFIX = ' -is:reply -is:retweet';
 
 /**
- * The query as X receives it: the saved query plus the filters, when both still fit under the
- * 512-character limit. A query saved long before the suffix existed is sent as it is.
+ * The query as X receives it: the saved query wrapped so the filters apply to every branch, when
+ * both still fit under the 512-character limit. The parentheses matter: X applies the implied AND
+ * before OR, so `cats OR dogs -is:reply` would filter only `dogs` and still bill `cats` replies.
+ * A query saved long before the suffix existed is sent as it is.
  */
 export function searchQueryForX(query: string): string {
   const trimmed = query.trim();
-  return trimmed.length + SEARCH_FILTER_SUFFIX.length <= MAX_SEARCH_QUERY
-    ? `${trimmed}${SEARCH_FILTER_SUFFIX}`
-    : trimmed;
+  const filtered = `(${trimmed})${SEARCH_FILTER_SUFFIX}`;
+  return filtered.length <= MAX_SEARCH_QUERY ? filtered : trimmed;
 }
 
 const Id = z.string().min(1).max(100);

@@ -19,7 +19,9 @@ import { requireSession } from '@/features/auth/session.server';
 
 // The Discover page's entry points to @xbase/server/discover and @xbase/server/discovery.
 
-export const listSavedSearchesFn = createServerFn().handler(() => listSavedSearches());
+export const listSavedSearchesFn = createServerFn().handler(() =>
+  listSavedSearches(requireSession().accountId),
+);
 
 export const listCandidatesFn = createServerFn()
   .validator(validator(SavedSearchIdInput))

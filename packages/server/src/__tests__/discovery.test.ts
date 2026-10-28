@@ -171,7 +171,7 @@ describe('a discovery run', () => {
         .all()
         .map(({ xPostId }) => xPostId),
     ).toEqual(['h1', 's1']);
-    const searches = listSavedSearches();
+    const searches = listSavedSearches(accountId);
     expect(searches.find(({ id }) => id === enabled.id)).toMatchObject({
       lastRunAt: NOW.toISOString(),
       lastCandidateCount: 1,
@@ -200,7 +200,7 @@ describe('a discovery run', () => {
 
     const query = calls.find((url) => url.pathname === SEARCH);
     expect(query?.searchParams.get('query')).toBe(searchQueryForX(search.query));
-    expect(query?.searchParams.get('query')).toBe('buildinpublic -is:reply -is:retweet');
+    expect(query?.searchParams.get('query')).toBe('(buildinpublic) -is:reply -is:retweet');
     expect(query?.searchParams.get('sort_order')).toBe('recency');
     expect(query?.searchParams.get('start_time')).toBe(
       new Date(NOW.getTime() - DAY_MS).toISOString(),
@@ -283,7 +283,7 @@ describe('a discovery run', () => {
         .all()
         .map(({ xPostId }) => xPostId),
     ).toEqual(['keep']);
-    expect(listCandidates(accountId, listSavedSearches()[0]?.id ?? '')).toHaveLength(1);
+    expect(listCandidates(accountId, listSavedSearches(accountId)[0]?.id ?? '')).toHaveLength(1);
   });
 
   it('keeps a post with the saved search that found it, even when the timeline returns it too', async () => {
@@ -315,6 +315,24 @@ describe('a discovery run', () => {
     rows = db.select().from(discoveryCandidates).all();
     expect(rows.find(({ xPostId }) => xPostId === 'home')?.savedSearchId).toBe(search.id);
     expect(rows.find(({ xPostId }) => xPostId === 'found')?.savedSearchId).toBe(search.id);
+  });
+
+  it('counts only the posts the search ends up owning', async () => {
+    const first = createSavedSearch({ name: 'a', query: 'first' });
+    const second = createSavedSearch({ name: 'b', query: 'second' });
+    cacheFollowing([]);
+    serve({
+      [HOME]: page([]),
+      // Both searches match the same post; the first one to run owns it.
+      [SEARCH]: page([{ id: 'shared', author_id: 'a2', username: 'alice' }]),
+    });
+
+    await runDiscovery(accountId);
+    const searches = listSavedSearches(accountId);
+    expect(searches.find(({ id }) => id === first.id)?.lastCandidateCount).toBe(1);
+    expect(searches.find(({ id }) => id === second.id)?.lastCandidateCount).toBe(0);
+    expect(listCandidates(accountId, first.id).map(({ xPostId }) => xPostId)).toEqual(['shared']);
+    expect(listCandidates(accountId, second.id)).toEqual([]);
   });
 
   it('marks a post by a followed author, and keeps it', async () => {
@@ -379,6 +397,34 @@ describe('a discovery run', () => {
     expect(db.select().from(discoveryCandidates).get()?.authorFollowing).toBeNull();
   });
 
+  it('reports a timeline 429 and still reads the searches, which use another endpoint', async () => {
+    const search = createSavedSearch({ name: 'makers', query: 'mixed' });
+    cacheFollowing([]);
+    const reset = new Date(NOW.getTime() + 15 * 60_000);
+    fetchMock.mockImplementation(async (input) => {
+      const url = urlOf(input);
+      if (url.pathname === HOME) {
+        return reply(
+          { title: 'Too Many Requests' },
+          {
+            status: 429,
+            headers: {
+              'x-rate-limit-remaining': '0',
+              'x-rate-limit-reset': String(reset.getTime() / 1000),
+            },
+          },
+        );
+      }
+      return reply(page([{ id: 'p1', author_id: 'a2', username: 'alice' }]));
+    });
+
+    const run = await runDiscovery(accountId);
+    expect(run.home).toBe(0);
+    expect(run.stop).toMatchObject({ reason: 'rate_limit', savedSearchId: null });
+    expect(run.searches).toEqual([{ id: search.id, name: 'makers', candidates: 1 }]);
+    expect(listCandidates(accountId, search.id)).toHaveLength(1);
+  });
+
   it('stops at a rate limit, keeping what it read and naming the search that hit it', async () => {
     const first = createSavedSearch({ name: 'a', query: 'first' });
     createSavedSearch({ name: 'b', query: 'second' });
@@ -406,9 +452,9 @@ describe('a discovery run', () => {
     expect(run.searches).toEqual([{ id: first.id, name: 'a', candidates: 0 }]);
     expect(run.stop).toMatchObject({
       reason: 'rate_limit',
-      savedSearchId: listSavedSearches().find(({ name }) => name === 'b')?.id,
+      savedSearchId: listSavedSearches(accountId).find(({ name }) => name === 'b')?.id,
     });
-    const second = listSavedSearches().find(({ name }) => name === 'b');
+    const second = listSavedSearches(accountId).find(({ name }) => name === 'b');
     expect(second?.lastRunAt).toBeNull();
     // Two searches were attempted; the third source never ran.
     expect(searches).toBe(2);

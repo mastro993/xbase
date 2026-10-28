@@ -1,4 +1,4 @@
-import { oauthGrants, posts, savedSearches } from '@xbase/db/schema';
+import { oauthGrants, posts, savedSearchRuns, savedSearches } from '@xbase/db/schema';
 import { createTestDb, seedAccount } from '@xbase/db/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { serveMcp } from '../endpoint';
@@ -169,12 +169,12 @@ describe('tools', () => {
     expect((await callTool('list_saved_searches')).structuredContent).toEqual({ items: [] });
   });
 
-  it('lists saved searches with whether they run and when they last did', async () => {
-    db.insert(savedSearches)
+  it('lists saved searches with the account’s own run stamps', async () => {
+    db.insert(savedSearches).values({ id: 's1', name: 'Makers', query: 'buildinpublic' }).run();
+    db.insert(savedSearchRuns)
       .values({
-        id: 's1',
-        name: 'Makers',
-        query: 'buildinpublic',
+        accountId: '1001',
+        savedSearchId: 's1',
         lastRunAt: new Date('2026-10-27T12:00:00.000Z'),
         lastCandidateCount: 4,
       })
@@ -191,6 +191,19 @@ describe('tools', () => {
         lastCandidateCount: 4,
       }),
     ]);
+
+    // Searches are shared; another account's run is not.
+    seedAccount({ id: '2002', username: 'other' });
+    const ambiguous = await callTool('list_saved_searches');
+    expect(ambiguous.structuredContent.items[0]).toMatchObject({
+      lastRunAt: null,
+      lastCandidateCount: 0,
+    });
+    const named = await callTool('list_saved_searches', { account: '@user1001' });
+    expect(named.structuredContent.items[0]).toMatchObject({
+      lastRunAt: '2026-10-27T12:00:00.000Z',
+      lastCandidateCount: 4,
+    });
   });
 
   it('needs the account for a new draft once several are linked, and filters lists by it', async () => {

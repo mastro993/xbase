@@ -38,9 +38,17 @@ CREATE TABLE `followed_accounts` (
 	CONSTRAINT `fk_followed_accounts_account_id_x_accounts_id_fk` FOREIGN KEY (`account_id`) REFERENCES `x_accounts`(`id`) ON DELETE CASCADE
 );
 --> statement-breakpoint
+CREATE TABLE `saved_search_runs` (
+	`account_id` text NOT NULL,
+	`saved_search_id` text NOT NULL,
+	`last_run_at` integer NOT NULL,
+	`last_candidate_count` integer DEFAULT 0 NOT NULL,
+	CONSTRAINT `saved_search_runs_pk` PRIMARY KEY(`account_id`, `saved_search_id`),
+	CONSTRAINT `fk_saved_search_runs_account_id_x_accounts_id_fk` FOREIGN KEY (`account_id`) REFERENCES `x_accounts`(`id`) ON DELETE CASCADE,
+	CONSTRAINT `fk_saved_search_runs_saved_search_id_saved_searches_id_fk` FOREIGN KEY (`saved_search_id`) REFERENCES `saved_searches`(`id`) ON DELETE CASCADE
+);
+--> statement-breakpoint
 ALTER TABLE `saved_searches` ADD `enabled` integer DEFAULT true NOT NULL;--> statement-breakpoint
-ALTER TABLE `saved_searches` ADD `last_run_at` integer;--> statement-breakpoint
-ALTER TABLE `saved_searches` ADD `last_candidate_count` integer DEFAULT 0 NOT NULL;--> statement-breakpoint
 ALTER TABLE `x_accounts` ADD `following_refreshed_at` integer;--> statement-breakpoint
 CREATE UNIQUE INDEX `discovery_candidates_account_post_uq` ON `discovery_candidates` (`account_id`,`x_post_id`);--> statement-breakpoint
 CREATE INDEX `discovery_candidates_account_search_posted_at_idx` ON `discovery_candidates` (`account_id`,`saved_search_id`,`posted_at`);

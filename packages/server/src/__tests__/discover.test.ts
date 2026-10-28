@@ -1,7 +1,7 @@
 import { SavedSearchInput } from '@xbase/core/discover';
 import { NotFoundError, ValidationError } from '@xbase/core/errors';
 import { getDb } from '@xbase/db/client';
-import { discoveryCandidates } from '@xbase/db/schema';
+import { discoveryCandidates, savedSearchRuns } from '@xbase/db/schema';
 import { createTestDb, seedAccount } from '@xbase/db/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -53,6 +53,31 @@ describe('saved searches', () => {
       updatedAt: new Date(NOW.getTime() + 1000).toISOString(),
     });
     expect(() => updateSavedSearch('nope', { name: 'c', query: 'd' })).toThrow(NotFoundError);
+  });
+
+  it('shows each account only its own last run and count', () => {
+    seedAccount({ id: '1001', username: 'owner' });
+    seedAccount({ id: '2002', username: 'other' });
+    const { id } = createSavedSearch({ name: 'a', query: 'b' });
+    getDb()
+      .insert(savedSearchRuns)
+      .values({
+        accountId: '1001',
+        savedSearchId: id,
+        lastRunAt: NOW,
+        lastCandidateCount: 3,
+      })
+      .run();
+
+    expect(listSavedSearches('1001')[0]).toMatchObject({
+      lastRunAt: NOW.toISOString(),
+      lastCandidateCount: 3,
+    });
+    expect(listSavedSearches('2002')[0]).toMatchObject({
+      lastRunAt: null,
+      lastCandidateCount: 0,
+    });
+    expect(listSavedSearches()[0]).toMatchObject({ lastRunAt: null, lastCandidateCount: 0 });
   });
 
   it('turns a search off and back on, and keeps updatedAt', () => {

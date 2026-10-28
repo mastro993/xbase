@@ -6,6 +6,8 @@ import {
   type DiscoveryCandidate,
   discoveryCandidates,
   type SavedSearch,
+  type SavedSearchRun,
+  savedSearchRuns,
   savedSearches,
 } from '@xbase/db/schema';
 import { and, desc, eq, sql } from 'drizzle-orm';
@@ -18,14 +20,14 @@ type Fields = { name: string; query: string };
 /** The newest candidates the page shows for one search. */
 const CANDIDATE_LIST_LIMIT = 50;
 
-function toDto(row: SavedSearch): SavedSearchDto {
+function toDto(row: SavedSearch, run?: SavedSearchRun): SavedSearchDto {
   return {
     id: row.id,
     name: row.name,
     query: row.query,
     enabled: row.enabled,
-    lastRunAt: row.lastRunAt?.toISOString() ?? null,
-    lastCandidateCount: row.lastCandidateCount,
+    lastRunAt: run?.lastRunAt.toISOString() ?? null,
+    lastCandidateCount: run?.lastCandidateCount ?? 0,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -67,14 +69,26 @@ const toCandidateDto = (row: DiscoveryCandidate): CandidateDto => ({
   fetchedAt: row.fetchedAt.toISOString(),
 });
 
-/** By name, ignoring case. */
-export function listSavedSearches(): SavedSearchDto[] {
+/**
+ * By name, ignoring case. With an account, each search carries that account's own last run and
+ * candidate count; without one, the run fields read as never run for the workspace.
+ */
+export function listSavedSearches(accountId?: string): SavedSearchDto[] {
+  const runs =
+    accountId === undefined
+      ? []
+      : getDb()
+          .select()
+          .from(savedSearchRuns)
+          .where(eq(savedSearchRuns.accountId, accountId))
+          .all();
+  const bySearch = new Map(runs.map((run) => [run.savedSearchId, run]));
   return getDb()
     .select()
     .from(savedSearches)
     .orderBy(sql`${savedSearches.name} collate nocase`, savedSearches.createdAt)
     .all()
-    .map(toDto);
+    .map((row) => toDto(row, bySearch.get(row.id)));
 }
 
 export function createSavedSearch(fields: Fields): SavedSearchDto {

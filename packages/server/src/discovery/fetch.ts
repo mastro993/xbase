@@ -7,8 +7,14 @@ import {
   ServiceError,
 } from '@xbase/core/errors';
 import { getDb } from '@xbase/db/client';
-import { discoveryCandidates, followedAccounts, savedSearches, xAccounts } from '@xbase/db/schema';
-import { asc, eq, sql } from 'drizzle-orm';
+import {
+  discoveryCandidates,
+  followedAccounts,
+  savedSearchRuns,
+  savedSearches,
+  xAccounts,
+} from '@xbase/db/schema';
+import { and, asc, eq, inArray, sql } from 'drizzle-orm';
 import { getAccountCredentials } from '../accounts';
 import { getFollowing, homeTimeline, searchRecent, type XTimelineStop } from '../x-api-client';
 import {
@@ -133,12 +139,36 @@ function storeCandidates(accountId: string, rows: CandidateRow[]): void {
   });
 }
 
-function stampSearch(id: string, at: Date, candidates: number): void {
+/** The run is the account's: saved searches are shared, but another account's candidates aren't. */
+function stampSearch(accountId: string, id: string, at: Date, candidates: number): void {
+  const values = { accountId, savedSearchId: id, lastRunAt: at, lastCandidateCount: candidates };
   getDb()
-    .update(savedSearches)
-    .set({ lastRunAt: at, lastCandidateCount: candidates })
-    .where(eq(savedSearches.id, id))
+    .insert(savedSearchRuns)
+    .values(values)
+    .onConflictDoUpdate({
+      target: [savedSearchRuns.accountId, savedSearchRuns.savedSearchId],
+      set: values,
+    })
     .run();
+}
+
+/**
+ * How many of a run's posts this search actually holds. A post an earlier search already owns
+ * stays with it, so counting every returned post would promise candidates the page never lists.
+ */
+function ownedCount(accountId: string, savedSearchId: string, postIds: string[]): number {
+  if (postIds.length === 0) return 0;
+  return getDb()
+    .select({ id: discoveryCandidates.xPostId })
+    .from(discoveryCandidates)
+    .where(
+      and(
+        eq(discoveryCandidates.accountId, accountId),
+        eq(discoveryCandidates.savedSearchId, savedSearchId),
+        inArray(discoveryCandidates.xPostId, postIds),
+      ),
+    )
+    .all().length;
 }
 
 /** The searches a run reads, in the order Discover lists them. */
@@ -154,8 +184,8 @@ function enabledSearches(): { id: string; name: string; query: string }[] {
 const stopOf = (home: XTimelineStop | null): DiscoveryStop | null =>
   home === null ? null : { reason: home.reason, message: home.message, savedSearchId: null };
 
-/** The next step's advice, when a search stopped the run instead of the timeline. */
-function searchStop(error: ServiceError, savedSearchId: string): DiscoveryStop {
+/** A stop a paid read raised: the timeline when `savedSearchId` is null, else that search. */
+function searchStop(error: ServiceError, savedSearchId: string | null): DiscoveryStop {
   const reason =
     error instanceof BudgetExceededError
       ? 'budget'
@@ -175,7 +205,9 @@ const isStop = (
 /**
  * Reads one home timeline page plus every enabled saved search, and stores what a reply could
  * target: fresh original and quote posts, in full, from accounts outside the follow list too.
- * Searches and the timeline filter at X as well, so a dropped post is rarely billed.
+ * Searches and the timeline filter at X as well, so a dropped post is rarely billed. X throttles
+ * per endpoint, so a timeline rate limit still lets the searches run; a budget or a rejected
+ * grant belongs to the account, and stops everything.
  */
 export async function runDiscovery(accountId: string): Promise<DiscoveryRun> {
   const startedAt = new Date();
@@ -183,18 +215,27 @@ export async function runDiscovery(accountId: string): Promise<DiscoveryRun> {
   const following = await followingFor(accountId, startedAt);
   const dropped: DroppedPost[] = [];
 
-  const home = await homeTimeline(accountId, { feature: 'discovery', since });
-  const homePage = candidatesFromPage(
-    { posts: home.posts, users: home.users },
-    { source: 'home', following, now: startedAt },
-  );
-  storeCandidates(accountId, homePage.candidates);
-  dropped.push(...homePage.dropped);
+  let stop: DiscoveryStop | null = null;
+  let homeKept = 0;
+  try {
+    const home = await homeTimeline(accountId, { feature: 'discovery', since });
+    const homePage = candidatesFromPage(
+      { posts: home.posts, users: home.users },
+      { source: 'home', following, now: startedAt },
+    );
+    storeCandidates(accountId, homePage.candidates);
+    dropped.push(...homePage.dropped);
+    homeKept = homePage.candidates.length;
+    stop = stopOf(home.stop);
+  } catch (error) {
+    // The first timeline page failed: report it and read the searches, which use another endpoint.
+    if (!isStop(error)) throw error;
+    stop = searchStop(error, null);
+  }
 
-  let stop = stopOf(home.stop);
   const searches: SearchRun[] = [];
   for (const search of enabledSearches()) {
-    if (stop) break;
+    if (stop?.reason === 'budget' || stop?.reason === 'reconnect') break;
     try {
       // oxlint-disable-next-line no-await-in-loop -- searches are paid calls: each passes the cap check before the next sends
       const page = await searchRecent(accountId, searchQueryForX(search.query), {
@@ -208,19 +249,25 @@ export async function runDiscovery(accountId: string): Promise<DiscoveryRun> {
         now: startedAt,
       });
       storeCandidates(accountId, result.candidates);
-      stampSearch(search.id, new Date(), result.candidates.length);
+      const candidates = ownedCount(
+        accountId,
+        search.id,
+        result.candidates.map(({ xPostId }) => xPostId),
+      );
+      stampSearch(accountId, search.id, new Date(), candidates);
       dropped.push(...result.dropped);
-      searches.push({ id: search.id, name: search.name, candidates: result.candidates.length });
+      searches.push({ id: search.id, name: search.name, candidates });
     } catch (error) {
-      // A cap, a 429 or a rejected token stops the sources that share it. Anything else is a bug.
+      // Every search shares one endpoint, so after a 429 the rest would hit the same wall.
       if (!isStop(error)) throw error;
       stop = searchStop(error, search.id);
+      break;
     }
   }
 
   return {
     startedAt: startedAt.toISOString(),
-    home: homePage.candidates.length,
+    home: homeKept,
     searches,
     dropped,
     stop,
