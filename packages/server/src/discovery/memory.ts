@@ -29,7 +29,11 @@ export function rememberedAmong(accountId: string, xPostIds: string[]): Set<stri
  * Remembers one post, keeping the first time it was remembered. A reply outranks a skip, so
  * skipping a post already replied to leaves it replied.
  */
-function remember(accountId: string, candidate: DiscoveryCandidate, status: MemoryStatus): void {
+function remember(
+  accountId: string,
+  candidate: DiscoveryCandidate,
+  status: Exclude<MemoryStatus, 'shown'>,
+): void {
   getDb()
     .insert(suggestedPosts)
     .values({ accountId, xPostId: candidate.xPostId, authorId: candidate.authorId, status })

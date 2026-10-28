@@ -46,6 +46,10 @@ describe('the default keyword lists', () => {
     ['follow-for-follow anyone?', 'bait'],
     ['#followforfollow', 'bait'],
     ['Comment "AI" and I’ll DM you the guide', 'bait'],
+    ['RT this if you agree', 'bait'],
+    ['Comment "PROMPT" for the full template', 'bait'],
+    ['Comment ROADMAP to get the Notion doc', 'bait'],
+    ['Reply YES and I’ll DM you the link', 'bait'],
     ['𝐆𝐈𝐕𝐄𝐀𝐖𝐀𝐘 time', 'giveaway'],
     ['ＧＩＶＥＡＷＡＹ', 'giveaway'],
     ['gift​card for the first 10', 'giveaway'],
@@ -58,6 +62,8 @@ describe('the default keyword lists', () => {
     ['vice-president says hi', 'politics'],
     ['Q&amp;A with the senator', 'politics'],
     ['Democrats unveil plan', 'politics'],
+    ['Election results tonight', 'politics'],
+    ['The presidential debate tonight', 'politics'],
     ['#NFT drop tonight', 'crypto'],
     ['Minting NFTs again', 'crypto'],
     ['The NFT’s floor', 'crypto'],
@@ -67,6 +73,10 @@ describe('the default keyword lists', () => {
     ['New memecoin', 'crypto'],
     ['#altcoins season', 'crypto'],
     ['$BTC to 200k', 'crypto'],
+    ['Free airdrop for holders', 'crypto'],
+    ['Claim your airdrop now', 'crypto'],
+    ['Coupon code SAVE20 for 20% discount', 'promo'],
+    ['We’re giving away 3 MacBooks! Follow + RT to enter', 'giveaway'],
   ])('drops %j as %s', (text, expected) => {
     expect(reason(text)).toBe(expected);
   });
@@ -88,6 +98,15 @@ describe('the default keyword lists', () => {
     'Studying at ETH Zurich',
     'Add it to your $PATH',
     'crypto.randomUUID() is all you need',
+    'Would you pay for something like this if it existed?',
+    'Happy to share if anyone is interested',
+    'Implemented leader election with etcd today',
+    'AirDrop is broken again on iOS 18',
+    'Hiring a pre-sales engineer for our SaaS',
+    'Feel free to use my code, it is MIT licensed',
+    'Comment anything for feedback on the draft',
+    'Reply to this for context',
+    'Reply with care for the people you disagree with',
   ])('keeps %j', (text) => {
     expect(reason(text)).toBeNull();
   });
@@ -140,6 +159,12 @@ describe('compileKeywords', () => {
     expect(matches(['인공지능'], '오늘 인공지능 공부')).toBe(true);
   });
 
+  it('keeps underscores at a keyword’s ends', () => {
+    expect(matches(['__init__'], 'logic in __init__ only')).toBe(true);
+    expect(matches(['__init__'], 'initialize it')).toBe(false);
+    expect(matches(['snake_'], 'a snake_ variable')).toBe(true);
+  });
+
   it('folds Turkish capitals like the keyword', () => {
     expect(matches(['seçim'], 'SEÇİM sonuçları')).toBe(true);
   });
@@ -170,9 +195,18 @@ describe('threadLength', () => {
     'Nothing here',
     // A bare marker beside a title reads like a rating: missing a thread beats dropping a post.
     '1/12 How we got to 10k MRR',
+    // Bracketed inside a sentence, it's a date.
+    'Public beta opens Monday (1/15). Who wants in?',
+    'Webinar on Thursday (1/16), sign up below',
   ])('finds no thread length in %j', (text) => {
     expect(length(text)).toBeNull();
   });
+});
+
+it('reads a long one-line post in linear time', () => {
+  const started = performance.now();
+  expect(threadLength(fold('1/2 '.repeat(6_250)))).toBeNull();
+  expect(performance.now() - started).toBeLessThan(200);
 });
 
 describe('compileExclusions', () => {
@@ -226,6 +260,15 @@ describe('compileExclusions', () => {
     ).toBe('bait');
     expect(
       reasonOf({ text: 'A post' }, { exclusions: { bait: { enabled: true, keywords: [] } } }),
+    ).toBeNull();
+  });
+
+  it('catches the comment-to-get formula only while bait is on', () => {
+    const text = 'Comment "GUIDE" for the template';
+    expect(reasonOf({ text })).toBe('bait');
+    expect(reasonOf({ text: 'Wow', quotedText: text })).toBe('bait');
+    expect(
+      reasonOf({ text }, { exclusions: { bait: { enabled: false, keywords: [] } } }),
     ).toBeNull();
   });
 

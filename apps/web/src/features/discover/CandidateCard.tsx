@@ -38,11 +38,19 @@ function metricsLine(metrics: CandidateDto['metrics']): string {
  * enough engagement to see how quiet it is. The author's following flag is a priority hint, so a
  * followed author is marked rather than hidden.
  *
- * Each action takes it off the list for good: XBase can't reply for the owner, so "Mark replied"
- * records a reply made on x.com; "Skip" passes on the post; "Mute author" never suggests them again
- * (Settings → Discovery keeps the list). The batch review (#20) will carry the same actions.
+ * XBase can't reply for the owner, so "Mark replied" records a reply made on x.com and "Skip"
+ * passes on the post: either takes it off the list for good. "Mute author" hides every post of
+ * theirs until they leave the Never suggest list in Settings. The batch review (#20) will carry
+ * the same actions. The card is gone once one succeeds, so `onHandled` says what happened and
+ * takes the focus.
  */
-export function CandidateCard({ candidate }: { candidate: CandidateDto }) {
+export function CandidateCard({
+  candidate,
+  onHandled,
+}: {
+  candidate: CandidateDto;
+  onHandled: (announcement: string) => void;
+}) {
   const router = useRouter();
   const markReplied = useServerFn(markCandidateRepliedFn);
   const skip = useServerFn(skipCandidateFn);
@@ -51,6 +59,7 @@ export function CandidateCard({ candidate }: { candidate: CandidateDto }) {
   const [error, setError] = useState<string | null>(null);
   const metrics = metricsLine(candidate.metrics);
   const handle = candidate.authorHandle;
+  const whose = handle ? `@${handle}’s post` : 'the post';
 
   const decide = async (action: 'replied' | 'skip') => {
     if (busy) return;
@@ -59,7 +68,9 @@ export function CandidateCard({ candidate }: { candidate: CandidateDto }) {
     try {
       const data = { id: candidate.id };
       await (action === 'replied' ? markReplied({ data }) : skip({ data }));
-      await router.invalidate();
+      // Sync, so the card is gone before the focus moves.
+      await router.invalidate({ sync: true });
+      onHandled(action === 'replied' ? `Marked ${whose} as replied.` : `Skipped ${whose}.`);
     } catch (cause) {
       setError(readableError(cause));
     } finally {
@@ -70,7 +81,8 @@ export function CandidateCard({ candidate }: { candidate: CandidateDto }) {
   // Throws on failure: ConfirmButton shows the error in its dialog.
   const muteAuthor = async () => {
     await mute({ data: { id: candidate.id } });
-    await router.invalidate();
+    await router.invalidate({ sync: true });
+    onHandled(`Muted @${handle}: their posts are hidden.`);
   };
 
   return (
@@ -130,20 +142,18 @@ export function CandidateCard({ candidate }: { candidate: CandidateDto }) {
           variant="secondary"
           leadingIcon={busy === 'replied' ? Spinner : CheckmarkCircle02Icon}
           aria-busy={busy === 'replied' || undefined}
-          disabled={busy !== null}
           onClick={() => void decide('replied')}
         >
-          Mark replied
+          Mark replied{handle && <span className="sr-only"> to @{handle}</span>}
         </Button>
         <Button
           size="small"
           variant="secondary"
           leadingIcon={busy === 'skip' ? Spinner : Forward01Icon}
           aria-busy={busy === 'skip' || undefined}
-          disabled={busy !== null}
           onClick={() => void decide('skip')}
         >
-          Skip
+          Skip<span className="sr-only"> {whose}</span>
         </Button>
         {handle && (
           <ConfirmButton
@@ -151,14 +161,13 @@ export function CandidateCard({ candidate }: { candidate: CandidateDto }) {
             variant="secondary"
             leadingIcon={UserBlock01Icon}
             disabled={busy !== null}
-            aria-label={`Mute author @${handle}`}
             title={`Mute @${handle}?`}
             description="Discover won’t suggest their posts again. You can take them off the Never suggest list in Settings → Discovery → Watch list."
             action="Mute"
             errorTitle="Couldn’t mute"
             onConfirm={muteAuthor}
           >
-            Mute author
+            Mute author<span className="sr-only"> @{handle}</span>
           </ConfirmButton>
         )}
       </div>

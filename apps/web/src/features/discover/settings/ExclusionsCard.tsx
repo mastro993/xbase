@@ -1,4 +1,5 @@
 import {
+  DEFAULT_EXCLUSION_KEYWORDS,
   type DiscoverySettings,
   type ExclusionFilter,
   MAX_EXCLUSION_KEYWORDS,
@@ -12,39 +13,33 @@ import { KeywordEditor } from './KeywordEditor';
 
 type Exclusions = DiscoverySettings['exclusions'];
 
-const KEYWORD_FILTERS: { field: ExclusionFilter; label: string; hint: string; example: string }[] =
-  [
-    {
-      field: 'bait',
-      label: 'Engagement bait',
-      hint: 'Posts that ask for a like, a repost or a tag instead of an answer.',
-      example: 'like if\ncomment if',
-    },
-    {
-      field: 'giveaways',
-      label: 'Giveaways',
-      hint: 'Contests where everyone replies and nobody reads.',
-      example: 'giveaway\nenter to win',
-    },
-    {
-      field: 'promos',
-      label: 'Promotions',
-      hint: 'Discount codes and sales pitches.',
-      example: 'promo code\n% off',
-    },
-    {
-      field: 'politics',
-      label: 'Politics',
-      hint: 'Elections and campaigns, whatever your niche.',
-      example: 'election\nvote for',
-    },
-    {
-      field: 'crypto',
-      label: 'Crypto',
-      hint: 'Coins, tokens and the launches around them.',
-      example: 'airdrop\nmemecoin',
-    },
-  ];
+const KEYWORD_FILTERS: { field: ExclusionFilter; label: string; hint: string }[] = [
+  {
+    field: 'bait',
+    label: 'Engagement bait',
+    hint: 'Posts that ask for a like, a repost or a tag instead of an answer.',
+  },
+  {
+    field: 'giveaways',
+    label: 'Giveaways',
+    hint: 'Contests where everyone replies and nobody reads.',
+  },
+  {
+    field: 'promos',
+    label: 'Promotions',
+    hint: 'Discount codes and sales pitches.',
+  },
+  {
+    field: 'politics',
+    label: 'Politics',
+    hint: 'Elections and campaigns, whatever your niche.',
+  },
+  {
+    field: 'crypto',
+    label: 'Crypto',
+    hint: 'Coins, tokens and the launches around them.',
+  },
+];
 
 const SHAPE_FILTERS: { field: 'imageOnly' | 'longThreads'; label: string; hint: string }[] = [
   {
@@ -66,15 +61,17 @@ export function ExclusionsCard({ settings }: { settings: Exclusions }) {
   const [threadPosts, setThreadPosts] = useState(() => String(settings.maxThreadPosts));
 
   const save = async () => {
-    if (!/^\d+$/.test(threadPosts)) {
+    const { longThreads, maxThreadPosts: stored } = exclusions.draft;
+    // A hidden box can't block the save: with long threads let through, the stored length stays.
+    if (longThreads && !/^\d+$/.test(threadPosts)) {
       exclusions.report(`${MAX_THREAD_POSTS.label}: use a whole number`);
       return;
     }
-    const stored = await exclusions.save({
+    const saved = await exclusions.save({
       ...exclusions.draft,
-      maxThreadPosts: Number(threadPosts),
+      maxThreadPosts: longThreads ? Number(threadPosts) : stored,
     });
-    if (stored) setThreadPosts(String(stored.maxThreadPosts));
+    if (saved) setThreadPosts(String(saved.maxThreadPosts));
   };
 
   const reset = async () => {
@@ -101,7 +98,7 @@ export function ExclusionsCard({ settings }: { settings: Exclusions }) {
       onSubmit={() => void save()}
       onReset={reset}
     >
-      {KEYWORD_FILTERS.map(({ field, label, hint, example }) => {
+      {KEYWORD_FILTERS.map(({ field, label, hint }) => {
         const filter = exclusions.draft[field];
         return (
           <div key={field} className="flex flex-col gap-3">
@@ -117,7 +114,7 @@ export function ExclusionsCard({ settings }: { settings: Exclusions }) {
                 kind="keyword"
                 label={`${label}: words to look for`}
                 hint={`One keyword or phrase per line, up to ${MAX_EXCLUSION_KEYWORDS}.`}
-                placeholder={example}
+                placeholder={DEFAULT_EXCLUSION_KEYWORDS[field].slice(0, 2).join('\n')}
                 value={filter.keywords}
                 max={MAX_EXCLUSION_KEYWORDS}
                 onChange={(keywords) => setFilter(field, { keywords })}

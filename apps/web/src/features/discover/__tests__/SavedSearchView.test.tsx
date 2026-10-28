@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { CandidateDto, SavedSearchDto } from '@xbase/core/discover';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
@@ -83,9 +83,21 @@ it('shows the candidates in full, with the post they quote', () => {
   render(<SavedSearchView search={SEARCH} candidates={[CANDIDATE]} canRead />);
   expect(screen.getByText('The whole long post, with the ending X hides.')).toBeTruthy();
   expect(screen.getByText('The quoted post, in full.')).toBeTruthy();
-  expect(screen.getByText('@alice')).toBeTruthy();
+  // The card's buttons repeat the handle for screen readers.
+  expect(screen.getByText('@alice', { ignore: '.sr-only, script, style' })).toBeTruthy();
   expect(screen.getByText('@quoted')).toBeTruthy();
   expect(screen.queryByText('Results need the X API')).toBeNull();
+});
+
+it('moves to the list and says what happened once a candidate is skipped', async () => {
+  const user = userEvent.setup();
+  render(<SavedSearchView search={SEARCH} candidates={[CANDIDATE]} canRead />);
+
+  await user.click(screen.getByRole('button', { name: 'Skip @alice’s post' }));
+  expect(await screen.findByText('Skipped @alice’s post.')).toBeTruthy();
+  await waitFor(() =>
+    expect(document.activeElement).toBe(screen.getByRole('heading', { name: 'Latest candidates' })),
+  );
 });
 
 it('asks to reconnect only when the account’s X access no longer works', () => {

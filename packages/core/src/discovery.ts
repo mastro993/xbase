@@ -151,19 +151,24 @@ const DiscoveryThresholdsInput = z
 
 /**
  * What each keyword switch drops until the owner edits its list. Matching ignores case, styled
- * letters and the separators inside a phrase ("pre-sale" also finds "presale"), and adds a plain
- * plural; so each entry here is chosen not to hit ordinary developer and indie posts ("crypto"
- * would catch node:crypto, "win a" a hackathon). An account that saved the section keeps its own.
+ * letters and the separators inside a phrase ("pre-sale opens" also finds "presale opens"), and
+ * adds a plain plural; so each entry here is chosen not to hit ordinary developer and indie posts
+ * ("crypto" would catch node:crypto, "airdrop" Apple's AirDrop, "election" a Raft leader
+ * election, "win a" a hackathon). An account that saved the section keeps its own lists.
  */
 export const DEFAULT_EXCLUSION_KEYWORDS = {
   bait: [
     'like if you agree',
-    'like this if',
+    'like this post if',
+    'like this tweet if',
     'like and repost',
     'like and retweet',
     'retweet if',
     'repost if',
     'rt if',
+    'rt this if',
+    'retweet this if',
+    'repost this if',
     'comment if',
     'comment below',
     'tag a friend',
@@ -173,7 +178,7 @@ export const DEFAULT_EXCLUSION_KEYWORDS = {
     'follow back',
     'who agrees',
     "i'll dm you",
-    'share if',
+    'share if you agree',
   ],
   giveaways: [
     'giveaway',
@@ -183,12 +188,17 @@ export const DEFAULT_EXCLUSION_KEYWORDS = {
     'retweet to win',
     'follow to win',
     'reply to win',
+    'rt to enter',
+    'retweet to enter',
+    'follow to enter',
     'gift card',
   ],
   promos: [
     'promo code',
     'discount code',
-    'use my code',
+    'coupon code',
+    'my referral code',
+    'referral link',
     '% off',
     'limited time offer',
     'buy now',
@@ -198,27 +208,43 @@ export const DEFAULT_EXCLUSION_KEYWORDS = {
     'paid partnership',
   ],
   politics: [
-    'election',
+    'elections',
+    'election day',
+    'election results',
+    'general election',
+    'electoral',
     'president',
+    'presidential',
     'senator',
     'congress',
+    'congressional',
     'ballot',
     'campaign trail',
     'democrat',
     'republican',
-    'midterm',
+    'midterm elections',
   ],
   crypto: [
-    'airdrop',
-    'pre-sale',
+    '#airdrop',
+    'free airdrop',
+    'token airdrop',
+    'claim your airdrop',
+    'airdrop incoming',
+    'pre-sale live',
+    'pre-sale is live',
+    'pre-sale opens',
+    'token pre-sale',
     'alt coin',
     'meme coin',
     'defi',
     'nft',
+    'cryptocurrency',
+    '#crypto',
     'bitcoin',
     '$btc',
     'ethereum',
     '$eth',
+    '$sol',
     'web3',
     'pump and dump',
     'to the moon',

@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   skipCandidateFn: vi.fn(),
   muteCandidateAuthorFn: vi.fn(),
   invalidate: vi.fn(async () => {}),
+  onHandled: vi.fn(),
 }));
 
 // The server functions' module needs the server; the card only calls them.
@@ -55,46 +56,55 @@ beforeEach(() => {
     mock.mockResolvedValue(undefined);
   }
   mocks.invalidate.mockClear();
+  mocks.onHandled.mockReset();
 });
+
+const renderCard = (candidate: CandidateDto = CANDIDATE) =>
+  render(<CandidateCard candidate={candidate} onHandled={mocks.onHandled} />);
 afterEach(cleanup);
 
 it.each([
-  ['Mark replied', mocks.markCandidateRepliedFn],
-  ['Skip', mocks.skipCandidateFn],
-])('%s takes the candidate off the list', async (name, action) => {
+  ['Mark replied to @alice', mocks.markCandidateRepliedFn, 'Marked @alice’s post as replied.'],
+  ['Skip @alice’s post', mocks.skipCandidateFn, 'Skipped @alice’s post.'],
+])('%s takes the candidate off the list, and says so', async (name, action, announcement) => {
   const user = userEvent.setup();
-  render(<CandidateCard candidate={CANDIDATE} />);
+  renderCard();
 
   await user.click(screen.getByRole('button', { name }));
   expect(action).toHaveBeenCalledWith({ data: { id: 'c1' } });
-  expect(mocks.invalidate).toHaveBeenCalled();
+  expect(mocks.invalidate).toHaveBeenCalledWith({ sync: true });
+  expect(mocks.onHandled).toHaveBeenCalledWith(announcement);
 });
 
 it('shows why an action failed, and lets it be tried again', async () => {
   const user = userEvent.setup();
   mocks.skipCandidateFn.mockRejectedValueOnce(new Error('Candidate not found.'));
-  render(<CandidateCard candidate={CANDIDATE} />);
+  renderCard();
 
-  await user.click(screen.getByRole('button', { name: 'Skip' }));
+  const skip = screen.getByRole('button', { name: 'Skip @alice’s post' });
+  await user.click(skip);
   expect((await screen.findByRole('alert')).textContent).toContain('Candidate not found.');
   expect(mocks.invalidate).not.toHaveBeenCalled();
-  expect(screen.getByRole('button', { name: 'Skip' }).hasAttribute('disabled')).toBe(false);
+  expect(mocks.onHandled).not.toHaveBeenCalled();
+  // Busy, never disabled: the button keeps the focus for another try.
+  expect(document.activeElement).toBe(skip);
+  expect(skip.hasAttribute('disabled')).toBe(false);
 });
 
 it('mutes the author only once the dialog is confirmed', async () => {
   const user = userEvent.setup();
-  render(<CandidateCard candidate={CANDIDATE} />);
+  renderCard();
 
   await user.click(screen.getByRole('button', { name: 'Mute author @alice' }));
   const dialog = await screen.findByRole('alertdialog', { name: 'Mute @alice?' });
   expect(mocks.muteCandidateAuthorFn).not.toHaveBeenCalled();
   await user.click(within(dialog).getByRole('button', { name: 'Mute' }));
   expect(mocks.muteCandidateAuthorFn).toHaveBeenCalledWith({ data: { id: 'c1' } });
-  expect(mocks.invalidate).toHaveBeenCalled();
+  expect(mocks.onHandled).toHaveBeenCalledWith('Muted @alice: their posts are hidden.');
 });
 
 it('offers no mute for a post without an author handle', () => {
-  render(<CandidateCard candidate={{ ...CANDIDATE, authorHandle: null }} />);
+  renderCard({ ...CANDIDATE, authorHandle: null });
   expect(screen.queryByRole('button', { name: /Mute/ })).toBeNull();
-  expect(screen.getByRole('button', { name: 'Skip' })).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'Skip the post' })).toBeTruthy();
 });

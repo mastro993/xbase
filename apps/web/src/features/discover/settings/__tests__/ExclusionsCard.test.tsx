@@ -71,3 +71,22 @@ it('hides the thread length while long threads are let through', async () => {
   await user.click(screen.getByRole('switch', { name: 'Long threads' }));
   expect(longest()).toBeNull();
 });
+
+it('saves with long threads off even when the hidden box was cleared', async () => {
+  const user = userEvent.setup();
+  mocks.saveDiscoverySettingsFn.mockResolvedValue({
+    ...DEFAULT_DISCOVERY_SETTINGS,
+    exclusions: { ...settings, longThreads: false },
+  });
+  render(<ExclusionsCard settings={settings} />);
+
+  const field = longest();
+  if (!field) throw new Error('The thread length field is missing');
+  await user.clear(field);
+  await user.click(screen.getByRole('switch', { name: 'Long threads' }));
+  await user.click(save());
+
+  expect(mocks.saveDiscoverySettingsFn).toHaveBeenCalledWith({
+    data: { section: 'exclusions', value: { ...settings, longThreads: false } },
+  });
+});

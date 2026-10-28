@@ -15,7 +15,7 @@ import {
   savedSearches,
   xAccounts,
 } from '@xbase/db/schema';
-import { and, asc, eq, inArray, isNotNull } from 'drizzle-orm';
+import { and, asc, eq, inArray } from 'drizzle-orm';
 import { getAccountCredentials } from '../accounts';
 import { getDiscoverySettings } from '../discovery-settings';
 import { getFollowing, homeTimeline, searchRecent, type XTimelineStop } from '../x-api-client';
@@ -133,8 +133,8 @@ function searchOwners(accountId: string, xPostIds: string[]): Map<string, string
     .where(
       and(
         eq(discoveryCandidates.accountId, accountId),
+        // Only the page's ids: an `is not null` here would walk every search's history instead.
         inArray(discoveryCandidates.xPostId, xPostIds),
-        isNotNull(discoveryCandidates.savedSearchId),
       ),
     )
     .all();
@@ -247,7 +247,9 @@ export async function runDiscovery(accountId: string): Promise<DiscoveryRun> {
   const excluded = new Map<string, ExclusionReason>();
   const store = (rows: CandidateRow[]): KeptPost[] => {
     const page = storeCandidates(accountId, rows);
+    // The last verdict counts: a search keeps a post the home timeline left out as off-topic.
     for (const { xPostId, reason } of page.excluded) excluded.set(xPostId, reason);
+    for (const { xPostId } of page.kept) excluded.delete(xPostId);
     dropped.push(...page.remembered.map((xPostId) => ({ xPostId, reason: 'remembered' as const })));
     return page.kept;
   };

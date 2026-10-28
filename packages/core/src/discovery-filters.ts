@@ -65,20 +65,26 @@ export type FilterablePost = {
 const ENTITIES: Record<string, string> = { '&amp;': '&', '&lt;': '<', '&gt;': '>' };
 
 /**
- * Text as every rule reads it, posts and keywords alike: X's HTML escapes decoded, styled and
- * full-width letters folded to plain ones, invisible characters and curly quotes evened out, and
- * links dropped (a t.co id is random letters).
+ * X's HTML escapes decoded, styled and full-width letters folded to plain ones, invisible
+ * characters and curly quotes evened out; the case stays.
+ */
+const unify = (text: string): string =>
+  text
+    .replace(/&(?:amp|lt|gt);/g, (entity) => ENTITIES[entity] ?? entity)
+    // NFKC turns "NFT™" into "nfttm", which no keyword would match.
+    .replace(/[™℠]/gu, ' ')
+    .normalize('NFKC')
+    .replace(/\p{Cf}/gu, '')
+    .replace(/[‘’ʼ′`´]/gu, "'")
+    .replace(/[“”„″]/gu, '"');
+
+/**
+ * Text as every rule reads it, posts and keywords alike: unified, in lower case, and with links
+ * dropped (a t.co id is random letters).
  */
 export function fold(text: string): string {
   return (
-    text
-      .replace(/&(?:amp|lt|gt);/g, (entity) => ENTITIES[entity] ?? entity)
-      // NFKC turns "NFT™" into "nfttm", which no keyword would match.
-      .replace(/[™℠]/gu, ' ')
-      .normalize('NFKC')
-      .replace(/\p{Cf}/gu, '')
-      .replace(/[‘’ʼ′`´]/gu, "'")
-      .replace(/[“”„″]/gu, '"')
+    unify(text)
       .toLowerCase()
       // "İ" lowercases to "i" plus a combining dot.
       .replace(/i̇/gu, 'i')
@@ -99,19 +105,24 @@ const SYNTAX = /[\\^$.*+?()[\]{}|/]/g;
 
 /** A keyword's pattern, and whether each end needs a word boundary; null for a blank keyword. */
 function keywordPattern(keyword: string): { body: string; start: boolean; end: boolean } | null {
-  const words = fold(keyword)
-    .split(/[\s\p{Pd}_]+/u)
-    .filter(Boolean);
+  // Underscores at the ends belong to the keyword ("__init__"); inside, they separate words.
+  const [, lead = '', inner = '', trail = ''] =
+    /^(_*)(.*?)(_*)$/su.exec(fold(keyword).trim()) ?? [];
+  const words = inner.split(/[\s\p{Pd}_]+/u).filter(Boolean);
   const first = words[0];
   const last = words.at(-1);
   if (first === undefined || last === undefined) return null;
-  const start = STARTS_WORD.test(first);
-  const end = ENDS_WORD.test(last);
+  const start = STARTS_WORD.test(lead || first);
+  const end = ENDS_WORD.test(trail || last);
   // "nfts" and "giveaways", but not "defies" for "defi", nor "ais" for a word under three letters.
   const plural =
-    !end || !/^\p{L}{3,}$/u.test(last) ? '' : /(?:s|x|z|ch|sh)$/.test(last) ? '(?:es)?' : 's?';
+    trail || !end || !/^\p{L}{3,}$/u.test(last)
+      ? ''
+      : /(?:s|x|z|ch|sh)$/.test(last)
+        ? '(?:es)?'
+        : 's?';
   return {
-    body: words.map((word) => word.replace(SYNTAX, '\\$&')).join(SEPARATOR) + plural,
+    body: lead + words.map((word) => word.replace(SYNTAX, '\\$&')).join(SEPARATOR) + plural + trail,
     start,
     end,
   };
@@ -152,8 +163,9 @@ const THREAD_EMOJI = '\u{1F9F5}';
 
 /**
  * How many posts a thread opener announces, or null when the post doesn't announce one. The
- * marker counts on the first or last line, when a 🧵 is in the post, when it's bracketed, or
- * when its line holds nothing else: "Rated 1/10 would not recommend" is no thread.
+ * marker counts on the first or last line: anywhere when a 🧵 is in the post, at either end of
+ * its line when bracketed ("… (1/12)"), or alone on its line. "Rated 1/10 would not recommend"
+ * and "Beta opens Monday (1/15). Who wants in?" are no threads.
  */
 export function threadLength(folded: string): number | null {
   const lines = folded
@@ -163,14 +175,35 @@ export function threadLength(folded: string): number | null {
   const emoji = folded.includes(THREAD_EMOJI);
   for (const line of new Set([lines[0], lines.at(-1)])) {
     if (line === undefined) continue;
-    for (const match of line.matchAll(THREAD_MARKER)) {
-      const bracketed = match[1] !== '' && match[3] !== '';
-      const alone = line.replace(match[0], '').replace(DECORATION, '') === '';
-      if (emoji || bracketed || alone) return Number(match[2]);
+    const markers = [...line.matchAll(THREAD_MARKER)];
+    const [first] = markers;
+    if (!first) continue;
+    if (emoji) return Number(first[2]);
+    // Only the first and last marker can sit at an end of the line: checking those keeps a
+    // 25,000-character post linear.
+    for (const marker of new Set([first, markers.at(-1) ?? first])) {
+      const before = line.slice(0, marker.index).replace(DECORATION, '');
+      const after = line.slice(marker.index + marker[0].length).replace(DECORATION, '');
+      const bracketed = marker[1] !== '' && marker[3] !== '';
+      if (before === '' && after === '') return Number(marker[2]);
+      if (bracketed && (before === '' || after === '')) return Number(marker[2]);
     }
   }
   return null;
 }
+
+// "Comment "AI" for the guide", "Reply YES and I'll DM you": a keyword can't stand for any word,
+// so the bait switch also knows this formula, when the word is quoted or in capitals.
+const COMMENT_TO_GET =
+  /(?<![\p{L}\p{N}_])(?:comment|reply(?: with)?)\s+(["']?)([\p{L}\p{N}]{2,20})\1\s+(?:for|to get|and i'?ll (?:send|dm))(?![\p{L}\p{N}_])/giu;
+
+const asksForComment = (text: string): boolean => {
+  for (const match of unify(text).matchAll(COMMENT_TO_GET)) {
+    const word = match[2] ?? '';
+    if (match[1] !== '' || (word === word.toUpperCase() && /\p{Lu}/u.test(word))) return true;
+  }
+  return false;
+};
 
 /** The settings the rules read. */
 export type FilterSettings = Pick<DiscoverySettings, 'niches' | 'watch' | 'exclusions'>;
@@ -212,6 +245,12 @@ export function compileExclusions(
       if (length !== null && length > exclusions.maxThreadPosts) return 'thread_too_long';
     }
 
+    if (
+      exclusions.bait.enabled &&
+      [post.text, post.quotedText].some((text) => text && asksForComment(text))
+    ) {
+      return 'bait';
+    }
     // Each text on its own, so a phrase can't run from the post into the post it quotes.
     for (const { reason, pattern } of keywordRules) {
       if (texts.some((text) => pattern.test(text))) return reason;

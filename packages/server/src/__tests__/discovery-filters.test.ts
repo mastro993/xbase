@@ -94,7 +94,7 @@ describe('a run’s filters', () => {
     const result = await run({
       home: [{ id: 'h-bait', text: 'Like and repost if this helped' }, { id: 'h-keep' }],
       found: [
-        { id: 's-crypto', text: 'Huge airdrop tomorrow' },
+        { id: 's-crypto', text: 'Free airdrop tomorrow' },
         { id: 's-image', text: 'https://t.co/abc', mediaKeys: ['m1'] },
         { id: 's-keep', text: 'We hit $1k MRR' },
       ],
@@ -123,6 +123,16 @@ describe('a run’s filters', () => {
       found: [{ id: 'both', text: 'GIVEAWAY time' }],
     });
     expect(result.excluded).toEqual([{ xPostId: 'both', reason: 'giveaway' }]);
+  });
+
+  it('counts a post home left out as off-topic once a search in the same run keeps it', async () => {
+    saveDiscoverySettings(accountId, 'niches', { keywords: ['build in public'] });
+    const post = { id: 'p', text: 'Our SaaS hit 1k MRR' };
+    const result = await run({ home: [post], found: [post] });
+    expect(result.excluded).toEqual([]);
+    expect(result.home).toBe(0);
+    expect(result.searches[0]?.candidates).toBe(1);
+    expect(listed(searchId)).toEqual(['p']);
   });
 
   it('applies the niches to the home timeline only, wherever a search holds the post', async () => {

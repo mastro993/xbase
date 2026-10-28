@@ -9,7 +9,7 @@ export function NichesCard({ settings }: { settings: DiscoverySettings['niches']
     <DiscoveryCard
       title="Niches and keywords"
       description="The topics you post about. They match posts and build the searches a run makes."
-      hint="Leave the list empty to consider every topic; the other sections still score what comes in."
+      hint="Home timeline posts outside these topics are left out; saved searches keep their own query. Leave the list empty to consider every topic."
       saving={niches.saving}
       saved={niches.saved}
       error={niches.error}
