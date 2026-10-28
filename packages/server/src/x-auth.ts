@@ -14,8 +14,11 @@ import { getEnv } from './env';
 const AUTHORIZE_URL = 'https://x.com/i/oauth2/authorize';
 const TOKEN_URL = 'https://api.x.com/2/oauth2/token';
 const ME_URL = 'https://api.x.com/2/users/me?user.fields=profile_image_url';
-/** Reading the profile, plus posting for the scheduler; offline.access brings a refresh token. */
-const SCOPES = ['tweet.read', 'users.read', 'tweet.write', 'offline.access'];
+/**
+ * Reading the profile and the follow list (discovery marks posts by followed accounts), plus
+ * posting for the scheduler; offline.access brings a refresh token.
+ */
+const SCOPES = ['tweet.read', 'users.read', 'follows.read', 'tweet.write', 'offline.access'];
 const TIMEOUT_MS = 15_000;
 
 /** The callback X redirects to; register it in the X app as well. */

@@ -8,7 +8,7 @@ import {
   POST_STATUSES,
   type PostDto,
 } from '@xbase/core/posts/schema';
-import { accountFilter, resolveAccountId } from '@xbase/server/accounts';
+import { accountFilter, listAccounts, resolveAccountId } from '@xbase/server/accounts';
 import { listSavedSearches } from '@xbase/server/discover';
 import {
   createDraft,
@@ -58,6 +58,9 @@ const SavedSearchList = z.object({
       id: z.string(),
       name: z.string(),
       query: z.string(),
+      enabled: z.boolean(),
+      lastRunAt: z.string().nullable(),
+      lastCandidateCount: z.number(),
       createdAt: z.string(),
       updatedAt: z.string(),
     }),
@@ -231,10 +234,26 @@ export function registerTools(server: McpServer): void {
     'list_saved_searches',
     {
       title: 'List saved searches',
-      description: 'The owner’s saved X searches from Discover, by name, in X search syntax.',
+      description:
+        'The owner’s saved X searches from Discover, by name, in X search syntax. Last run and candidate count belong to one account: the only linked one, or the one named.',
+      inputSchema: z.object({
+        account: Account.optional().describe(
+          'Whose run times and counts to show; default the only linked account',
+        ),
+      }),
       outputSchema: SavedSearchList,
       annotations: READ,
     },
-    async () => result(() => ({ items: listSavedSearches() })),
+    async ({ account }) =>
+      result(() => {
+        const accounts = listAccounts();
+        const accountId =
+          account === undefined
+            ? accounts.length === 1
+              ? accounts[0]?.id
+              : undefined
+            : resolveAccountId(account);
+        return { items: listSavedSearches(accountId) };
+      }),
   );
 }

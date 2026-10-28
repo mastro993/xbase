@@ -63,6 +63,8 @@ export type XAccountCredentials = {
   scope: string;
   /** Set when X refused the account's access; no read may go out until it signs in again. */
   reconnectRequiredAt: Date | null;
+  /** When discovery last read this account's follow list; null until it does. */
+  followingRefreshedAt: Date | null;
 };
 
 /** The row a read works with; null when the account was removed. */
@@ -77,6 +79,7 @@ export function getAccountCredentials(id: string): XAccountCredentials | null {
         expiresAt: row.tokenExpiresAt,
         scope: row.scope,
         reconnectRequiredAt: row.reconnectRequiredAt,
+        followingRefreshedAt: row.followingRefreshedAt,
       }
     : null;
 }

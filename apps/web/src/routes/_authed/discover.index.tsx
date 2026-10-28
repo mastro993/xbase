@@ -17,8 +17,8 @@ function NoSearchOpen() {
         title={empty ? 'Find posts worth replying to' : 'Pick a saved search'}
         description={
           empty
-            ? 'Save the X searches you’d run by hand: topics, phrases, people. Once XBase is connected to the X API, it runs them and lists fresh posts here.'
-            : 'See its query, edit it, or run it on X for now.'
+            ? 'Save the X searches you’d run by hand: topics, phrases, people. A discovery run reads them and your home timeline, and lists fresh posts here.'
+            : 'See its query, when it last ran, and the candidates it found.'
         }
       />
     </div>

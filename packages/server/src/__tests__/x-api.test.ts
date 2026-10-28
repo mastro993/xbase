@@ -16,7 +16,7 @@ import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 import { getAccountCredentials, listAccounts, saveAccount, saveAccountTokens } from '../accounts';
 import { getDiscoverySettings, saveDiscoverySettings } from '../discovery-settings';
 import type { Env } from '../env';
-import { getPosts, getUsers, homeTimeline, searchRecent } from '../x-api-client';
+import { getFollowing, getPosts, getUsers, homeTimeline, searchRecent } from '../x-api-client';
 import { getXApiSettings, saveXApiSection, saveXApiSettings } from '../x-api-settings';
 import {
   assertBudget,
@@ -821,6 +821,29 @@ describe('search and users', () => {
       costMicros: 2_000,
     });
     expect(db.select().from(xPosts).all()).toEqual([]);
+  });
+
+  it('reads the follow list in pages of 1,000', async () => {
+    const accountId = seed('1001', 'owner');
+    fetchMock
+      .mockResolvedValueOnce(
+        reply({ data: [{ id: '2002', username: 'brand' }], meta: { next_token: 'next' } }),
+      )
+      .mockResolvedValueOnce(reply({ data: [{ id: '3003', username: 'other' }], meta: {} }));
+
+    const follows = await getFollowing(accountId, { feature: 'discovery' });
+    expect(follows).toEqual([
+      { id: '2002', username: 'brand' },
+      { id: '3003', username: 'other' },
+    ]);
+    expect(callUrl(0).pathname).toBe('/2/users/1001/following');
+    expect(callUrl(0).searchParams.get('max_results')).toBe('1000');
+    expect(callUrl(0).searchParams.get('pagination_token')).toBeNull();
+    expect(callUrl(1).searchParams.get('pagination_token')).toBe('next');
+    expect(db.select().from(xApiCalls).all()).toMatchObject([
+      { endpoint: 'GET /2/users/:id/following', itemCount: 1, costMicros: 1_000 },
+      { endpoint: 'GET /2/users/:id/following', itemCount: 1, costMicros: 1_000 },
+    ]);
   });
 });
 

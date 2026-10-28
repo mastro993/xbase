@@ -96,7 +96,7 @@ describe('startXSignIn', () => {
       response_type: 'code',
       client_id: 'client-id',
       redirect_uri: 'https://xbase.test/auth/x/callback',
-      scope: 'tweet.read users.read tweet.write offline.access',
+      scope: 'tweet.read users.read follows.read tweet.write offline.access',
       code_challenge_method: 'S256',
     });
     const cookie = response.headers.get('set-cookie') ?? '';

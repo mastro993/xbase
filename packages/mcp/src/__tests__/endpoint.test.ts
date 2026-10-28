@@ -1,4 +1,4 @@
-import { oauthGrants, posts } from '@xbase/db/schema';
+import { oauthGrants, posts, savedSearchRuns, savedSearches } from '@xbase/db/schema';
 import { createTestDb, seedAccount } from '@xbase/db/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { serveMcp } from '../endpoint';
@@ -167,6 +167,49 @@ describe('tools', () => {
     const queue = await callTool('list_scheduled', {});
     expect(queue.structuredContent.items.map((item: { id: string }) => item.id)).toEqual([id]);
     expect((await callTool('list_saved_searches')).structuredContent).toEqual({ items: [] });
+  });
+
+  it('lists saved searches with the account’s own run stamps', async () => {
+    db.insert(savedSearches).values({ id: 's1', name: 'Makers', query: 'buildinpublic' }).run();
+    db.insert(savedSearchRuns)
+      .values({
+        accountId: '1001',
+        savedSearchId: 's1',
+        lastRunAt: new Date('2026-10-27T12:00:00.000Z'),
+        lastCandidateCount: 4,
+      })
+      .run();
+
+    const list = await callTool('list_saved_searches');
+    expect(list.structuredContent.items).toEqual([
+      expect.objectContaining({
+        id: 's1',
+        name: 'Makers',
+        query: 'buildinpublic',
+        enabled: true,
+        lastRunAt: '2026-10-27T12:00:00.000Z',
+        lastCandidateCount: 4,
+      }),
+    ]);
+
+    // Searches are shared; another account's run is not.
+    seedAccount({ id: '2002', username: 'other' });
+    const ambiguous = await callTool('list_saved_searches');
+    expect(ambiguous.structuredContent.items[0]).toMatchObject({
+      lastRunAt: null,
+      lastCandidateCount: 0,
+    });
+    const named = await callTool('list_saved_searches', { account: '@user1001' });
+    expect(named.structuredContent.items[0]).toMatchObject({
+      lastRunAt: '2026-10-27T12:00:00.000Z',
+      lastCandidateCount: 4,
+    });
+
+    // A bad handle is a tool error with the usual next step, not a bare throw.
+    const unknown = await callTool('list_saved_searches', { account: '@nobody' });
+    expect(unknown.isError).toBe(true);
+    expect(unknown.content[0].text).toContain('isn’t linked to XBase');
+    expect(unknown.content[0].text).toContain('Fix the arguments and try again.');
   });
 
   it('needs the account for a new draft once several are linked, and filters lists by it', async () => {

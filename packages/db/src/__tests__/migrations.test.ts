@@ -13,11 +13,14 @@ const MIGRATIONS = fileURLToPath(new URL('../../drizzle', import.meta.url));
 const SCHEMA = fileURLToPath(new URL('../schema.ts', import.meta.url));
 const TABLES = [
   'api_keys',
+  'discovery_candidates',
+  'followed_accounts',
   'oauth_clients',
   'oauth_codes',
   'oauth_grants',
   'oauth_tokens',
   'posts',
+  'saved_search_runs',
   'saved_searches',
   'sessions',
   'settings',
