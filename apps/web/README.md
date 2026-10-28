@@ -11,7 +11,7 @@ It is a Node server built with [TanStack Start](https://tanstack.com/start) and 
 - **Queue**: schedule a draft at a time in your browser's time zone. The queue lists scheduled posts by day; reschedule them, edit them or move them back to the drafts.
 - **Discover**: keep the X searches you'd run by hand, in X's search syntax, and open any of them on x.com.
 - **Stats**: a placeholder for now: engagement rate, the best times to post and follower growth arrive with the X API.
-- **Settings**: the X accounts; X API spend and caps; the AI provider and model; each account's voice for the AI; the decision model; reply discovery's niches, watch list, thresholds, exclusions, language, sources and budget; API keys; MCP; sessions. Provider keys come from the environment, never from the page.
+- **Settings**: the X accounts; X API spend and caps; the AI provider and model; each account's voice for the AI; the decision model's provider and model; reply discovery's niches, watch list, thresholds, exclusions, language, sources and budget; API keys; MCP; sessions. Provider keys come from the environment, never from the page.
 - **For other apps**: a [REST API](#rest-api) for drafts, with API keys, and an [MCP server](#mcp) with OAuth, so assistants such as Claude can write and schedule.
 
 It signs in with X, keeps sessions on the server so signing out ends them, migrates its SQLite database at startup, and ships with a health check and a Docker image.
@@ -59,7 +59,13 @@ XBase asks X for `tweet.read`, `users.read`, `tweet.write` and `offline.access`:
 
 Refine with AI uses OpenAI, Anthropic, xAI or OpenRouter with your own API key: set `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `XAI_API_KEY` or `OPENROUTER_API_KEY`, then pick the provider and model in **Settings → AI provider**. Settings only offers providers that have a key, and until you pick one it uses the first of them with its default model. Without any key, AI writing is off and the app works as before.
 
-`TYPESAFE_API_KEY` adds [TypeSafe](https://docs.typesafe.ai)'s Jev, a decision model: it answers yes/no, score and choice questions with probabilities instead of writing text. **Settings → Decision model** picks its version (`jev-latest` by default). No feature uses it yet.
+Decision models answer yes/no, score and choice questions with probabilities instead of writing text, for features that decide rather than write. **Settings → Decision model** picks the provider and model:
+
+- [TypeSafe](https://docs.typesafe.ai)'s Jev through `TYPESAFE_API_KEY`, `jev-latest` by default;
+- OpenAI's [Decisions API](https://developers.openai.com/api/docs/guides/decisions) through `OPENAI_API_KEY`, never the Luna chat model: one fixed model, so there is nothing to choose;
+- a curated list of OpenRouter's decision models, Jev included, through `OPENROUTER_API_KEY`, `~typesafe/jev-latest` by default. The same key also enables OpenRouter writing.
+
+Settings falls back to the first provider that still has a key, in that order. No feature uses a decision model yet.
 
 Keys never reach the browser or the database. Changing one takes a restart.
 
@@ -87,8 +93,8 @@ A saved change applies from the next run. Runs themselves arrive with the X API 
 | `X_CLIENT_SECRET`                                                          | Yes           | none                                                   | Your X app's OAuth 2.0 Client Secret. The server doesn't start without it. It also encrypts the stored X tokens: changing it means signing in again.                                                               |
 | `X_OWNER_USERNAME`                                                         | No            | none                                                   | The only X account that may claim an empty XBase, for example `@you`. Without it, the first account to sign in does.                                                                                               |
 | `APP_URL`                                                                  | In production | `http://127.0.0.1:5173` in `pnpm dev`                  | The address you open XBase at, as an origin: `https://xbase.example.com`, no path. With `https`, cookies are `Secure`. MCP clients only connect over HTTPS. Set it to the port `pnpm dev` prints to sign in there. |
-| `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `XAI_API_KEY`, `OPENROUTER_API_KEY` | No            | none                                                   | API keys for Refine with AI; Settings offers each provider that has one. See [AI providers](#ai-providers).                                                                                                        |
-| `TYPESAFE_API_KEY`                                                         | No            | none                                                   | A TypeSafe key for the decision model.                                                                                                                                                                             |
+| `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `XAI_API_KEY`, `OPENROUTER_API_KEY` | No            | none                                                   | API keys for Refine with AI; OpenAI and OpenRouter also serve decision models. Settings offers each provider that has one. See [AI providers](#ai-providers).                                                      |
+| `TYPESAFE_API_KEY`                                                         | No            | none                                                   | A TypeSafe key for Jev, its decision model.                                                                                                                                                                        |
 | `DATABASE_PATH`                                                            | No            | `./data/xbase.db` (`/data/xbase.db` in Docker)         | The SQLite file. Its folder is created if missing.                                                                                                                                                                 |
 | `PORT`, `HOST`                                                             | No            | `3000`, all interfaces                                 | Where the production server listens. `pnpm dev` prefers port 5173, then the next free one.                                                                                                                         |
 | `MIGRATIONS_DIR`                                                           | No            | `../../packages/db/drizzle` (`/app/drizzle` in Docker) | The migrations folder, if the server runs from another working directory.                                                                                                                                          |

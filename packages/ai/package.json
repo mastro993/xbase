@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./decisions": "./src/decisions.ts",
     "./errors": "./src/errors.ts",
     "./llm": "./src/llm.ts",
     "./post": "./src/post.ts",

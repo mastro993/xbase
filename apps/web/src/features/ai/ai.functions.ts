@@ -1,5 +1,6 @@
 import { createServerFn } from '@tanstack/react-start';
 import {
+  ListDecisionModelsInput,
   ListModelsInput,
   RefineDraftInput,
   SaveAiSettingsInput,
@@ -37,9 +38,9 @@ export const saveDecisionFn = createServerFn({ method: 'POST' })
   .validator(validator(SaveDecisionInput))
   .handler(({ data }) => saveDecisionModel(data));
 
-export const listDecisionModelsFn = createServerFn({ method: 'POST' }).handler(() =>
-  listDecisionModelsFor(),
-);
+export const listDecisionModelsFn = createServerFn({ method: 'POST' })
+  .validator(validator(ListDecisionModelsInput))
+  .handler(({ data }) => listDecisionModelsFor(data));
 
 export const getVoiceFn = createServerFn().handler(() => getVoice(requireSession().accountId));
 

@@ -1,5 +1,10 @@
 import { MAX_STYLE_FIELD_LENGTH, type StyleGuide } from '@xbase/ai/profile';
-import type { ModelOption, ProviderId } from '@xbase/ai/providers';
+import {
+  DECISION_PROVIDER_IDS,
+  type DecisionProvider,
+  type ModelOption,
+  type ProviderId,
+} from '@xbase/ai/providers';
 import { z } from 'zod';
 import { hasText, MAX_PART_LENGTH } from './posts/schema';
 
@@ -14,14 +19,14 @@ export const WRITING_PROVIDERS = [
 ] as const satisfies readonly ProviderId[];
 export type WritingProvider = (typeof WRITING_PROVIDERS)[number];
 
-/** Where each provider's key goes in .env. TypeSafe makes decisions instead of writing. */
+/** Where each provider's key goes in .env. */
 export const KEY_ENV = {
   openai: 'OPENAI_API_KEY',
   anthropic: 'ANTHROPIC_API_KEY',
   xai: 'XAI_API_KEY',
   openrouter: 'OPENROUTER_API_KEY',
   typesafe: 'TYPESAFE_API_KEY',
-} as const satisfies Record<WritingProvider | 'typesafe', string>;
+} as const satisfies Record<WritingProvider | DecisionProvider, string>;
 
 /** The AI settings. Keys never leave the server: the UI only learns which providers have one. */
 export type AiSettingsDto = {
@@ -29,8 +34,10 @@ export type AiSettingsDto = {
   available: WritingProvider[];
   /** What Refine with AI uses: the saved choice, else the first available provider's default. */
   writing: { provider: WritingProvider; model: ModelOption } | null;
-  /** The TypeSafe model for decisions; null without TYPESAFE_API_KEY. */
-  decision: ModelOption | null;
+  /** The decision providers with a key, in DECISION_PROVIDER_IDS order. */
+  decisionProviders: DecisionProvider[];
+  /** What decisions use: the saved choice, else the first available provider's default; null without any decision key. */
+  decision: { provider: DecisionProvider; model: ModelOption } | null;
 };
 
 /** refineDraftFn's error when no provider has a key; the UI can link to Settings next to it. */
@@ -50,7 +57,14 @@ export const SaveAiSettingsInput = z.object({
 
 export const ListModelsInput = z.object({ provider: z.enum(WRITING_PROVIDERS, 'Pick a provider') });
 
-export const SaveDecisionInput = z.object({ model: ModelOptionInput });
+const DecisionProviderInput = z.enum(DECISION_PROVIDER_IDS, 'Pick a provider');
+
+export const SaveDecisionInput = z.object({
+  provider: DecisionProviderInput,
+  model: ModelOptionInput,
+});
+
+export const ListDecisionModelsInput = z.object({ provider: DecisionProviderInput });
 
 const StyleText = z
   .string()
