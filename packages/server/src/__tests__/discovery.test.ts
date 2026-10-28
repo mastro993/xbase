@@ -4,11 +4,12 @@ import { createTestDb } from '@xbase/db/testing';
 import { eq } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createSavedSearch, listCandidates, listSavedSearches } from '../discover';
-import { FOLLOWING_REFRESH_MS, runDiscovery } from '../discovery/fetch';
+import { runDiscovery } from '../discovery/fetch';
+import { LIST_REFRESH_MS } from '../discovery/relations';
 import type { Env } from '../env';
 import { getPosts } from '../x-api-client';
 import {
-  cacheFollowing as cacheFollowingFor,
+  cacheLists,
   DAY_MS,
   FOLLOWING,
   HOME,
@@ -35,7 +36,7 @@ const fetchMock = vi.fn<typeof fetch>();
 let db: ReturnType<typeof createTestDb>;
 let accountId: string;
 
-const cacheFollowing = (userIds: string[]) => cacheFollowingFor(accountId, userIds);
+const cacheFollowing = (userIds: string[]) => cacheLists(accountId, userIds);
 const serve = (routes: Record<string, unknown>, calls: URL[] = []) =>
   serveX(fetchMock, routes, calls);
 
@@ -260,7 +261,7 @@ describe('a discovery run', () => {
   it('reads and caches the follow list when the cache is older than a day', async () => {
     cacheFollowing(['stale']);
     db.update(xAccounts)
-      .set({ followingRefreshedAt: new Date(NOW.getTime() - FOLLOWING_REFRESH_MS - 1) })
+      .set({ followingRefreshedAt: new Date(NOW.getTime() - LIST_REFRESH_MS - 1) })
       .where(eq(xAccounts.id, accountId))
       .run();
     createSavedSearch({ name: 'makers', query: 'mixed' });

@@ -16,7 +16,7 @@ import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 import { getAccountCredentials, listAccounts, saveAccount, saveAccountTokens } from '../accounts';
 import { getDiscoverySettings, saveDiscoverySettings } from '../discovery-settings';
 import type { Env } from '../env';
-import { getFollowing, getPosts, getUsers, homeTimeline, searchRecent } from '../x-api-client';
+import { getPosts, getUserList, getUsers, homeTimeline, searchRecent } from '../x-api-client';
 import { getXApiSettings, saveXApiSection, saveXApiSettings } from '../x-api-settings';
 import {
   assertBudget,
@@ -831,7 +831,7 @@ describe('search and users', () => {
       )
       .mockResolvedValueOnce(reply({ data: [{ id: '3003', username: 'other' }], meta: {} }));
 
-    const follows = await getFollowing(accountId, { feature: 'discovery' });
+    const follows = await getUserList(accountId, 'following', { feature: 'discovery' });
     expect(follows).toEqual([
       { id: '2002', username: 'brand' },
       { id: '3003', username: 'other' },
@@ -845,6 +845,31 @@ describe('search and users', () => {
       { endpoint: 'GET /2/users/:id/following', itemCount: 1, costMicros: 1_000 },
     ]);
   });
+
+  it.each(['muting', 'blocking'] as const)(
+    'reads the %s list at $0.001 an account',
+    async (list) => {
+      const accountId = seed('1001', 'owner');
+      fetchMock.mockResolvedValueOnce(
+        reply({
+          data: [
+            { id: '2002', username: 'spam' },
+            { id: '3003', username: 'troll' },
+          ],
+        }),
+      );
+
+      expect(await getUserList(accountId, list, { feature: 'discovery' })).toEqual([
+        { id: '2002', username: 'spam' },
+        { id: '3003', username: 'troll' },
+      ]);
+      expect(callUrl(0).pathname).toBe(`/2/users/1001/${list}`);
+      expect(callUrl(0).searchParams.get('max_results')).toBe('1000');
+      expect(db.select().from(xApiCalls).all()).toMatchObject([
+        { endpoint: `GET /2/users/:id/${list}`, itemCount: 2, costMicros: 2_000 },
+      ]);
+    },
+  );
 });
 
 describe('tokens', () => {

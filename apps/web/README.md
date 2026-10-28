@@ -76,7 +76,7 @@ Reply discovery has its own rules. **Settings → Discovery** holds them for the
 They start at what suits most accounts, so a first run needs no setup:
 
 - **Niches and keywords** is empty, which considers every topic. Fill it and a run drops home timeline posts outside the list (saved searches keep their own query), and builds its searches from the words.
-- **Watch list** boosts the accounts you always check, and never suggests the ones you block, nor a post quoting them. Paste a list and it lands without the `@`, in lower case, once each. **Mute author** on a Discover post adds its author here.
+- **Watch list** boosts the accounts you always check, and never suggests the ones you block, nor a post quoting them. Accounts you mute or block on X are never suggested either: a run reads both lists once a day. Paste a list and it lands without the `@`, in lower case, once each. **Mute author** on a Discover post adds its author here.
 - **Thresholds** are the author's size (5,000 followers), the post's age (best under 6 hours, never older than 24: a run reads X only that far back), replies (ideal under 20, crowded from 40, never more than 60), an author cooldown of 3 days, one post per author and 15 per batch. Combinations that can't work — a hard cap below the best age, a crowded penalty at the ideal — are rejected with the reason.
 - **Exclusions** drop engagement bait, giveaways, promotions, politics, crypto, image-only posts and long threads, with a keyword list for each of the first five. A keyword matches whole words in the post and in the post it quotes, ignoring case and styled letters, with or without the spaces and hyphens in a phrase ("pre-sale" finds "presale" and "#PreSale"), plurals included. Engagement bait also catches the "Comment "AI" for the guide" formula, when the word is quoted or in capitals. Long threads are posts that open one with more parts than the limit, 8 by default ("1/12 🧵"). Switch one off to let those posts through again, keywords and all.
 - **Language** is the language a run looks for posts in and the one it writes your replies in; both default to English.
@@ -85,7 +85,7 @@ They start at what suits most accounts, so a first run needs no setup:
 
 A saved change applies from the next run. Niches, the watch list, thresholds and exclusions also re-check the posts a run already found, so a filter you switch off brings its posts back at once. Niches apply to the home timeline only: a saved search already matches your own query.
 
-A post you marked replied or skipped never comes back, whichever run finds it again; neither does an author you muted, until you remove them from the watch list. The list holds handles, so an author who renames shows up again until you mute the new handle. Scoring and batches arrive with the batch runner; until then, Discover lists every post that passes the filters.
+A post you marked replied or skipped never comes back, whichever run finds it again; neither does an author you muted, until you remove them from the watch list. The list holds handles, so an author who renames shows up again until you mute the new handle; muting or blocking them on X follows them across renames. Scoring and batches arrive with the batch runner; until then, Discover lists every post that passes the filters.
 
 ## Environment
 

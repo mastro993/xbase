@@ -59,6 +59,8 @@ export const xAccounts = snakeCase.table('x_accounts', {
   discovery: text({ mode: 'json' }).$type<unknown>(),
   /** When the account's follow list was last read; null until discovery reads it once. */
   followingRefreshedAt: timestamp(),
+  /** When the account's mute and block lists were last read; null until discovery reads them. */
+  hiddenAuthorsRefreshedAt: timestamp(),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
 });
@@ -225,6 +227,22 @@ export const followedAccounts = snakeCase.table(
       .notNull()
       .references(() => xAccounts.id, { onDelete: 'cascade' }),
     /** X's user id. */
+    userId: text().notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.accountId, t.userId] })],
+);
+
+/**
+ * The accounts the user muted or blocked on X, cached per account like the follow list: discovery
+ * never suggests their posts. `x_accounts.hidden_authors_refreshed_at` is the cache's clock.
+ */
+export const hiddenAuthors = snakeCase.table(
+  'hidden_authors',
+  {
+    accountId: text()
+      .notNull()
+      .references(() => xAccounts.id, { onDelete: 'cascade' }),
+    /** X's user id: a muted account that renames stays muted. */
     userId: text().notNull(),
   },
   (t) => [primaryKey({ columns: [t.accountId, t.userId] })],

@@ -58,7 +58,9 @@ export type FilterablePost = {
   text: string;
   quotedText: string | null;
   hasMedia: boolean;
+  authorId: string | null;
   authorHandle: string | null;
+  quotedAuthorId: string | null;
   quotedAuthorHandle: string | null;
 };
 
@@ -210,7 +212,8 @@ export type FilterSettings = Pick<DiscoverySettings, 'niches' | 'watch' | 'exclu
 
 /**
  * The rules for one set of settings, built once: a run applies them to every post it reads.
- * Returns the first reason that applies, or null when the post is kept.
+ * Returns the first reason that applies, or null when the post is kept. `hiddenAuthorIds` are the
+ * X user ids the owner muted or blocked on X: matched by id, they stay hidden when they rename.
  *
  * - A post deep inside a thread is a reply, which a run never keeps; `thread_too_long` is for
  *   the opener of a thread longer than the setting, where a reply lands under all its parts.
@@ -218,6 +221,7 @@ export type FilterSettings = Pick<DiscoverySettings, 'niches' | 'watch' | 'exclu
  */
 export function compileExclusions(
   settings: FilterSettings,
+  hiddenAuthorIds: ReadonlySet<string>,
 ): (post: FilterablePost) => ExclusionReason | null {
   const blocked = new Set(settings.watch.blocked);
   const { exclusions } = settings;
@@ -229,9 +233,13 @@ export function compileExclusions(
   const niches = compileKeywords(settings.niches.keywords);
 
   return (post) => {
-    const isBlocked = (handle: string | null) =>
-      handle !== null && blocked.has(handle.toLowerCase());
-    if (isBlocked(post.authorHandle) || isBlocked(post.quotedAuthorHandle)) {
+    const isBlocked = (id: string | null, handle: string | null) =>
+      (id !== null && hiddenAuthorIds.has(id)) ||
+      (handle !== null && blocked.has(handle.toLowerCase()));
+    if (
+      isBlocked(post.authorId, post.authorHandle) ||
+      isBlocked(post.quotedAuthorId, post.quotedAuthorHandle)
+    ) {
       return 'blocked_author';
     }
 

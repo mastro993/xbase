@@ -14,7 +14,9 @@ const post = (overrides: Partial<FilterablePost> = {}): FilterablePost => ({
   text: 'Shipped the new onboarding today, signups doubled.',
   quotedText: null,
   hasMedia: false,
+  authorId: 'a1',
   authorHandle: 'Alice',
+  quotedAuthorId: null,
   quotedAuthorHandle: null,
   ...overrides,
 });
@@ -31,11 +33,16 @@ const settings = (
   exclusions: { ...DEFAULT_DISCOVERY_SETTINGS.exclusions, ...changes.exclusions },
 });
 
-const reasonOf = (overrides: Partial<FilterablePost>, changes?: Parameters<typeof settings>[0]) =>
-  compileExclusions(settings(changes))(post(overrides));
+const NONE_HIDDEN: ReadonlySet<string> = new Set();
+
+const reasonOf = (
+  overrides: Partial<FilterablePost>,
+  changes?: Parameters<typeof settings>[0],
+  hidden = NONE_HIDDEN,
+) => compileExclusions(settings(changes), hidden)(post(overrides));
 
 describe('the default keyword lists', () => {
-  const defaults = compileExclusions(DEFAULT_DISCOVERY_SETTINGS);
+  const defaults = compileExclusions(DEFAULT_DISCOVERY_SETTINGS, NONE_HIDDEN);
   const reason = (text: string, quotedText: string | null = null) =>
     defaults(post({ text, quotedText }));
 
@@ -220,6 +227,13 @@ describe('compileExclusions', () => {
       reasonOf({ quotedAuthorHandle: 'ALICE', authorHandle: 'bob' }, { blocked: ['alice'] }),
     ).toBe('blocked_author');
     expect(reasonOf({ authorHandle: null }, { blocked: ['alice'] })).toBeNull();
+  });
+
+  it('drops an author muted or blocked on X by id, whatever their handle is now', () => {
+    const hidden = new Set(['a1']);
+    expect(reasonOf({ authorHandle: 'alice_renamed' }, {}, hidden)).toBe('blocked_author');
+    expect(reasonOf({ authorId: 'b2', quotedAuthorId: 'a1' }, {}, hidden)).toBe('blocked_author');
+    expect(reasonOf({ authorId: 'b2' }, {}, hidden)).toBeNull();
   });
 
   it('drops an image with no words, unless the post it quotes has some', () => {

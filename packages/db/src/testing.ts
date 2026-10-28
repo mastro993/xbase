@@ -35,7 +35,7 @@ export function seedAccount(
       accessToken: `access-${id}`,
       refreshToken: `refresh-${id}`,
       tokenExpiresAt: new Date(Date.now() + 2 * 60 * 60 * 1000),
-      scope: 'tweet.read users.read follows.read tweet.write offline.access',
+      scope: 'tweet.read users.read follows.read mute.read block.read tweet.write offline.access',
     })
     .run();
   return id;

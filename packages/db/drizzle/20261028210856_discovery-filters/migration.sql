@@ -1,3 +1,10 @@
+CREATE TABLE `hidden_authors` (
+	`account_id` text NOT NULL,
+	`user_id` text NOT NULL,
+	CONSTRAINT `hidden_authors_pk` PRIMARY KEY(`account_id`, `user_id`),
+	CONSTRAINT `fk_hidden_authors_account_id_x_accounts_id_fk` FOREIGN KEY (`account_id`) REFERENCES `x_accounts`(`id`) ON DELETE CASCADE
+);
+--> statement-breakpoint
 CREATE TABLE `suggested_posts` (
 	`account_id` text NOT NULL,
 	`x_post_id` text NOT NULL,
@@ -11,6 +18,7 @@ CREATE TABLE `suggested_posts` (
 );
 --> statement-breakpoint
 ALTER TABLE `discovery_candidates` ADD `excluded_reason` text;--> statement-breakpoint
+ALTER TABLE `x_accounts` ADD `hidden_authors_refreshed_at` integer;--> statement-breakpoint
 PRAGMA foreign_keys=OFF;--> statement-breakpoint
 CREATE TABLE `__new_discovery_candidates` (
 	`id` text PRIMARY KEY,

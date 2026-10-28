@@ -2,33 +2,23 @@ import { searchQueryForX } from '@xbase/core/discover';
 import { compileExclusions, type ExclusionReason } from '@xbase/core/discovery-filters';
 import {
   BudgetExceededError,
-  NotFoundError,
   RateLimitedError,
   ReconnectRequiredError,
-  ServiceError,
+  type ServiceError,
 } from '@xbase/core/errors';
 import { getDb } from '@xbase/db/client';
-import {
-  discoveryCandidates,
-  followedAccounts,
-  savedSearchRuns,
-  savedSearches,
-  xAccounts,
-} from '@xbase/db/schema';
+import { discoveryCandidates, savedSearchRuns, savedSearches } from '@xbase/db/schema';
 import { and, asc, eq, inArray } from 'drizzle-orm';
-import { getAccountCredentials } from '../accounts';
 import { getDiscoverySettings } from '../discovery-settings';
-import { getFollowing, homeTimeline, searchRecent, type XTimelineStop } from '../x-api-client';
+import { homeTimeline, searchRecent, type XTimelineStop } from '../x-api-client';
 import { type CandidateRow, candidatesFromPage, type DroppedPost } from './candidates';
-import { oldestWanted } from './filter';
+import { cachedHiddenAuthors, oldestWanted } from './filter';
 import { rememberedAmong } from './memory';
+import { followingFor, refreshHiddenAuthors } from './relations';
 
 // One discovery run: the account's home timeline plus every enabled saved search, read through
 // x-api-client.ts so every paid page passes the budget, the 429 wait and the post cache. The run
 // filters and stores candidates and stamps each search it read; nothing schedules it yet (#16 will).
-
-/** The follow list changes slowly, so a run reads it at most once a day. */
-export const FOLLOWING_REFRESH_MS = 24 * 60 * 60 * 1000;
 
 /** Why a run stopped before reading every source, and the message the page shows. */
 type DiscoveryStop = {
@@ -62,65 +52,6 @@ type KeptPost = { xPostId: string; savedSearchId: string | null };
 
 /** What one page left in the lists, what the filters keep out, and what was already decided. */
 type StoredPage = { kept: KeptPost[]; excluded: ExcludedPost[]; remembered: string[] };
-
-const followsScope = (scope: string): boolean =>
-  scope
-    .split(/\s+/)
-    .map((value) => value.trim())
-    .includes('follows.read');
-
-/** The ids the account follows now, in the cache, or null when an old grant can't read them. */
-function cachedFollowing(accountId: string): Set<string> {
-  return new Set(
-    getDb()
-      .select({ userId: followedAccounts.userId })
-      .from(followedAccounts)
-      .where(eq(followedAccounts.accountId, accountId))
-      .all()
-      .map(({ userId }) => userId),
-  );
-}
-
-/**
- * The accounts the user follows, as a set for the candidates' following flag. A linked account
- * whose grant predates `follows.read` gets null, and the run keeps going: the flag is a priority
- * hint, not a requirement. The list is cached for a day; a failed refresh keeps the old one.
- */
-async function followingFor(accountId: string, now: Date): Promise<Set<string> | null> {
-  const account = getAccountCredentials(accountId);
-  if (!account) throw new NotFoundError('Account not found.');
-  if (!followsScope(account.scope)) return null;
-
-  const fresh =
-    account.followingRefreshedAt !== null &&
-    now.getTime() - account.followingRefreshedAt.getTime() < FOLLOWING_REFRESH_MS;
-  if (fresh) return cachedFollowing(accountId);
-
-  let follows: { id: string }[];
-  try {
-    follows = await getFollowing(accountId, { feature: 'discovery' });
-  } catch (error) {
-    // X being over budget or throttled leaves the flag unknown, not the run dead: the posts read
-    // from another source still matter. The old cache stays as it was.
-    if (error instanceof ServiceError) return null;
-    throw error;
-  }
-
-  const db = getDb();
-  db.transaction((tx) => {
-    tx.delete(followedAccounts).where(eq(followedAccounts.accountId, accountId)).run();
-    if (follows.length > 0) {
-      tx.insert(followedAccounts)
-        .values(follows.map(({ id }) => ({ accountId, userId: id })))
-        .run();
-    }
-    tx.update(xAccounts)
-      .set({ followingRefreshedAt: now })
-      .where(eq(xAccounts.id, accountId))
-      .run();
-  });
-  return new Set(follows.map(({ id }) => id));
-}
 
 /** The saved search that already holds each of these posts, when one does. */
 function searchOwners(accountId: string, xPostIds: string[]): Map<string, string> {
@@ -157,7 +88,10 @@ function storeCandidates(accountId: string, rows: CandidateRow[]): StoredPage {
   const page: StoredPage = { kept: [], excluded: [], remembered: [] };
   if (rows.length === 0) return page;
   const ids = rows.map(({ xPostId }) => xPostId);
-  const exclusionOf = compileExclusions(getDiscoverySettings(accountId));
+  const exclusionOf = compileExclusions(
+    getDiscoverySettings(accountId),
+    cachedHiddenAuthors(accountId),
+  );
   const remembered = rememberedAmong(accountId, ids);
   const owners = searchOwners(accountId, ids);
   getDb().transaction((tx) => {
@@ -242,6 +176,7 @@ export async function runDiscovery(accountId: string): Promise<DiscoveryRun> {
   // The hard age cap is also how far back the run reads: X then never bills an older post.
   const since = oldestWanted(getDiscoverySettings(accountId), startedAt);
   const following = await followingFor(accountId, startedAt);
+  await refreshHiddenAuthors(accountId, startedAt);
   const dropped: DroppedPost[] = [];
   // By post: home and a search can return the same one.
   const excluded = new Map<string, ExclusionReason>();

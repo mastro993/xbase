@@ -15,10 +15,19 @@ const AUTHORIZE_URL = 'https://x.com/i/oauth2/authorize';
 const TOKEN_URL = 'https://api.x.com/2/oauth2/token';
 const ME_URL = 'https://api.x.com/2/users/me?user.fields=profile_image_url';
 /**
- * Reading the profile and the follow list (discovery marks posts by followed accounts), plus
- * posting for the scheduler; offline.access brings a refresh token.
+ * Reading the profile and the follow, mute and block lists (discovery marks posts by followed
+ * accounts and never suggests muted or blocked ones), plus posting for the scheduler;
+ * offline.access brings a refresh token.
  */
-const SCOPES = ['tweet.read', 'users.read', 'follows.read', 'tweet.write', 'offline.access'];
+const SCOPES = [
+  'tweet.read',
+  'users.read',
+  'follows.read',
+  'mute.read',
+  'block.read',
+  'tweet.write',
+  'offline.access',
+];
 const TIMEOUT_MS = 15_000;
 
 /** The callback X redirects to; register it in the X app as well. */

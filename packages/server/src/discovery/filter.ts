@@ -1,7 +1,7 @@
 import type { DiscoverySettings } from '@xbase/core/discovery';
 import { compileExclusions, type ExclusionReason } from '@xbase/core/discovery-filters';
 import { getDb } from '@xbase/db/client';
-import { discoveryCandidates } from '@xbase/db/schema';
+import { discoveryCandidates, hiddenAuthors } from '@xbase/db/schema';
 import { and, eq, gte } from 'drizzle-orm';
 
 // The filter stage: which stored candidates the lists leave out, and why. A run applies the same
@@ -15,6 +15,21 @@ export const oldestWanted = (settings: DiscoverySettings, now: Date): Date =>
   new Date(now.getTime() - settings.thresholds.hardMaxAgeHours * HOUR_MS);
 
 /**
+ * The X user ids the account muted or blocked, as the last run cached them (relations.ts): the
+ * filters read the cache, never X.
+ */
+export function cachedHiddenAuthors(accountId: string): Set<string> {
+  return new Set(
+    getDb()
+      .select({ userId: hiddenAuthors.userId })
+      .from(hiddenAuthors)
+      .where(eq(hiddenAuthors.accountId, accountId))
+      .all()
+      .map(({ userId }) => userId),
+  );
+}
+
+/**
  * Recomputes the reason of every candidate young enough to be listed; older ones are hidden by
  * age whatever their reason. Writes only the rows whose verdict changed. Runs inside the caller's
  * transaction, with the settings just saved.
@@ -25,7 +40,7 @@ export function refilterCandidates(
   now: Date,
 ): void {
   const db = getDb();
-  const exclusionOf = compileExclusions(settings);
+  const exclusionOf = compileExclusions(settings, cachedHiddenAuthors(accountId));
   const rows = db
     .select()
     .from(discoveryCandidates)

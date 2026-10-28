@@ -1,12 +1,12 @@
 import { getDb } from '@xbase/db/client';
-import { followedAccounts, xAccounts } from '@xbase/db/schema';
+import { followedAccounts, hiddenAuthors, xAccounts } from '@xbase/db/schema';
 import { seedAccount } from '@xbase/db/testing';
 import { eq } from 'drizzle-orm';
 import type { Mock } from 'vitest';
 import { saveAccountTokens } from '../accounts';
 
 // A stubbed X for discovery runs: pages shaped like X's answers, a fetch that serves them by
-// path, and a linked account whose follow list is already cached. Tests mock `../env` themselves.
+// path, and a linked account whose own lists are already cached. Tests mock `../env` themselves.
 
 export const NOW = new Date('2026-10-27T15:00:00.000Z');
 export const DAY_MS = 24 * 60 * 60 * 1000;
@@ -14,6 +14,8 @@ export const DAY_MS = 24 * 60 * 60 * 1000;
 export const HOME = '/2/users/1001/timelines/reverse_chronological';
 export const SEARCH = '/2/tweets/search/recent';
 export const FOLLOWING = '/2/users/1001/following';
+export const MUTING = '/2/users/1001/muting';
+export const BLOCKING = '/2/users/1001/blocking';
 
 export const urlOf = (input: Parameters<typeof fetch>[0]): URL => {
   if (input instanceof URL) return input;
@@ -83,7 +85,9 @@ export function page(tweets: Tweet[], quoted: Tweet[] = []) {
 }
 
 /** A linked account whose tokens are stored as x-api-http expects them. */
-export function seed(scope = 'tweet.read users.read follows.read tweet.write offline.access') {
+export function seed(
+  scope = 'tweet.read users.read follows.read mute.read block.read tweet.write offline.access',
+) {
   seedAccount({ id: '1001', username: 'owner' });
   saveAccountTokens('1001', {
     accessToken: 'access-1001',
@@ -94,16 +98,24 @@ export function seed(scope = 'tweet.read users.read follows.read tweet.write off
   return '1001';
 }
 
-/** The follow list as a fresh cache: a run then spends nothing to learn who the user follows. */
-export function cacheFollowing(accountId: string, userIds: string[]) {
+/**
+ * The follow, mute and block lists as fresh caches: a run then spends nothing to learn who the
+ * user follows or hides.
+ */
+export function cacheLists(accountId: string, following: string[], hidden: string[] = []) {
   getDb().transaction((tx) => {
-    if (userIds.length > 0) {
+    if (following.length > 0) {
       tx.insert(followedAccounts)
-        .values(userIds.map((userId) => ({ accountId, userId })))
+        .values(following.map((userId) => ({ accountId, userId })))
+        .run();
+    }
+    if (hidden.length > 0) {
+      tx.insert(hiddenAuthors)
+        .values(hidden.map((userId) => ({ accountId, userId })))
         .run();
     }
     tx.update(xAccounts)
-      .set({ followingRefreshedAt: NOW })
+      .set({ followingRefreshedAt: NOW, hiddenAuthorsRefreshedAt: NOW })
       .where(eq(xAccounts.id, accountId))
       .run();
   });

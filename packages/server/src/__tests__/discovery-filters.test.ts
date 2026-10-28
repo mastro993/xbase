@@ -1,6 +1,6 @@
 import { DEFAULT_DISCOVERY_SETTINGS } from '@xbase/core/discovery';
 import { NotFoundError, ValidationError } from '@xbase/core/errors';
-import { discoveryCandidates, suggestedPosts } from '@xbase/db/schema';
+import { discoveryCandidates, suggestedPosts, xAccounts } from '@xbase/db/schema';
 import { createTestDb, seedAccount } from '@xbase/db/testing';
 import { eq } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -8,11 +8,14 @@ import { createSavedSearch, listCandidates } from '../discover';
 import { getDiscoverySettings, saveDiscoverySettings } from '../discovery-settings';
 import { runDiscovery } from '../discovery/fetch';
 import { markCandidateReplied, muteCandidateAuthor, skipCandidate } from '../discovery/memory';
+import { LIST_REFRESH_MS } from '../discovery/relations';
 import type { Env } from '../env';
 import {
-  cacheFollowing,
+  BLOCKING,
+  cacheLists,
   DAY_MS,
   HOME,
+  MUTING,
   NOW,
   page,
   SEARCH,
@@ -80,7 +83,7 @@ beforeEach(() => {
   fetchMock.mockReset();
   vi.stubGlobal('fetch', fetchMock);
   accountId = seed();
-  cacheFollowing(accountId, []);
+  cacheLists(accountId, []);
   searchId = createSavedSearch({ name: 'makers', query: 'saas' }).id;
 });
 
@@ -165,6 +168,90 @@ describe('a run’s filters', () => {
       { text: 'First version' },
     ]);
     expect(listed(searchId)).toEqual([]);
+  });
+});
+
+describe('authors muted or blocked on X', () => {
+  const staleLists = () =>
+    db
+      .update(xAccounts)
+      .set({ hiddenAuthorsRefreshedAt: new Date(NOW.getTime() - LIST_REFRESH_MS - 1) })
+      .where(eq(xAccounts.id, accountId))
+      .run();
+
+  it('reads both lists once a day and hides those authors, quoted or quoting', async () => {
+    staleLists();
+    const calls = serve({
+      [MUTING]: { data: [{ id: 'm1', username: 'muted' }], meta: {} },
+      [BLOCKING]: { data: [{ id: 'b1', username: 'blocked' }], meta: {} },
+      [HOME]: page([]),
+      [SEARCH]: page(
+        [
+          { id: 'p-muted', author_id: 'm1', username: 'renamed_since' },
+          {
+            id: 'p-quotes',
+            author_id: 'a2',
+            text: 'So true',
+            references: [{ type: 'quoted', id: 'q1' }],
+          },
+          { id: 'p-keep', author_id: 'a3' },
+        ],
+        [{ id: 'q1', author_id: 'b1', text: 'A blocked take' }],
+      ),
+    });
+
+    const result = await runDiscovery(accountId);
+    expect(result.excluded).toEqual([
+      { xPostId: 'p-muted', reason: 'blocked_author' },
+      { xPostId: 'p-quotes', reason: 'blocked_author' },
+    ]);
+    expect(listed(searchId)).toEqual(['p-keep']);
+    expect(
+      calls.filter(({ pathname }) => pathname === MUTING || pathname === BLOCKING),
+    ).toHaveLength(2);
+
+    // Within the day the cache answers, and a settings save re-checks with it too.
+    calls.length = 0;
+    await runDiscovery(accountId);
+    expect(calls.filter(({ pathname }) => pathname === MUTING || pathname === BLOCKING)).toEqual(
+      [],
+    );
+    exclusions({});
+    expect(listed(searchId)).toEqual(['p-keep']);
+  });
+
+  it('keeps the last lists when X refuses a read, and the run goes on', async () => {
+    cacheLists(accountId, [], ['m1']);
+    staleLists();
+    fetchMock.mockImplementation(async (input) => {
+      const { pathname } = new URL(input instanceof Request ? input.url : String(input));
+      if (pathname === MUTING) {
+        return new Response(JSON.stringify({ title: 'Too Many Requests' }), {
+          status: 429,
+          headers: { 'content-type': 'application/json', 'x-rate-limit-reset': '9999999999' },
+        });
+      }
+      if (pathname === HOME) return new Response(JSON.stringify(page([])), { status: 200 });
+      return new Response(JSON.stringify(page([{ id: 'p-muted', author_id: 'm1' }])), {
+        status: 200,
+      });
+    });
+
+    const result = await runDiscovery(accountId);
+    expect(result.excluded).toEqual([{ xPostId: 'p-muted', reason: 'blocked_author' }]);
+  });
+
+  it('asks X nothing when the grant lacks the mute and block scopes', async () => {
+    db.update(xAccounts)
+      .set({ scope: 'tweet.read users.read follows.read tweet.write offline.access' })
+      .where(eq(xAccounts.id, accountId))
+      .run();
+    staleLists();
+    const calls = serve({ [HOME]: page([]), [SEARCH]: page([{ id: 'p1', author_id: 'm1' }]) });
+
+    await runDiscovery(accountId);
+    expect(calls.map(({ pathname }) => pathname)).toEqual([HOME, SEARCH]);
+    expect(listed(searchId)).toEqual(['p1']);
   });
 });
 

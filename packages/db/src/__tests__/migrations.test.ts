@@ -15,6 +15,7 @@ const TABLES = [
   'api_keys',
   'discovery_candidates',
   'followed_accounts',
+  'hidden_authors',
   'oauth_clients',
   'oauth_codes',
   'oauth_grants',
@@ -155,7 +156,10 @@ describe('migrations', () => {
     }
     const path = join(dir, 'xbase.db');
     const old = openDb(path, before);
-    insertAccount(old);
+    // Raw SQL: today's schema has columns that database doesn't have yet.
+    old.run(
+      sql`insert into x_accounts (id, username, name, access_token, token_expires_at, scope, created_at, updated_at) values (${ACCOUNT_ID}, 'user1001', 'User 1001', 'access', 1, 'tweet.read', 1, 1)`,
+    );
     old.run(
       sql`insert into saved_searches (id, name, query, created_at, updated_at) values ('s1', 'indie', 'saas', 1, 1)`,
     );
