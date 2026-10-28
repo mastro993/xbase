@@ -34,10 +34,21 @@ import { Route as AuthedDraftsDraftIdRouteImport } from './routes/_authed/drafts
 import { Route as AuthedDraftsNewRouteImport } from './routes/_authed/drafts.new'
 import { Route as AuthedQueueIndexRouteImport } from './routes/_authed/queue.index'
 import { Route as AuthedQueuePostIdRouteImport } from './routes/_authed/queue.$postId'
+import { Route as AuthedSettingsIndexRouteImport } from './routes/_authed/settings.index'
+import { Route as AuthedSettingsSessionsRouteImport } from './routes/_authed/settings.sessions'
 import { Route as ApiV1DraftsRouteImport } from './routes/api/v1/drafts'
 import { Route as ApiV1MeRouteImport } from './routes/api/v1/me'
 import { Route as AuthXCallbackRouteImport } from './routes/auth/x/callback'
 import { Route as AuthXStartRouteImport } from './routes/auth/x/start'
+import { Route as AuthedSettingsAiDecisionRouteImport } from './routes/_authed/settings.ai.decision'
+import { Route as AuthedSettingsAiProviderRouteImport } from './routes/_authed/settings.ai.provider'
+import { Route as AuthedSettingsAiVoiceRouteImport } from './routes/_authed/settings.ai.voice'
+import { Route as AuthedSettingsDiscoveryFiltersRouteImport } from './routes/_authed/settings.discovery.filters'
+import { Route as AuthedSettingsDiscoverySourcesRouteImport } from './routes/_authed/settings.discovery.sources'
+import { Route as AuthedSettingsDiscoveryTopicsRouteImport } from './routes/_authed/settings.discovery.topics'
+import { Route as AuthedSettingsIntegrationsApiKeysRouteImport } from './routes/_authed/settings.integrations.api-keys'
+import { Route as AuthedSettingsIntegrationsMcpRouteImport } from './routes/_authed/settings.integrations.mcp'
+import { Route as AuthedSettingsIntegrationsXApiRouteImport } from './routes/_authed/settings.integrations.x-api'
 import { Route as ApiV1DraftsDraftIdRouteImport } from './routes/api/v1/drafts.$draftId'
 
 const AuthedRoute = AuthedRouteImport.update({
@@ -166,6 +177,16 @@ const AuthedQueuePostIdRoute = AuthedQueuePostIdRouteImport.update({
   path: '/$postId',
   getParentRoute: () => AuthedQueueRoute,
 } as any)
+const AuthedSettingsIndexRoute = AuthedSettingsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthedSettingsRoute,
+} as any)
+const AuthedSettingsSessionsRoute = AuthedSettingsSessionsRouteImport.update({
+  id: '/sessions',
+  path: '/sessions',
+  getParentRoute: () => AuthedSettingsRoute,
+} as any)
 const ApiV1DraftsRoute = ApiV1DraftsRouteImport.update({
   id: '/api/v1/drafts',
   path: '/api/v1/drafts',
@@ -186,6 +207,59 @@ const AuthXStartRoute = AuthXStartRouteImport.update({
   path: '/auth/x/start',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthedSettingsAiDecisionRoute =
+  AuthedSettingsAiDecisionRouteImport.update({
+    id: '/ai/decision',
+    path: '/ai/decision',
+    getParentRoute: () => AuthedSettingsRoute,
+  } as any)
+const AuthedSettingsAiProviderRoute =
+  AuthedSettingsAiProviderRouteImport.update({
+    id: '/ai/provider',
+    path: '/ai/provider',
+    getParentRoute: () => AuthedSettingsRoute,
+  } as any)
+const AuthedSettingsAiVoiceRoute = AuthedSettingsAiVoiceRouteImport.update({
+  id: '/ai/voice',
+  path: '/ai/voice',
+  getParentRoute: () => AuthedSettingsRoute,
+} as any)
+const AuthedSettingsDiscoveryFiltersRoute =
+  AuthedSettingsDiscoveryFiltersRouteImport.update({
+    id: '/discovery/filters',
+    path: '/discovery/filters',
+    getParentRoute: () => AuthedSettingsRoute,
+  } as any)
+const AuthedSettingsDiscoverySourcesRoute =
+  AuthedSettingsDiscoverySourcesRouteImport.update({
+    id: '/discovery/sources',
+    path: '/discovery/sources',
+    getParentRoute: () => AuthedSettingsRoute,
+  } as any)
+const AuthedSettingsDiscoveryTopicsRoute =
+  AuthedSettingsDiscoveryTopicsRouteImport.update({
+    id: '/discovery/topics',
+    path: '/discovery/topics',
+    getParentRoute: () => AuthedSettingsRoute,
+  } as any)
+const AuthedSettingsIntegrationsApiKeysRoute =
+  AuthedSettingsIntegrationsApiKeysRouteImport.update({
+    id: '/integrations/api-keys',
+    path: '/integrations/api-keys',
+    getParentRoute: () => AuthedSettingsRoute,
+  } as any)
+const AuthedSettingsIntegrationsMcpRoute =
+  AuthedSettingsIntegrationsMcpRouteImport.update({
+    id: '/integrations/mcp',
+    path: '/integrations/mcp',
+    getParentRoute: () => AuthedSettingsRoute,
+  } as any)
+const AuthedSettingsIntegrationsXApiRoute =
+  AuthedSettingsIntegrationsXApiRouteImport.update({
+    id: '/integrations/x-api',
+    path: '/integrations/x-api',
+    getParentRoute: () => AuthedSettingsRoute,
+  } as any)
 const ApiV1DraftsDraftIdRoute = ApiV1DraftsDraftIdRouteImport.update({
   id: '/$draftId',
   path: '/$draftId',
@@ -201,7 +275,7 @@ export interface FileRoutesByFullPath {
   '/discover': typeof AuthedDiscoverRouteWithChildren
   '/drafts': typeof AuthedDraftsRouteWithChildren
   '/queue': typeof AuthedQueueRouteWithChildren
-  '/settings': typeof AuthedSettingsRoute
+  '/settings': typeof AuthedSettingsRouteWithChildren
   '/stats': typeof AuthedStatsRoute
   '/api/$': typeof ApiSplatRoute
   '/api/health': typeof ApiHealthRoute
@@ -214,6 +288,7 @@ export interface FileRoutesByFullPath {
   '/drafts/$draftId': typeof AuthedDraftsDraftIdRoute
   '/drafts/new': typeof AuthedDraftsNewRoute
   '/queue/$postId': typeof AuthedQueuePostIdRoute
+  '/settings/sessions': typeof AuthedSettingsSessionsRoute
   '/api/v1/drafts': typeof ApiV1DraftsRouteWithChildren
   '/api/v1/me': typeof ApiV1MeRoute
   '/auth/x/callback': typeof AuthXCallbackRoute
@@ -221,6 +296,16 @@ export interface FileRoutesByFullPath {
   '/discover/': typeof AuthedDiscoverIndexRoute
   '/drafts/': typeof AuthedDraftsIndexRoute
   '/queue/': typeof AuthedQueueIndexRoute
+  '/settings/': typeof AuthedSettingsIndexRoute
+  '/settings/ai/decision': typeof AuthedSettingsAiDecisionRoute
+  '/settings/ai/provider': typeof AuthedSettingsAiProviderRoute
+  '/settings/ai/voice': typeof AuthedSettingsAiVoiceRoute
+  '/settings/discovery/filters': typeof AuthedSettingsDiscoveryFiltersRoute
+  '/settings/discovery/sources': typeof AuthedSettingsDiscoverySourcesRoute
+  '/settings/discovery/topics': typeof AuthedSettingsDiscoveryTopicsRoute
+  '/settings/integrations/api-keys': typeof AuthedSettingsIntegrationsApiKeysRoute
+  '/settings/integrations/mcp': typeof AuthedSettingsIntegrationsMcpRoute
+  '/settings/integrations/x-api': typeof AuthedSettingsIntegrationsXApiRoute
   '/api/v1/drafts/$draftId': typeof ApiV1DraftsDraftIdRoute
 }
 export interface FileRoutesByTo {
@@ -228,7 +313,6 @@ export interface FileRoutesByTo {
   '/mcp': typeof McpRoute
   '/.well-known/$': typeof DotwellKnownSplatRoute
   '/.well-known/oauth-authorization-server': typeof DotwellKnownOauthAuthorizationServerRoute
-  '/settings': typeof AuthedSettingsRoute
   '/stats': typeof AuthedStatsRoute
   '/api/$': typeof ApiSplatRoute
   '/api/health': typeof ApiHealthRoute
@@ -242,6 +326,7 @@ export interface FileRoutesByTo {
   '/drafts/$draftId': typeof AuthedDraftsDraftIdRoute
   '/drafts/new': typeof AuthedDraftsNewRoute
   '/queue/$postId': typeof AuthedQueuePostIdRoute
+  '/settings/sessions': typeof AuthedSettingsSessionsRoute
   '/api/v1/drafts': typeof ApiV1DraftsRouteWithChildren
   '/api/v1/me': typeof ApiV1MeRoute
   '/auth/x/callback': typeof AuthXCallbackRoute
@@ -249,6 +334,16 @@ export interface FileRoutesByTo {
   '/discover': typeof AuthedDiscoverIndexRoute
   '/drafts': typeof AuthedDraftsIndexRoute
   '/queue': typeof AuthedQueueIndexRoute
+  '/settings': typeof AuthedSettingsIndexRoute
+  '/settings/ai/decision': typeof AuthedSettingsAiDecisionRoute
+  '/settings/ai/provider': typeof AuthedSettingsAiProviderRoute
+  '/settings/ai/voice': typeof AuthedSettingsAiVoiceRoute
+  '/settings/discovery/filters': typeof AuthedSettingsDiscoveryFiltersRoute
+  '/settings/discovery/sources': typeof AuthedSettingsDiscoverySourcesRoute
+  '/settings/discovery/topics': typeof AuthedSettingsDiscoveryTopicsRoute
+  '/settings/integrations/api-keys': typeof AuthedSettingsIntegrationsApiKeysRoute
+  '/settings/integrations/mcp': typeof AuthedSettingsIntegrationsMcpRoute
+  '/settings/integrations/x-api': typeof AuthedSettingsIntegrationsXApiRoute
   '/api/v1/drafts/$draftId': typeof ApiV1DraftsDraftIdRoute
 }
 export interface FileRoutesById {
@@ -261,7 +356,7 @@ export interface FileRoutesById {
   '/_authed/discover': typeof AuthedDiscoverRouteWithChildren
   '/_authed/drafts': typeof AuthedDraftsRouteWithChildren
   '/_authed/queue': typeof AuthedQueueRouteWithChildren
-  '/_authed/settings': typeof AuthedSettingsRoute
+  '/_authed/settings': typeof AuthedSettingsRouteWithChildren
   '/_authed/stats': typeof AuthedStatsRoute
   '/api/$': typeof ApiSplatRoute
   '/api/health': typeof ApiHealthRoute
@@ -275,6 +370,7 @@ export interface FileRoutesById {
   '/_authed/drafts/$draftId': typeof AuthedDraftsDraftIdRoute
   '/_authed/drafts/new': typeof AuthedDraftsNewRoute
   '/_authed/queue/$postId': typeof AuthedQueuePostIdRoute
+  '/_authed/settings/sessions': typeof AuthedSettingsSessionsRoute
   '/api/v1/drafts': typeof ApiV1DraftsRouteWithChildren
   '/api/v1/me': typeof ApiV1MeRoute
   '/auth/x/callback': typeof AuthXCallbackRoute
@@ -282,6 +378,16 @@ export interface FileRoutesById {
   '/_authed/discover/': typeof AuthedDiscoverIndexRoute
   '/_authed/drafts/': typeof AuthedDraftsIndexRoute
   '/_authed/queue/': typeof AuthedQueueIndexRoute
+  '/_authed/settings/': typeof AuthedSettingsIndexRoute
+  '/_authed/settings/ai/decision': typeof AuthedSettingsAiDecisionRoute
+  '/_authed/settings/ai/provider': typeof AuthedSettingsAiProviderRoute
+  '/_authed/settings/ai/voice': typeof AuthedSettingsAiVoiceRoute
+  '/_authed/settings/discovery/filters': typeof AuthedSettingsDiscoveryFiltersRoute
+  '/_authed/settings/discovery/sources': typeof AuthedSettingsDiscoverySourcesRoute
+  '/_authed/settings/discovery/topics': typeof AuthedSettingsDiscoveryTopicsRoute
+  '/_authed/settings/integrations/api-keys': typeof AuthedSettingsIntegrationsApiKeysRoute
+  '/_authed/settings/integrations/mcp': typeof AuthedSettingsIntegrationsMcpRoute
+  '/_authed/settings/integrations/x-api': typeof AuthedSettingsIntegrationsXApiRoute
   '/api/v1/drafts/$draftId': typeof ApiV1DraftsDraftIdRoute
 }
 export interface FileRouteTypes {
@@ -308,6 +414,7 @@ export interface FileRouteTypes {
     | '/drafts/$draftId'
     | '/drafts/new'
     | '/queue/$postId'
+    | '/settings/sessions'
     | '/api/v1/drafts'
     | '/api/v1/me'
     | '/auth/x/callback'
@@ -315,6 +422,16 @@ export interface FileRouteTypes {
     | '/discover/'
     | '/drafts/'
     | '/queue/'
+    | '/settings/'
+    | '/settings/ai/decision'
+    | '/settings/ai/provider'
+    | '/settings/ai/voice'
+    | '/settings/discovery/filters'
+    | '/settings/discovery/sources'
+    | '/settings/discovery/topics'
+    | '/settings/integrations/api-keys'
+    | '/settings/integrations/mcp'
+    | '/settings/integrations/x-api'
     | '/api/v1/drafts/$draftId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -322,7 +439,6 @@ export interface FileRouteTypes {
     | '/mcp'
     | '/.well-known/$'
     | '/.well-known/oauth-authorization-server'
-    | '/settings'
     | '/stats'
     | '/api/$'
     | '/api/health'
@@ -336,6 +452,7 @@ export interface FileRouteTypes {
     | '/drafts/$draftId'
     | '/drafts/new'
     | '/queue/$postId'
+    | '/settings/sessions'
     | '/api/v1/drafts'
     | '/api/v1/me'
     | '/auth/x/callback'
@@ -343,6 +460,16 @@ export interface FileRouteTypes {
     | '/discover'
     | '/drafts'
     | '/queue'
+    | '/settings'
+    | '/settings/ai/decision'
+    | '/settings/ai/provider'
+    | '/settings/ai/voice'
+    | '/settings/discovery/filters'
+    | '/settings/discovery/sources'
+    | '/settings/discovery/topics'
+    | '/settings/integrations/api-keys'
+    | '/settings/integrations/mcp'
+    | '/settings/integrations/x-api'
     | '/api/v1/drafts/$draftId'
   id:
     | '__root__'
@@ -368,6 +495,7 @@ export interface FileRouteTypes {
     | '/_authed/drafts/$draftId'
     | '/_authed/drafts/new'
     | '/_authed/queue/$postId'
+    | '/_authed/settings/sessions'
     | '/api/v1/drafts'
     | '/api/v1/me'
     | '/auth/x/callback'
@@ -375,6 +503,16 @@ export interface FileRouteTypes {
     | '/_authed/discover/'
     | '/_authed/drafts/'
     | '/_authed/queue/'
+    | '/_authed/settings/'
+    | '/_authed/settings/ai/decision'
+    | '/_authed/settings/ai/provider'
+    | '/_authed/settings/ai/voice'
+    | '/_authed/settings/discovery/filters'
+    | '/_authed/settings/discovery/sources'
+    | '/_authed/settings/discovery/topics'
+    | '/_authed/settings/integrations/api-keys'
+    | '/_authed/settings/integrations/mcp'
+    | '/_authed/settings/integrations/x-api'
     | '/api/v1/drafts/$draftId'
   fileRoutesById: FileRoutesById
 }
@@ -574,6 +712,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedQueuePostIdRouteImport
       parentRoute: typeof AuthedQueueRoute
     }
+    '/_authed/settings/': {
+      id: '/_authed/settings/'
+      path: '/'
+      fullPath: '/settings/'
+      preLoaderRoute: typeof AuthedSettingsIndexRouteImport
+      parentRoute: typeof AuthedSettingsRoute
+    }
+    '/_authed/settings/sessions': {
+      id: '/_authed/settings/sessions'
+      path: '/sessions'
+      fullPath: '/settings/sessions'
+      preLoaderRoute: typeof AuthedSettingsSessionsRouteImport
+      parentRoute: typeof AuthedSettingsRoute
+    }
     '/api/v1/drafts': {
       id: '/api/v1/drafts'
       path: '/api/v1/drafts'
@@ -601,6 +753,69 @@ declare module '@tanstack/react-router' {
       fullPath: '/auth/x/start'
       preLoaderRoute: typeof AuthXStartRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authed/settings/ai/decision': {
+      id: '/_authed/settings/ai/decision'
+      path: '/ai/decision'
+      fullPath: '/settings/ai/decision'
+      preLoaderRoute: typeof AuthedSettingsAiDecisionRouteImport
+      parentRoute: typeof AuthedSettingsRoute
+    }
+    '/_authed/settings/ai/provider': {
+      id: '/_authed/settings/ai/provider'
+      path: '/ai/provider'
+      fullPath: '/settings/ai/provider'
+      preLoaderRoute: typeof AuthedSettingsAiProviderRouteImport
+      parentRoute: typeof AuthedSettingsRoute
+    }
+    '/_authed/settings/ai/voice': {
+      id: '/_authed/settings/ai/voice'
+      path: '/ai/voice'
+      fullPath: '/settings/ai/voice'
+      preLoaderRoute: typeof AuthedSettingsAiVoiceRouteImport
+      parentRoute: typeof AuthedSettingsRoute
+    }
+    '/_authed/settings/discovery/filters': {
+      id: '/_authed/settings/discovery/filters'
+      path: '/discovery/filters'
+      fullPath: '/settings/discovery/filters'
+      preLoaderRoute: typeof AuthedSettingsDiscoveryFiltersRouteImport
+      parentRoute: typeof AuthedSettingsRoute
+    }
+    '/_authed/settings/discovery/sources': {
+      id: '/_authed/settings/discovery/sources'
+      path: '/discovery/sources'
+      fullPath: '/settings/discovery/sources'
+      preLoaderRoute: typeof AuthedSettingsDiscoverySourcesRouteImport
+      parentRoute: typeof AuthedSettingsRoute
+    }
+    '/_authed/settings/discovery/topics': {
+      id: '/_authed/settings/discovery/topics'
+      path: '/discovery/topics'
+      fullPath: '/settings/discovery/topics'
+      preLoaderRoute: typeof AuthedSettingsDiscoveryTopicsRouteImport
+      parentRoute: typeof AuthedSettingsRoute
+    }
+    '/_authed/settings/integrations/api-keys': {
+      id: '/_authed/settings/integrations/api-keys'
+      path: '/integrations/api-keys'
+      fullPath: '/settings/integrations/api-keys'
+      preLoaderRoute: typeof AuthedSettingsIntegrationsApiKeysRouteImport
+      parentRoute: typeof AuthedSettingsRoute
+    }
+    '/_authed/settings/integrations/mcp': {
+      id: '/_authed/settings/integrations/mcp'
+      path: '/integrations/mcp'
+      fullPath: '/settings/integrations/mcp'
+      preLoaderRoute: typeof AuthedSettingsIntegrationsMcpRouteImport
+      parentRoute: typeof AuthedSettingsRoute
+    }
+    '/_authed/settings/integrations/x-api': {
+      id: '/_authed/settings/integrations/x-api'
+      path: '/integrations/x-api'
+      fullPath: '/settings/integrations/x-api'
+      preLoaderRoute: typeof AuthedSettingsIntegrationsXApiRouteImport
+      parentRoute: typeof AuthedSettingsRoute
     }
     '/api/v1/drafts/$draftId': {
       id: '/api/v1/drafts/$draftId'
@@ -656,11 +871,44 @@ const AuthedQueueRouteWithChildren = AuthedQueueRoute._addFileChildren(
   AuthedQueueRouteChildren,
 )
 
+interface AuthedSettingsRouteChildren {
+  AuthedSettingsSessionsRoute: typeof AuthedSettingsSessionsRoute
+  AuthedSettingsIndexRoute: typeof AuthedSettingsIndexRoute
+  AuthedSettingsAiDecisionRoute: typeof AuthedSettingsAiDecisionRoute
+  AuthedSettingsAiProviderRoute: typeof AuthedSettingsAiProviderRoute
+  AuthedSettingsAiVoiceRoute: typeof AuthedSettingsAiVoiceRoute
+  AuthedSettingsDiscoveryFiltersRoute: typeof AuthedSettingsDiscoveryFiltersRoute
+  AuthedSettingsDiscoverySourcesRoute: typeof AuthedSettingsDiscoverySourcesRoute
+  AuthedSettingsDiscoveryTopicsRoute: typeof AuthedSettingsDiscoveryTopicsRoute
+  AuthedSettingsIntegrationsApiKeysRoute: typeof AuthedSettingsIntegrationsApiKeysRoute
+  AuthedSettingsIntegrationsMcpRoute: typeof AuthedSettingsIntegrationsMcpRoute
+  AuthedSettingsIntegrationsXApiRoute: typeof AuthedSettingsIntegrationsXApiRoute
+}
+
+const AuthedSettingsRouteChildren: AuthedSettingsRouteChildren = {
+  AuthedSettingsSessionsRoute: AuthedSettingsSessionsRoute,
+  AuthedSettingsIndexRoute: AuthedSettingsIndexRoute,
+  AuthedSettingsAiDecisionRoute: AuthedSettingsAiDecisionRoute,
+  AuthedSettingsAiProviderRoute: AuthedSettingsAiProviderRoute,
+  AuthedSettingsAiVoiceRoute: AuthedSettingsAiVoiceRoute,
+  AuthedSettingsDiscoveryFiltersRoute: AuthedSettingsDiscoveryFiltersRoute,
+  AuthedSettingsDiscoverySourcesRoute: AuthedSettingsDiscoverySourcesRoute,
+  AuthedSettingsDiscoveryTopicsRoute: AuthedSettingsDiscoveryTopicsRoute,
+  AuthedSettingsIntegrationsApiKeysRoute:
+    AuthedSettingsIntegrationsApiKeysRoute,
+  AuthedSettingsIntegrationsMcpRoute: AuthedSettingsIntegrationsMcpRoute,
+  AuthedSettingsIntegrationsXApiRoute: AuthedSettingsIntegrationsXApiRoute,
+}
+
+const AuthedSettingsRouteWithChildren = AuthedSettingsRoute._addFileChildren(
+  AuthedSettingsRouteChildren,
+)
+
 interface AuthedRouteChildren {
   AuthedDiscoverRoute: typeof AuthedDiscoverRouteWithChildren
   AuthedDraftsRoute: typeof AuthedDraftsRouteWithChildren
   AuthedQueueRoute: typeof AuthedQueueRouteWithChildren
-  AuthedSettingsRoute: typeof AuthedSettingsRoute
+  AuthedSettingsRoute: typeof AuthedSettingsRouteWithChildren
   AuthedStatsRoute: typeof AuthedStatsRoute
   AuthedIndexRoute: typeof AuthedIndexRoute
 }
@@ -669,7 +917,7 @@ const AuthedRouteChildren: AuthedRouteChildren = {
   AuthedDiscoverRoute: AuthedDiscoverRouteWithChildren,
   AuthedDraftsRoute: AuthedDraftsRouteWithChildren,
   AuthedQueueRoute: AuthedQueueRouteWithChildren,
-  AuthedSettingsRoute: AuthedSettingsRoute,
+  AuthedSettingsRoute: AuthedSettingsRouteWithChildren,
   AuthedStatsRoute: AuthedStatsRoute,
   AuthedIndexRoute: AuthedIndexRoute,
 }

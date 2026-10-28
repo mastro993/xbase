@@ -11,7 +11,7 @@ It is a Node server built with [TanStack Start](https://tanstack.com/start) and 
 - **Queue**: schedule a draft at a time in your browser's time zone. The queue lists scheduled posts by day; reschedule them, edit them or move them back to the drafts.
 - **Discover**: keep the X searches you'd run by hand, in X's search syntax, and open any of them on x.com.
 - **Stats**: a placeholder for now: engagement rate, the best times to post and follower growth arrive with the X API.
-- **Settings**: the X accounts; X API spend and caps; the AI provider and model; each account's voice for the AI; the decision model's provider and model; reply discovery's niches, watch list, thresholds, exclusions, language, sources and budget; API keys; MCP; sessions. Provider keys come from the environment, never from the page.
+- **Settings**: a modal with its own grouped navigation: Accounts and Sessions under Account; Provider, Voice and Decision model under AI; Topics, Sources and Filters under Discovery; X API, API keys and MCP under Integrations. It covers the X accounts, X API spend and caps, AI writing, discovery rules, access for other apps and sessions; closing it returns to the page it opened over. Provider keys come from the environment, never from the page.
 - **For other apps**: a [REST API](#rest-api) for drafts, with API keys, and an [MCP server](#mcp) with OAuth, so assistants such as Claude can write and schedule.
 
 It signs in with X, keeps sessions on the server so signing out ends them, migrates its SQLite database at startup, and ships with a health check and a Docker image.
@@ -36,7 +36,7 @@ Every read goes through one layer, `packages/server/src/x-api-client.ts`: posts 
 - returns long posts in full (`note_tweet`), and brings quoted posts with their own full text and author, so a feature never reads a truncated preview;
 - logs each call in `x_api_calls` with its endpoint, the feature that asked, the number of items, its estimated cost and the time; the price table lives in `packages/core/src/x-api.ts` beside the code that uses it;
 - caches posts per account for an hour by default, and serves them from the database instead of paying again; `fresh: true` skips the cache for current engagement numbers;
-- stops paid reads at the daily and monthly caps set in **Settings → X API**, naming the cap and its reset time; a running job finishes its current page and then stops. The caps there cover every account together and are the hard limit; each account can set lower caps of its own under **Settings → Discovery → Budget**;
+- stops paid reads at the daily and monthly caps set in **Settings → Integrations → X API**, naming the cap and its reset time; a running job finishes its current page and then stops. The caps there cover every account together and are the hard limit; each account can set lower caps of its own on the same page, next to its spend;
 - stores the rate-limit headers X returns, and after a 429 waits for the reported reset time instead of retrying in a loop;
 - flags an account as **needs reconnecting** when X refuses its access (a 401 or a dead refresh token), makes no further reads for it, and clears the flag when it signs in again.
 
@@ -53,13 +53,13 @@ XBase needs an app of yours in the [X developer console](https://developer.x.com
 
 XBase asks X for `tweet.read`, `users.read`, `tweet.write` and `offline.access`: reading the profile to sign in, then posting and staying connected for the scheduler.
 
-**The first X account to sign in owns this XBase.** After that, only linked accounts can sign in; others see "This X account isn't linked". Set `X_OWNER_USERNAME` to your X username so only that account can claim it; otherwise, sign in before you share the address, and keep XBase where only you can reach it until you have. To link another account, use **Settings → X accounts → Add account**: X adds the account you're signed in to on x.com, so switch accounts there first. Removing an account deletes its drafts and scheduled posts and signs out the browsers that signed in with it; the last one can't be removed. XBase doesn't revoke its access on X: do that in your X settings under **Connected apps**.
+**The first X account to sign in owns this XBase.** After that, only linked accounts can sign in; others see "This X account isn't linked". Set `X_OWNER_USERNAME` to your X username so only that account can claim it; otherwise, sign in before you share the address, and keep XBase where only you can reach it until you have. To link another account, use **Settings → Account → Accounts → Add account**: X adds the account you're signed in to on x.com, so switch accounts there first. Removing an account deletes its drafts and scheduled posts and signs out the browsers that signed in with it; the last one can't be removed. XBase doesn't revoke its access on X: do that in your X settings under **Connected apps**.
 
 ## AI providers
 
-Refine with AI uses OpenAI, Anthropic, xAI or OpenRouter with your own API key: set `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `XAI_API_KEY` or `OPENROUTER_API_KEY`, then pick the provider and model in **Settings → AI provider**. Settings only offers providers that have a key, and until you pick one it uses the first of them with its default model. Without any key, AI writing is off and the app works as before.
+Refine with AI uses OpenAI, Anthropic, xAI or OpenRouter with your own API key: set `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `XAI_API_KEY` or `OPENROUTER_API_KEY`, then pick the provider and model in **Settings → AI → Provider**. Settings only offers providers that have a key, and until you pick one it uses the first of them with its default model. Without any key, AI writing is off and the app works as before.
 
-Decision models answer yes/no, score and choice questions with probabilities instead of writing text, for features that decide rather than write. **Settings → Decision model** picks the provider and model:
+Decision models answer yes/no, score and choice questions with probabilities instead of writing text, for features that decide rather than write. **Settings → AI → Decision model** picks the provider and model:
 
 - [TypeSafe](https://docs.typesafe.ai)'s Jev through `TYPESAFE_API_KEY`, `jev-latest` by default;
 - OpenAI's [Decisions API](https://developers.openai.com/api/docs/guides/decisions) through `OPENAI_API_KEY`, never the Luna chat model: one fixed model, so there is nothing to choose;
@@ -71,7 +71,7 @@ Keys never reach the browser or the database. Changing one takes a restart.
 
 ## Discovery settings
 
-Reply discovery has its own rules. **Settings → Discovery** holds them for the account you work as: niches and keywords, the watch list, thresholds, exclusions, language, sources and the budget. Each section saves on its own and resets to its defaults behind a confirmation. A saved section keeps whatever it has, so a default that changes in a later version still reaches the sections you never edited.
+Reply discovery has its own rules. **Settings → Discovery** holds them for the account you work as: **Topics** has the niches and watch list, **Sources** the home timeline pages, **Filters** the thresholds, exclusions and language; the per-account **Budget** sits with the X API caps. Each section saves on its own and resets to its defaults behind a confirmation. A saved section keeps whatever it has, so a default that changes in a later version still reaches the sections you never edited.
 
 They start at what suits most accounts, so a first run needs no setup:
 
@@ -81,7 +81,7 @@ They start at what suits most accounts, so a first run needs no setup:
 - **Exclusions** drop engagement bait, giveaways, promotions, politics, crypto, image-only posts and long threads, with a keyword list for each of the first five. Switch one off to let those posts through again, keywords and all.
 - **Language** is the language a run looks for posts in and the one it writes your replies in; both default to English.
 - **Sources** is the home timeline page count: one page of up to 25 posts per run by default, with the extra cost shown before you save it.
-- **Budget** is this account's own daily and monthly cap, inside the workspace's hard cap in **Settings → X API**. Both are blank (no cap) until you set one, and spend resets at midnight UTC and on the first of the month.
+- **Budget** is this account's own daily and monthly cap, inside the workspace's hard cap in **Settings → Integrations → X API**. Both are blank (no cap) until you set one, and spend resets at midnight UTC and on the first of the month.
 
 A saved change applies from the next run. Runs themselves arrive with the X API client and the batch runner; until then, the settings are stored and the rules are ready for them.
 
@@ -210,7 +210,7 @@ To restore, stop the server and replace `xbase.db` with the copy, deleting any `
 > [!WARNING]
 > The first start after upgrading from a version with `APP_PASSWORD` **deletes every draft and scheduled post**, and signs every browser out. Those posts and sessions belong to no X account, and keeping the sessions would let them in again as soon as someone claims XBase. The stored AI provider key and the voice go too: keys now come from the environment, and each account has its own voice. Back up the database first (above) if you want to keep a copy.
 
-Removing an account in Settings signs out every browser that signed in with it. To sign everyone out, use **Settings → Sessions → Sign out everywhere**, or delete the rows in the `sessions` table.
+Removing an account in Settings signs out every browser that signed in with it. To sign everyone out, use **Settings → Account → Sessions → Sign out everywhere**, or delete the rows in the `sessions` table.
 
 ## REST API
 
@@ -218,7 +218,7 @@ Scripts and other apps reach your drafts through a small JSON API under `/api/v1
 
 ### Authentication
 
-Create a key in **Settings → API keys**. XBase shows it once, when you create it, and stores only its hash; revoking it deletes it. Send it on every request:
+Create a key in **Settings → Integrations → API keys**. XBase shows it once, when you create it, and stores only its hash; revoking it deletes it. Send it on every request:
 
 ```http
 Authorization: Bearer xbase_ak_…
@@ -299,7 +299,7 @@ Every error is JSON with a stable `error` code and, usually, a `message` you can
 
 AI assistants such as Claude, Claude Code and Cursor can work with your drafts and queue through XBase's [MCP](https://modelcontextprotocol.io) server. It speaks the 2026-07-28 protocol and still serves clients on the 2025 versions.
 
-The server URL is `APP_URL` followed by `/mcp`, for example `https://xbase.example.com/mcp`. **Settings → MCP** shows it.
+The server URL is `APP_URL` followed by `/mcp`, for example `https://xbase.example.com/mcp`. **Settings → Integrations → MCP** shows it.
 
 ### Before you connect
 
@@ -339,7 +339,7 @@ Posts take the same shape as in the REST API, with `origin` set to `mcp`. As the
 
 ### Disconnect an app
 
-**Settings → MCP → Connected apps** lists every app you approved, with when it last used XBase. An app you connect while Settings is open shows up there on its own within a few seconds, or as soon as you switch back to the tab. **Disconnect** stops its tokens at once; it has to ask for your consent again to come back. An app that disconnects itself, or stops using XBase for 60 days, drops off the list too.
+**Settings → Integrations → MCP → Connected apps** lists every app you approved, with when it last used XBase. An app you connect while Settings is open shows up there on its own within a few seconds, or as soon as you switch back to the tab. **Disconnect** stops its tokens at once; it has to ask for your consent again to come back. An app that disconnects itself, or stops using XBase for 60 days, drops off the list too.
 
 ### How it is secured
 

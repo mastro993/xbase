@@ -96,6 +96,15 @@ it('marks the current section in the rail, child pages included', async () => {
   }
 });
 
+it('remembers the page Settings was opened from, so closing the modal returns there', async () => {
+  const user = userEvent.setup();
+  const router = renderAt('/drafts/abc');
+  const nav = await screen.findByRole('navigation', { name: 'Main' });
+  await user.click(within(nav).getByRole('link', { name: 'Settings' }));
+  await vi.waitFor(() => expect(router.state.location.pathname).toBe('/settings'));
+  expect(router.state.location.state).toMatchObject({ settingsReturnTo: '/drafts/abc' });
+});
+
 it('signs out from the account menu, with a native POST', async () => {
   const user = userEvent.setup();
   renderAt('/queue');

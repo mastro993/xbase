@@ -25,6 +25,7 @@ export function LanguageCard({ settings }: { settings: DiscoverySettings['langua
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
         <Select
           label="Posts to look for"
+          popoverClassName="z-50"
           selectedKey={language.draft.posts}
           onSelectionChange={(key) => {
             if (key) language.edit({ ...language.draft, posts: key as DiscoveryLanguageCode });
@@ -38,6 +39,7 @@ export function LanguageCard({ settings }: { settings: DiscoverySettings['langua
         </Select>
         <Select
           label="Replies to write"
+          popoverClassName="z-50"
           selectedKey={language.draft.replies}
           onSelectionChange={(key) => {
             if (key) language.edit({ ...language.draft, replies: key as DiscoveryLanguageCode });

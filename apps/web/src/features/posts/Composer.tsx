@@ -1,5 +1,5 @@
 import { Add01Icon, Delete02Icon } from '@hugeicons/core-free-icons';
-import { useNavigate, useRouter } from '@tanstack/react-router';
+import { useNavigate, useRouter, useRouterState } from '@tanstack/react-router';
 import { useServerFn } from '@tanstack/react-start';
 import { AI_NOT_CONFIGURED } from '@xbase/core/ai';
 import { MAX_PARTS, type PostDto } from '@xbase/core/posts/schema';
@@ -42,6 +42,7 @@ const sameTexts = (a: readonly string[], b: readonly string[]) =>
 export function Composer({ post, aiReady }: { post: PostDto; aiReady: boolean }) {
   const router = useRouter();
   const navigate = useNavigate();
+  const returnTo = useRouterState({ select: (state) => state.location.href });
   const updateDraft = useServerFn(updateDraftFn);
   const schedulePost = useServerFn(schedulePostFn);
   const unschedulePost = useServerFn(unschedulePostFn);
@@ -277,7 +278,12 @@ export function Composer({ post, aiReady }: { post: PostDto; aiReady: boolean })
           title={notice.title}
           action={
             notice.settingsLink && (
-              <ButtonRouterLink to="/settings" variant="secondary" size="small">
+              <ButtonRouterLink
+                to="/settings/ai/provider"
+                state={{ settingsReturnTo: returnTo }}
+                variant="secondary"
+                size="small"
+              >
                 Open Settings
               </ButtonRouterLink>
             )
@@ -336,7 +342,11 @@ export function Composer({ post, aiReady }: { post: PostDto; aiReady: boolean })
           {!aiReady && (
             <p id={aiHintId} className="text-body-regular text-text-secondary">
               Refine with AI needs an AI provider.{' '}
-              <LinkButtonRouterLink to="/settings" className="underline">
+              <LinkButtonRouterLink
+                to="/settings/ai/provider"
+                state={{ settingsReturnTo: returnTo }}
+                className="underline"
+              >
                 Set one up in Settings
               </LinkButtonRouterLink>
             </p>

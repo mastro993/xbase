@@ -122,7 +122,7 @@ it('without an AI provider, keeps Refine unavailable and says where to set one u
   expect(refine.getAttribute('aria-disabled')).toBe('true');
   const hint = document.getElementById(refine.getAttribute('aria-describedby') ?? '');
   expect(hint?.textContent).toBe('Refine with AI needs an AI provider. Set one up in Settings');
-  expect(within(hint!).getByRole('link').getAttribute('href')).toBe('/settings');
+  expect(within(hint!).getByRole('link').getAttribute('href')).toBe('/settings/ai/provider');
   await user.click(refine);
   expect(server.refineDraftFn).not.toHaveBeenCalled();
 });
@@ -151,6 +151,6 @@ it('shows a refine error, with a way to Settings when no provider is set up', as
   expect(alert.textContent).toContain('Couldn’t refine');
   expect(alert.textContent).toContain(AI_NOT_CONFIGURED);
   expect(within(alert).getByRole('link', { name: 'Open Settings' }).getAttribute('href')).toBe(
-    '/settings',
+    '/settings/ai/provider',
   );
 });

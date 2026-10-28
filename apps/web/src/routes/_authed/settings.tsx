@@ -1,66 +1,70 @@
-import { createFileRoute, getRouteApi } from '@tanstack/react-router';
-import { SIGN_IN_ERRORS } from '@xbase/core/auth';
-import { z } from 'zod';
-import { AccountsCard } from '@/features/accounts/AccountsCard';
-import { getAiSettingsFn, getVoiceFn } from '@/features/ai/ai.functions';
-import { AiProviderCard } from '@/features/ai/AiProviderCard';
-import { DecisionCard } from '@/features/ai/DecisionCard';
-import { VoiceCard } from '@/features/ai/VoiceCard';
-import { listApiKeysFn } from '@/features/api-keys/api-keys.functions';
-import { ApiKeysCard } from '@/features/api-keys/ApiKeysCard';
-import { getDiscoverySettingsFn } from '@/features/discover/settings/discovery.functions';
-import { DiscoverySettings } from '@/features/discover/settings/DiscoverySettings';
-import { getMcpSettingsFn } from '@/features/mcp/mcp.functions';
-import { McpCard } from '@/features/settings/McpCard';
-import { SessionsCard } from '@/features/settings/SessionsCard';
-import { FullWidthPage } from '@/features/shell/FullWidthPage';
-import { getXApiUsageFn } from '@/features/x-api/x-api.functions';
-import { XApiCard } from '@/features/x-api/XApiCard';
+import { createFileRoute, Outlet, useNavigate, useRouterState } from '@tanstack/react-router';
+import { SettingsModal } from '@xbase/ui/components/application/settings/settings-modal';
+import { useEffect, useRef, useState } from 'react';
+import {
+  SETTINGS_PAGES,
+  SETTINGS_SECTIONS,
+  type SettingsPageId,
+  settingsPageForPath,
+} from '@/features/settings/settings-pages';
 
-const authed = getRouteApi('/_authed');
-
-// Mutations call their server function, then router.invalidate() so this loader reads the
-// stored result. Secrets never appear here: AI keys stay in the server's environment, API keys
-// come back as a prefix. ?accountError= is why adding an X account didn't work.
+// Settings is a modal over the page that opened it: the routes below still load their own data
+// and keep a linkable URL, while the modal supplies the grouped rail and the page title.
 export const Route = createFileRoute('/_authed/settings')({
-  validateSearch: z.object({ accountError: z.enum(SIGN_IN_ERRORS).optional().catch(undefined) }),
-  head: () => ({ meta: [{ title: 'Settings · XBase' }] }),
-  loader: async () => {
-    const [ai, voice, discovery, apiKeys, mcp, xApi] = await Promise.all([
-      getAiSettingsFn(),
-      getVoiceFn(),
-      getDiscoverySettingsFn(),
-      listApiKeysFn(),
-      getMcpSettingsFn(),
-      getXApiUsageFn(),
-    ]);
-    return { ai, voice, discovery, apiKeys, mcp, xApi };
-  },
-  component: SettingsPage,
+  component: SettingsLayout,
 });
 
-function SettingsPage() {
-  const { ai, voice, discovery, apiKeys, mcp, xApi } = Route.useLoaderData();
-  const { accountError } = Route.useSearch();
-  const accounts = authed.useLoaderData();
-  // The budget card sits in the discovery section, next to the caps it edits.
-  const currentUsage = xApi.accounts.find(({ id }) => id === accounts.current.id);
+const CLOSE_MS = 320;
+
+/** Settings' route shell: the BoardUI settings modal over the page that opened it. */
+function SettingsLayout() {
+  const navigate = useNavigate();
+  const locationState = useRouterState({ select: (state) => state.location.state });
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const current = settingsPageForPath(pathname);
+  const [open, setOpen] = useState(true);
+  // Where closing goes, captured on mount so moving between pages doesn't change it. The shell's
+  // Settings link put the page it came from in the navigation state.
+  const [returnTo] = useState(() => {
+    const from = locationState?.settingsReturnTo;
+    return typeof from === 'string' && !from.startsWith('/settings') ? from : '/';
+  });
+  const closeTimer = useRef<number | null>(null);
+
+  useEffect(
+    () => () => {
+      if (closeTimer.current !== null) window.clearTimeout(closeTimer.current);
+    },
+    [],
+  );
+
+  // Let the panel's exit transition play, then return to the page that opened Settings.
+  const close = () => {
+    if (closeTimer.current !== null) return;
+    setOpen(false);
+    closeTimer.current = window.setTimeout(() => void navigate({ href: returnTo }), CLOSE_MS);
+  };
+
+  const go = (id: string) => {
+    if (!Object.hasOwn(SETTINGS_PAGES, id)) return;
+    // Keep the return target in the history state as the pages change.
+    void navigate({ to: SETTINGS_PAGES[id as SettingsPageId].to, state: true });
+  };
+
   return (
-    <FullWidthPage
-      title="Settings"
-      description="Your X accounts, X API spend, AI writing, reply discovery, access for other apps, and where you’re signed in."
+    <SettingsModal
+      isOpen={open}
+      onOpenChange={(next) => {
+        if (!next) close();
+      }}
+      page={current}
+      onPageChange={go}
+      sections={SETTINGS_SECTIONS}
+      title={SETTINGS_PAGES[current].label}
     >
-      <AccountsCard data={accounts} error={accountError} />
-      <XApiCard usage={xApi} />
-      <AiProviderCard settings={ai} />
-      {/* Keyed by account: switching accounts loads another voice into a fresh form. */}
-      <VoiceCard key={accounts.current.id} voice={voice} username={accounts.current.username} />
-      <DecisionCard settings={ai} />
-      {/* Also per account: another account loads its own niches, thresholds, filters and caps. */}
-      <DiscoverySettings key={accounts.current.id} settings={discovery} usage={currentUsage} />
-      <ApiKeysCard keys={apiKeys} />
-      <McpCard settings={mcp} />
-      <SessionsCard />
-    </FullWidthPage>
+      <div className="flex flex-col gap-6">
+        <Outlet />
+      </div>
+    </SettingsModal>
   );
 }

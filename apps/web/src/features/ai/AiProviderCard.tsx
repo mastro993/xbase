@@ -139,7 +139,7 @@ export function AiProviderCard({ settings }: { settings: AiSettingsDto }) {
           // The only keys are the provider IDs listed below.
           onSelectionChange={(id) => id && chooseProvider(id as WritingProvider)}
           className="w-full"
-          popoverClassName="w-(--trigger-width)"
+          popoverClassName="z-50 w-(--trigger-width)"
         >
           {available.map((id) => (
             <SelectItem key={id} id={id}>
