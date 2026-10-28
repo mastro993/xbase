@@ -11,7 +11,7 @@ It is a Node server built with [TanStack Start](https://tanstack.com/start) and 
 - **Queue**: schedule a draft at a time in your browser's time zone. The queue lists scheduled posts by day; reschedule them, edit them or move them back to the drafts.
 - **Discover**: keep the X searches you'd run by hand, in X's search syntax, and open any of them on x.com.
 - **Stats**: a placeholder for now: engagement rate, the best times to post and follower growth arrive with the X API.
-- **Settings**: a modal with its own grouped navigation: Accounts and Sessions under Account; Provider, Voice and Decision model under AI; Topics, Sources and Filters under Discovery; X API, API keys and MCP under Integrations. It covers the X accounts, X API spend and caps, AI writing, discovery rules, access for other apps and sessions; closing it returns to the page it opened over. Provider keys come from the environment, never from the page.
+- **Settings**: a modal with its own grouped navigation: Accounts and Sessions under Account; Provider, Voice and Decision model under AI; Topics, Sources and Filters under Discovery; X API, API keys and MCP under Integrations. It covers the X accounts, X API spend and caps, AI writing, discovery rules, access for other apps and sessions. Opening it replaces the current page; closing it returns to the page you were on. Provider keys come from the environment, never from the page.
 - **For other apps**: a [REST API](#rest-api) for drafts, with API keys, and an [MCP server](#mcp) with OAuth, so assistants such as Claude can write and schedule.
 
 It signs in with X, keeps sessions on the server so signing out ends them, migrates its SQLite database at startup, and ships with a health check and a Docker image.

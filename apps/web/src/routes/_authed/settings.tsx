@@ -8,15 +8,16 @@ import {
   settingsPageForPath,
 } from '@/features/settings/settings-pages';
 
-// Settings is a modal over the page that opened it: the routes below still load their own data
-// and keep a linkable URL, while the modal supplies the grouped rail and the page title.
+// Settings replaces the current page while open: the routes below still load their own data and
+// keep a linkable URL, while the modal supplies the grouped rail and the page title. Closing
+// returns to the page it opened from.
 export const Route = createFileRoute('/_authed/settings')({
   component: SettingsLayout,
 });
 
 const CLOSE_MS = 320;
 
-/** Settings' route shell: the BoardUI settings modal over the page that opened it. */
+/** Settings' route shell: the BoardUI settings modal, replacing the current page while open. */
 function SettingsLayout() {
   const navigate = useNavigate();
   const locationState = useRouterState({ select: (state) => state.location.state });

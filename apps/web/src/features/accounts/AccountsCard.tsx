@@ -48,7 +48,7 @@ export function AccountsCard({ data, error }: { data: AccountsDto; error?: SignI
     <SectionCard
       title="X accounts"
       headingRef={heading}
-      description="Every linked account can sign in to this XBase. Drafts, the queue and the voice belong to the account you work as; switch it from the account menu."
+      description="Every linked account can sign in to this XBase. Drafts, the queue and the voice belong to the account you work as; close Settings to switch it from the account menu."
       hint="X adds the account you’re signed in to on x.com. To add another, switch accounts on x.com first."
       actions={
         <ButtonLink href={ADD_ACCOUNT_HREF} variant="secondary" leadingIcon={Add01Icon}>
