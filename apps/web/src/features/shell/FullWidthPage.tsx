@@ -10,7 +10,7 @@ type FullWidthPageProps = {
   children: ReactNode;
 };
 
-/** A page without the list pane: Stats and Settings. Its sections stack with a 24px gap. */
+/** A page without the list pane, such as Stats. Its sections stack with a 24px gap. */
 export function FullWidthPage({ title, description, width = '3xl', children }: FullWidthPageProps) {
   return (
     <div

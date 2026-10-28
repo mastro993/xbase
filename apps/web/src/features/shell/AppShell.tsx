@@ -6,7 +6,7 @@ import {
   QuillWrite01Icon,
   Settings01Icon,
 } from '@hugeicons/core-free-icons';
-import { createLink, Link } from '@tanstack/react-router';
+import { createLink, Link, useRouterState } from '@tanstack/react-router';
 import type { AccountsDto } from '@xbase/core/accounts';
 import {
   DashboardSidebar,
@@ -31,6 +31,9 @@ const PAGES = [
 
 /** The sections, with Settings at the bottom. In the drawer, following a link closes it. */
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
+  const href = useRouterState({ select: (state) => state.location.href });
+  // The settings modal returns here when it closes. A settings page would return to itself.
+  const inSettings = href.startsWith('/settings');
   return (
     <>
       {PAGES.map((page) => (
@@ -48,6 +51,7 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
         label="Settings"
         onClick={onNavigate}
         className="mt-auto"
+        state={inSettings ? true : { settingsReturnTo: href }}
       />
     </>
   );
