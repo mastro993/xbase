@@ -96,13 +96,9 @@ export function DecisionCard({ settings }: { settings: AiSettingsDto }) {
       setError({ title: 'Not saved', message: 'Choose a provider first.' });
       return;
     }
-    // A fixed model has nothing to choose: save the provider's own, not a stale stored label.
-    const chosen = DECISION_PROVIDERS[provider].fixedModel
-      ? DECISION_PROVIDERS[provider].defaultModel
-      : model;
     setSaving(true);
     try {
-      await saveDecision({ data: { provider, model: chosen } });
+      await saveDecision({ data: { provider, model } });
       setSaved(true);
       await router.invalidate({ sync: true });
     } catch (cause) {

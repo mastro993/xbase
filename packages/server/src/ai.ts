@@ -82,7 +82,12 @@ function availableDecisionProviders(): DecisionProvider[] {
 
 function decisionConfig(): DecisionConfig | null {
   const saved = readSetting('decision', SaveDecisionInput);
-  if (saved && keyFor(saved.provider)) return saved;
+  if (saved && keyFor(saved.provider)) {
+    // A fixed-model provider keeps its current model, even when the stored one is from an older
+    // release: every caller then sees the model that the API actually serves.
+    const info = DECISION_PROVIDERS[saved.provider];
+    return info.fixedModel ? { ...saved, model: info.defaultModel } : saved;
+  }
   const [provider] = availableDecisionProviders();
   return provider ? { provider, model: DECISION_PROVIDERS[provider].defaultModel } : null;
 }

@@ -154,6 +154,18 @@ describe('decision model', () => {
     });
   });
 
+  it('returns the current fixed model for OpenAI, even from a stale stored one', () => {
+    env.vars = { OPENAI_API_KEY: OPENAI_KEY };
+    saveDecisionModel({
+      provider: 'openai',
+      model: { id: 'gpt-6-luna-old', label: 'GPT-6 Luna', lowEffort: false },
+    });
+    expect(getAiSettings().decision).toEqual({
+      provider: 'openai',
+      model: DECISION_PROVIDERS.openai.defaultModel,
+    });
+  });
+
   it('falls back in provider order once the saved provider loses its key', () => {
     env.vars = {
       TYPESAFE_API_KEY: TYPESAFE_KEY,
