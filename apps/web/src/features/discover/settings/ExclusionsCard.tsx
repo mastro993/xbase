@@ -2,8 +2,11 @@ import {
   type DiscoverySettings,
   type ExclusionFilter,
   MAX_EXCLUSION_KEYWORDS,
+  MAX_THREAD_POSTS,
 } from '@xbase/core/discovery';
+import { Input } from '@xbase/ui/components/base/input/input';
 import { Switch } from '@xbase/ui/components/base/switch/switch';
+import { useState } from 'react';
 import { DiscoveryCard, useDiscoverySection } from './DiscoveryCard';
 import { KeywordEditor } from './KeywordEditor';
 
@@ -52,13 +55,32 @@ const SHAPE_FILTERS: { field: 'imageOnly' | 'longThreads'; label: string; hint: 
   {
     field: 'longThreads',
     label: 'Long threads',
-    hint: 'A reply lands under dozens of posts, where nobody reads it.',
+    hint: 'Posts that open a long thread (“1/12 🧵”): a reply lands under every part, where nobody reads it.',
   },
 ];
 
 /** What a run keeps out of a batch: five keyword lists it can edit, and two shapes of post. */
 export function ExclusionsCard({ settings }: { settings: Exclusions }) {
   const exclusions = useDiscoverySection('exclusions', settings);
+  // As typed: a cleared box has to read as empty, not as the number 0.
+  const [threadPosts, setThreadPosts] = useState(() => String(settings.maxThreadPosts));
+
+  const save = async () => {
+    if (!/^\d+$/.test(threadPosts)) {
+      exclusions.report(`${MAX_THREAD_POSTS.label}: use a whole number`);
+      return;
+    }
+    const stored = await exclusions.save({
+      ...exclusions.draft,
+      maxThreadPosts: Number(threadPosts),
+    });
+    if (stored) setThreadPosts(String(stored.maxThreadPosts));
+  };
+
+  const reset = async () => {
+    // Throws when it fails: ConfirmButton shows the error in the dialog.
+    setThreadPosts(String((await exclusions.restore()).maxThreadPosts));
+  };
 
   const setFilter = (field: ExclusionFilter, changes: Partial<Exclusions[ExclusionFilter]>) => {
     exclusions.edit({ ...exclusions.draft, [field]: { ...exclusions.draft[field], ...changes } });
@@ -72,12 +94,12 @@ export function ExclusionsCard({ settings }: { settings: Exclusions }) {
     <DiscoveryCard
       title="Exclusions"
       description="What a run leaves out, with the words it looks for. Each list is yours to edit."
-      hint="Switch one off to let those posts through again, keywords and all."
+      hint="Saving applies to the candidates already found too: switch one off to let those posts back."
       saving={exclusions.saving}
       saved={exclusions.saved}
       error={exclusions.error}
-      onSubmit={() => void exclusions.save(exclusions.draft)}
-      onReset={exclusions.restore}
+      onSubmit={() => void save()}
+      onReset={reset}
     >
       {KEYWORD_FILTERS.map(({ field, label, hint, example }) => {
         const filter = exclusions.draft[field];
@@ -105,14 +127,32 @@ export function ExclusionsCard({ settings }: { settings: Exclusions }) {
         );
       })}
       {SHAPE_FILTERS.map(({ field, label, hint }) => (
-        <div key={field} className="flex flex-col gap-1">
-          <Switch
-            isSelected={exclusions.draft[field]}
-            onChange={(enabled) => setShape(field, enabled)}
-          >
-            {label}
-          </Switch>
-          <p className="text-body-regular text-text-secondary">{hint}</p>
+        <div key={field} className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1">
+            <Switch
+              isSelected={exclusions.draft[field]}
+              onChange={(enabled) => setShape(field, enabled)}
+            >
+              {label}
+            </Switch>
+            <p className="text-body-regular text-text-secondary">{hint}</p>
+          </div>
+          {field === 'longThreads' && exclusions.draft.longThreads && (
+            <Input
+              label={MAX_THREAD_POSTS.label}
+              hint={`Openers announcing more parts are left out (${MAX_THREAD_POSTS.min} to ${MAX_THREAD_POSTS.max}).`}
+              value={threadPosts}
+              inputMode="numeric"
+              maxLength={2}
+              autoComplete="off"
+              validationBehavior="aria"
+              className="sm:max-w-60"
+              onChange={(value) => {
+                setThreadPosts(value.replace(/[^\d]/g, ''));
+                exclusions.dirty();
+              }}
+            />
+          )}
         </div>
       ))}
     </DiscoveryCard>

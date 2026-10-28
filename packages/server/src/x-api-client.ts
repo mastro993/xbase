@@ -364,8 +364,18 @@ export async function getPosts(
 }
 
 /**
+ * Recent search reaches seven days back from when X receives the request, and rejects an older
+ * `start_time`: a minute's margin covers the time a run spends before the request goes out.
+ */
+const RECENT_SEARCH_REACH_MS = 7 * 24 * 60 * 60 * 1000 - 60 * 1000;
+
+const searchStart = (since: Date): Date =>
+  new Date(Math.max(since.getTime(), Date.now() - RECENT_SEARCH_REACH_MS));
+
+/**
  * One page of recent search, newest first, at most the tier's 25 results. `since` is sent as
- * `start_time`, so X never bills posts a caller would throw away as too old.
+ * `start_time`, so X never bills posts a caller would throw away as too old; one older than
+ * search reaches is sent as the oldest it accepts.
  */
 export async function searchRecent(
   accountId: string,
@@ -381,7 +391,7 @@ export async function searchRecent(
       query: query.trim(),
       max_results: String(X_SEARCH_RESULTS_PER_CALL),
       sort_order: 'recency',
-      ...(since ? { start_time: since.toISOString() } : {}),
+      ...(since ? { start_time: searchStart(since).toISOString() } : {}),
       'tweet.fields': TWEET_FIELDS,
       expansions: EXPANSIONS,
     },

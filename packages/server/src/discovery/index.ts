@@ -1,9 +1,5 @@
-// One discovery run and what it kept. The page's manual run calls this; #16 will schedule it.
+// One discovery run, and what the owner decides about each candidate it stored. The page's
+// manual run calls these; #16 will schedule the run.
 
-export {
-  type DiscoveryRun,
-  type DiscoveryStop,
-  FOLLOWING_REFRESH_MS,
-  runDiscovery,
-  type SearchRun,
-} from './fetch';
+export { runDiscovery } from './fetch';
+export { markCandidateReplied, muteCandidateAuthor, skipCandidate } from './memory';

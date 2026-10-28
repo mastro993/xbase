@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { sql } from 'drizzle-orm';
 import { afterEach, describe, expect, it } from 'vitest';
 import { type Db, openDb } from '../client';
-import { posts, xAccounts } from '../schema';
+import { discoveryCandidates, posts, xAccounts } from '../schema';
 
 const MIGRATIONS = fileURLToPath(new URL('../../drizzle', import.meta.url));
 const SCHEMA = fileURLToPath(new URL('../schema.ts', import.meta.url));
@@ -24,6 +24,7 @@ const TABLES = [
   'saved_searches',
   'sessions',
   'settings',
+  'suggested_posts',
   'x_accounts',
   'x_api_calls',
   'x_posts',
@@ -139,6 +140,49 @@ describe('migrations', () => {
     expect(upgraded.select({ accountId: posts.accountId }).from(posts).all()).toEqual([
       { accountId: ACCOUNT_ID },
     ]);
+  });
+
+  // Adding the filters' CHECK rebuilds discovery_candidates: the candidates a run already stored
+  // must come through, listed until a filter says otherwise.
+  it('keep stored candidates when the exclusion reason arrives', () => {
+    dir = mkdtempSync(join(tmpdir(), 'xbase-db-'));
+    const before = join(dir, 'drizzle');
+    cpSync(MIGRATIONS, before, { recursive: true });
+    for (const entry of readdirSync(before).filter((folder) =>
+      folder.endsWith('_discovery-filters'),
+    )) {
+      rmSync(join(before, entry), { recursive: true });
+    }
+    const path = join(dir, 'xbase.db');
+    const old = openDb(path, before);
+    insertAccount(old);
+    old.run(
+      sql`insert into saved_searches (id, name, query, created_at, updated_at) values ('s1', 'indie', 'saas', 1, 1)`,
+    );
+    old.run(
+      sql`insert into discovery_candidates (id, account_id, x_post_id, source, saved_search_id, url, text, posted_at, fetched_at) values ('c1', ${ACCOUNT_ID}, 'p1', 'search', 's1', 'https://x.com/a/status/p1', 'hello', 1, 1)`,
+    );
+
+    const upgraded = openDb(path, MIGRATIONS);
+    expect(
+      upgraded
+        .select({
+          id: discoveryCandidates.id,
+          savedSearchId: discoveryCandidates.savedSearchId,
+          excludedReason: discoveryCandidates.excludedReason,
+        })
+        .from(discoveryCandidates)
+        .all(),
+    ).toEqual([{ id: 'c1', savedSearchId: 's1', excludedReason: null }]);
+    expect(() =>
+      upgraded.run(sql`update discovery_candidates set excluded_reason = 'nope' where id = 'c1'`),
+    ).toThrow(
+      expect.objectContaining({
+        cause: expect.objectContaining({
+          message: expect.stringContaining('CHECK constraint failed'),
+        }),
+      }),
+    );
   });
 
   // Catches any schema.ts change committed without its migration: tables, columns, types, CHECK

@@ -11,6 +11,7 @@
     "./consent": "./src/consent.ts",
     "./discover": "./src/discover.ts",
     "./discovery": "./src/discovery.ts",
+    "./discovery-filters": "./src/discovery-filters.ts",
     "./errors": "./src/errors.ts",
     "./loopback": "./src/loopback.ts",
     "./mcp": "./src/mcp.ts",

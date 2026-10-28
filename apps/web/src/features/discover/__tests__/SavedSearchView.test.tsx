@@ -18,8 +18,11 @@ vi.mock('../discover.functions', () => ({
   deleteSavedSearchFn: mocks.deleteSavedSearchFn,
   listCandidatesFn: vi.fn(),
   listSavedSearchesFn: vi.fn(),
+  markCandidateRepliedFn: vi.fn(),
+  muteCandidateAuthorFn: vi.fn(),
   runDiscoveryFn: mocks.runDiscoveryFn,
   setSavedSearchEnabledFn: mocks.setSavedSearchEnabledFn,
+  skipCandidateFn: vi.fn(),
   updateSavedSearchFn: vi.fn(),
 }));
 vi.mock('@/features/accounts/AccountMenu', () => ({
@@ -114,12 +117,39 @@ it('runs discovery and reports what it kept', async () => {
     home: 3,
     searches: [{ id: 's1', name: 'Indie makers', candidates: 4 }],
     dropped: [],
+    excluded: [],
     stop: null,
   });
   render(<SavedSearchView search={SEARCH} candidates={[]} canRead />);
 
   await user.click(screen.getByRole('button', { name: 'Run discovery' }));
   expect(mocks.runDiscoveryFn).toHaveBeenCalled();
-  expect(await screen.findByText(/7 candidates from your home timeline and 1 search/)).toBeTruthy();
+  expect(
+    await screen.findByText('7 candidates from your home timeline and 1 search.'),
+  ).toBeTruthy();
   expect(mocks.invalidate).toHaveBeenCalled();
+});
+
+it('says what the filters left out, biggest reason first', async () => {
+  const user = userEvent.setup();
+  mocks.runDiscoveryFn.mockResolvedValue({
+    startedAt: '2026-10-27T15:00:00.000Z',
+    home: 1,
+    searches: [],
+    dropped: [{ xPostId: 'r1', reason: 'reply' }],
+    excluded: [
+      { xPostId: 'p1', reason: 'crypto' },
+      { xPostId: 'p2', reason: 'off_topic' },
+      { xPostId: 'p3', reason: 'off_topic' },
+    ],
+    stop: null,
+  });
+  render(<SavedSearchView search={SEARCH} candidates={[]} canRead />);
+
+  await user.click(screen.getByRole('button', { name: 'Run discovery' }));
+  expect(
+    await screen.findByText(
+      '1 candidate from your home timeline and 0 searches. 3 left out by your filters: off-topic 2, crypto 1.',
+    ),
+  ).toBeTruthy();
 });

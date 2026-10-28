@@ -1,4 +1,5 @@
 import { CANDIDATE_SOURCES } from '@xbase/core/discover';
+import { EXCLUSION_REASONS, MEMORY_STATUSES } from '@xbase/core/discovery-filters';
 import { OAUTH_CLIENT_KINDS } from '@xbase/core/mcp';
 import { POST_ORIGINS, POST_STATUSES } from '@xbase/core/posts/schema';
 import { X_API_CALL_STATUSES, X_API_FEATURES } from '@xbase/core/x-api';
@@ -233,6 +234,9 @@ export const followedAccounts = snakeCase.table(
  * Posts a discovery run kept as reply candidates: fresh original or quote posts, with their full
  * body and the post they quote. One row per post per account; `fetchedAt` is when X was read, so
  * a post read again inside the cache window keeps the earlier time.
+ *
+ * Changing a CHECK here rebuilds the table, so nothing may reference it: the owner's decisions
+ * about a post live in `suggested_posts`, keyed by X's post id.
  */
 export const discoveryCandidates = snakeCase.table(
   'discovery_candidates',
@@ -271,15 +275,47 @@ export const discoveryCandidates = snakeCase.table(
     quotedAuthorId: text(),
     quotedAuthorHandle: text(),
     fetchedAt: timestamp().notNull(),
+    /**
+     * The filter rule that keeps it out of the lists, or null when it is listed. Only the filters
+     * write it, from the post and the settings, so a run or a settings change recomputes it.
+     */
+    excludedReason: text({ enum: EXCLUSION_REASONS }),
   },
   (t) => [
     check('discovery_candidates_source_ck', oneOf(t.source, CANDIDATE_SOURCES)),
+    check('discovery_candidates_excluded_reason_ck', oneOf(t.excludedReason, EXCLUSION_REASONS)),
     uniqueIndex('discovery_candidates_account_post_uq').on(t.accountId, t.xPostId),
     index('discovery_candidates_account_search_posted_at_idx').on(
       t.accountId,
       t.savedSearchId,
       t.postedAt,
     ),
+  ],
+);
+
+/**
+ * What discovery remembers about a post for good, per account: shown in a batch, skipped, or
+ * replied to. A remembered post is never suggested again, so nothing prunes this table; removing
+ * the account forgets it. `createdAt` is when the post was first remembered and never changes;
+ * a status only moves up (replied over skipped over shown).
+ */
+export const suggestedPosts = snakeCase.table(
+  'suggested_posts',
+  {
+    accountId: text()
+      .notNull()
+      .references(() => xAccounts.id, { onDelete: 'cascade' }),
+    /** X's post id. */
+    xPostId: text().notNull(),
+    /** X's user id of the post's author. */
+    authorId: text(),
+    status: text({ enum: MEMORY_STATUSES }).notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.accountId, t.xPostId] }),
+    check('suggested_posts_status_ck', oneOf(t.status, MEMORY_STATUSES)),
   ],
 );
 

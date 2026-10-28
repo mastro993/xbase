@@ -53,13 +53,13 @@ function emptyCopy({
     return {
       title: 'No candidates yet',
       description:
-        'Run discovery to read your home timeline and this search. Fresh original and quote posts from the last day show up here, in full.',
+        'Run discovery to read your home timeline and this search. Fresh original and quote posts show up here, in full, unless your filters leave them out.',
     };
   }
   return {
-    title: 'No candidates in the last run',
+    title: 'Nothing to reply to here',
     description:
-      'Everything it returned was a reply, a repost, older than a day, or a quote X couldn’t return in full.',
+      'What the last run found was a reply or a repost, older than your age cap, left out by your filters, or already skipped or replied to.',
   };
 }
 

@@ -149,40 +149,80 @@ const DiscoveryThresholdsInput = z
     }
   });
 
-/** What each keyword switch drops until the owner edits its list. */
+/**
+ * What each keyword switch drops until the owner edits its list. Matching ignores case, styled
+ * letters and the separators inside a phrase ("pre-sale" also finds "presale"), and adds a plain
+ * plural; so each entry here is chosen not to hit ordinary developer and indie posts ("crypto"
+ * would catch node:crypto, "win a" a hackathon). An account that saved the section keeps its own.
+ */
 export const DEFAULT_EXCLUSION_KEYWORDS = {
   bait: [
-    'like if',
+    'like if you agree',
+    'like this if',
+    'like and repost',
+    'like and retweet',
     'retweet if',
     'repost if',
     'rt if',
     'comment if',
+    'comment below',
     'tag a friend',
+    'tag your friend',
     'follow for follow',
+    'f4f',
+    'follow back',
     'who agrees',
+    "i'll dm you",
     'share if',
   ],
-  giveaways: ['giveaway', 'give away', 'enter to win', 'chance to win', 'win a', 'gift card'],
-  promos: ['promo code', 'discount code', 'use code', '% off', 'limited time offer', 'buy now'],
+  giveaways: [
+    'giveaway',
+    'enter to win',
+    'chance to win',
+    'rt to win',
+    'retweet to win',
+    'follow to win',
+    'reply to win',
+    'gift card',
+  ],
+  promos: [
+    'promo code',
+    'discount code',
+    'use my code',
+    '% off',
+    'limited time offer',
+    'buy now',
+    'link in bio',
+    '#ad',
+    '#sponsored',
+    'paid partnership',
+  ],
   politics: [
     'election',
     'president',
     'senator',
     'congress',
-    'vote for',
     'ballot',
     'campaign trail',
+    'democrat',
+    'republican',
+    'midterm',
   ],
   crypto: [
     'airdrop',
-    'presale',
-    'altcoin',
-    'memecoin',
+    'pre-sale',
+    'alt coin',
+    'meme coin',
     'defi',
     'nft',
-    '100x',
+    'bitcoin',
+    '$btc',
+    'ethereum',
+    '$eth',
+    'web3',
     'pump and dump',
     'to the moon',
+    'rug pull',
   ],
 } as const;
 
@@ -194,6 +234,12 @@ const KeywordExclusion = z.object({
   keywords: keywordList(MAX_EXCLUSION_KEYWORDS),
 });
 
+/**
+ * The longest thread an opener may announce ("1/12 🧵") before the long-threads switch drops it.
+ * The range may only ever widen: a stored value outside it resets the whole section.
+ */
+export const MAX_THREAD_POSTS = { label: 'Longest thread (posts)', min: 2, max: 50 } as const;
+
 /** What to keep out of a batch: five keyword lists, and two shapes of post. */
 const DiscoveryExclusionsInput = z.object({
   bait: KeywordExclusion,
@@ -203,8 +249,13 @@ const DiscoveryExclusionsInput = z.object({
   crypto: KeywordExclusion,
   /** Posts that are only an image: nothing to reply to. */
   imageOnly: z.boolean(),
-  /** Threads too long to answer from the bottom. */
+  /** Thread openers announcing more than `maxThreadPosts` parts: a reply lands under them all. */
   longThreads: z.boolean(),
+  maxThreadPosts: z
+    .number()
+    .int(`${MAX_THREAD_POSTS.label}: use a whole number`)
+    .min(MAX_THREAD_POSTS.min, `${MAX_THREAD_POSTS.label}: use ${MAX_THREAD_POSTS.min} or more`)
+    .max(MAX_THREAD_POSTS.max, `${MAX_THREAD_POSTS.label}: use ${MAX_THREAD_POSTS.max} or less`),
 });
 
 /** The languages XBase can look for posts in and write replies in: X's `lang:` takes these codes. */
@@ -302,6 +353,7 @@ export const DEFAULT_DISCOVERY_SETTINGS: DiscoverySettings = {
     crypto: { enabled: true, keywords: [...DEFAULT_EXCLUSION_KEYWORDS.crypto] },
     imageOnly: true,
     longThreads: true,
+    maxThreadPosts: 8,
   },
   language: { posts: 'en', replies: 'en' },
   sources: { homeTimelinePages: 1 },

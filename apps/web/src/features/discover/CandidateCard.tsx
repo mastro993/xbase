@@ -1,8 +1,25 @@
-import { ExternalLinkIcon } from '@hugeicons/core-free-icons';
+import {
+  CheckmarkCircle02Icon,
+  ExternalLinkIcon,
+  Forward01Icon,
+  UserBlock01Icon,
+} from '@hugeicons/core-free-icons';
+import { useRouter } from '@tanstack/react-router';
+import { useServerFn } from '@tanstack/react-start';
 import type { CandidateDto } from '@xbase/core/discover';
 import { Chip } from '@xbase/ui/components/base/badges/chip';
-import { ButtonLink } from '@xbase/ui/components/base/buttons/button';
+import { Button, ButtonLink } from '@xbase/ui/components/base/buttons/button';
+import { Callout } from '@xbase/ui/components/xbase/callout';
+import { Spinner } from '@xbase/ui/components/xbase/spinner';
+import { useState } from 'react';
 import { LocalTime } from '@/features/posts/LocalTime';
+import { ConfirmButton } from '@/features/shell/ConfirmButton';
+import { readableError } from '@/lib/readable-error';
+import {
+  markCandidateRepliedFn,
+  muteCandidateAuthorFn,
+  skipCandidateFn,
+} from './discover.functions';
 
 /** A post's engagement, skipping the metrics X didn't return. */
 function metricsLine(metrics: CandidateDto['metrics']): string {
@@ -20,9 +37,42 @@ function metricsLine(metrics: CandidateDto['metrics']): string {
  * One candidate as a run stored it: the full post, the post it quotes when it quotes one, and
  * enough engagement to see how quiet it is. The author's following flag is a priority hint, so a
  * followed author is marked rather than hidden.
+ *
+ * Each action takes it off the list for good: XBase can't reply for the owner, so "Mark replied"
+ * records a reply made on x.com; "Skip" passes on the post; "Mute author" never suggests them again
+ * (Settings → Discovery keeps the list). The batch review (#20) will carry the same actions.
  */
 export function CandidateCard({ candidate }: { candidate: CandidateDto }) {
+  const router = useRouter();
+  const markReplied = useServerFn(markCandidateRepliedFn);
+  const skip = useServerFn(skipCandidateFn);
+  const mute = useServerFn(muteCandidateAuthorFn);
+  const [busy, setBusy] = useState<'replied' | 'skip' | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const metrics = metricsLine(candidate.metrics);
+  const handle = candidate.authorHandle;
+
+  const decide = async (action: 'replied' | 'skip') => {
+    if (busy) return;
+    setBusy(action);
+    setError(null);
+    try {
+      const data = { id: candidate.id };
+      await (action === 'replied' ? markReplied({ data }) : skip({ data }));
+      await router.invalidate();
+    } catch (cause) {
+      setError(readableError(cause));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  // Throws on failure: ConfirmButton shows the error in its dialog.
+  const muteAuthor = async () => {
+    await mute({ data: { id: candidate.id } });
+    await router.invalidate();
+  };
+
   return (
     <article className="flex flex-col gap-3 rounded-2xl border border-border-button-default bg-background-primary-default p-4">
       <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
@@ -62,8 +112,9 @@ export function CandidateCard({ candidate }: { candidate: CandidateDto }) {
         </blockquote>
       )}
 
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-body-2-regular text-text-secondary">{metrics || 'No engagement yet'}</p>
+      <p className="text-body-2-regular text-text-secondary">{metrics || 'No engagement yet'}</p>
+
+      <div className="flex flex-wrap items-center gap-2">
         <ButtonLink
           href={candidate.url}
           target="_blank"
@@ -74,7 +125,49 @@ export function CandidateCard({ candidate }: { candidate: CandidateDto }) {
         >
           Open on X<span className="sr-only"> (opens in a new tab)</span>
         </ButtonLink>
+        <Button
+          size="small"
+          variant="secondary"
+          leadingIcon={busy === 'replied' ? Spinner : CheckmarkCircle02Icon}
+          aria-busy={busy === 'replied' || undefined}
+          disabled={busy !== null}
+          onClick={() => void decide('replied')}
+        >
+          Mark replied
+        </Button>
+        <Button
+          size="small"
+          variant="ghost"
+          leadingIcon={busy === 'skip' ? Spinner : Forward01Icon}
+          aria-busy={busy === 'skip' || undefined}
+          disabled={busy !== null}
+          onClick={() => void decide('skip')}
+        >
+          Skip
+        </Button>
+        {handle && (
+          <ConfirmButton
+            size="small"
+            variant="ghost"
+            leadingIcon={UserBlock01Icon}
+            disabled={busy !== null}
+            aria-label={`Mute author @${handle}`}
+            title={`Mute @${handle}?`}
+            description="Discover won’t suggest their posts again. You can take them off the Never suggest list in Settings → Discovery → Watch list."
+            action="Mute"
+            errorTitle="Couldn’t mute"
+            onConfirm={muteAuthor}
+          >
+            Mute author
+          </ConfirmButton>
+        )}
       </div>
+
+      {error && (
+        <Callout tone="error" role="alert" title="Couldn’t update the candidate">
+          {error}
+        </Callout>
+      )}
     </article>
   );
 }
