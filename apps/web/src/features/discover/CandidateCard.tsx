@@ -162,7 +162,7 @@ export function CandidateCard({
             leadingIcon={UserBlock01Icon}
             disabled={busy !== null}
             title={`Mute @${handle}?`}
-            description="Discover won’t suggest their posts again. You can take them off the Never suggest list in Settings → Discovery → Watch list."
+            description="Discover won’t suggest their posts again. You can take them off the Never suggest list in Settings → Discovery → Topics."
             action="Mute"
             errorTitle="Couldn’t mute"
             onConfirm={muteAuthor}

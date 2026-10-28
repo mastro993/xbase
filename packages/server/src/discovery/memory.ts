@@ -84,7 +84,7 @@ export function muteCandidateAuthor(accountId: string, candidateId: string): voi
   if (watch.blocked.includes(handle)) return;
   if (watch.blocked.length >= MAX_WATCH_HANDLES) {
     throw new ValidationError(
-      `Your Never suggest list is full (${MAX_WATCH_HANDLES}). Remove someone in Settings → Discovery → Watch list first.`,
+      `Your Never suggest list is full (${MAX_WATCH_HANDLES}). Remove someone in Settings → Discovery → Topics first.`,
     );
   }
   saveDiscoverySettings(accountId, 'watch', {
