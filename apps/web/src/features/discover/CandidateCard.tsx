@@ -137,7 +137,7 @@ export function CandidateCard({ candidate }: { candidate: CandidateDto }) {
         </Button>
         <Button
           size="small"
-          variant="ghost"
+          variant="secondary"
           leadingIcon={busy === 'skip' ? Spinner : Forward01Icon}
           aria-busy={busy === 'skip' || undefined}
           disabled={busy !== null}
@@ -148,7 +148,7 @@ export function CandidateCard({ candidate }: { candidate: CandidateDto }) {
         {handle && (
           <ConfirmButton
             size="small"
-            variant="ghost"
+            variant="secondary"
             leadingIcon={UserBlock01Icon}
             disabled={busy !== null}
             aria-label={`Mute author @${handle}`}
