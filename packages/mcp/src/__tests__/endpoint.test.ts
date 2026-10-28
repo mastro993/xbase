@@ -204,6 +204,12 @@ describe('tools', () => {
       lastRunAt: '2026-10-27T12:00:00.000Z',
       lastCandidateCount: 4,
     });
+
+    // A bad handle is a tool error with the usual next step, not a bare throw.
+    const unknown = await callTool('list_saved_searches', { account: '@nobody' });
+    expect(unknown.isError).toBe(true);
+    expect(unknown.content[0].text).toContain('isn’t linked to XBase');
+    expect(unknown.content[0].text).toContain('Fix the arguments and try again.');
   });
 
   it('needs the account for a new draft once several are linked, and filters lists by it', async () => {

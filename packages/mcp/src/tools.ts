@@ -244,15 +244,16 @@ export function registerTools(server: McpServer): void {
       outputSchema: SavedSearchList,
       annotations: READ,
     },
-    async ({ account }) => {
-      const accounts = listAccounts();
-      const accountId =
-        account === undefined
-          ? accounts.length === 1
-            ? accounts[0]?.id
-            : undefined
-          : resolveAccountId(account);
-      return result(() => ({ items: listSavedSearches(accountId) }));
-    },
+    async ({ account }) =>
+      result(() => {
+        const accounts = listAccounts();
+        const accountId =
+          account === undefined
+            ? accounts.length === 1
+              ? accounts[0]?.id
+              : undefined
+            : resolveAccountId(account);
+        return { items: listSavedSearches(accountId) };
+      }),
   );
 }
