@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { CandidateDto, SavedSearchDto } from '@xbase/core/discover';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
@@ -98,6 +98,34 @@ it('moves to the list and says what happened once a candidate is skipped', async
   await waitFor(() =>
     expect(document.activeElement).toBe(screen.getByRole('heading', { name: 'Latest candidates' })),
   );
+});
+
+it('announces the same result again for a second post', async () => {
+  const user = userEvent.setup();
+  const second = { ...CANDIDATE, id: 'c2', xPostId: 'p2' };
+  const { rerender } = render(
+    <SavedSearchView search={SEARCH} candidates={[CANDIDATE, second]} canRead />,
+  );
+
+  const [first] = screen.getAllByRole('button', { name: 'Skip @alice’s post' });
+  if (!first) throw new Error('No Skip button');
+  await user.click(first);
+  const status = await screen.findByText('Skipped @alice’s post.');
+  rerender(<SavedSearchView search={SEARCH} candidates={[second]} canRead />);
+
+  // The region empties before the same words return, so a screen reader reads them again.
+  const frames: FrameRequestCallback[] = [];
+  const frame = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+    frames.push(callback);
+    return frames.length;
+  });
+  await user.click(screen.getByRole('button', { name: 'Skip @alice’s post' }));
+  await waitFor(() => expect(status.textContent).toBe(''));
+  act(() => {
+    for (const callback of frames.splice(0)) callback(0);
+  });
+  expect(status.textContent).toBe('Skipped @alice’s post.');
+  frame.mockRestore();
 });
 
 it('asks to reconnect only when the account’s X access no longer works', () => {

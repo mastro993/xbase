@@ -88,9 +88,13 @@ export function SavedSearchView({
   const [announcement, setAnnouncement] = useState('');
 
   // The card and the button that had the focus are gone: say what happened and go to the list.
+  // Cleared first, so the same message twice in a row is still announced.
   const handled = (message: string) => {
-    setAnnouncement(message);
-    requestAnimationFrame(() => candidatesHeading.current?.focus());
+    setAnnouncement('');
+    requestAnimationFrame(() => {
+      setAnnouncement(message);
+      candidatesHeading.current?.focus();
+    });
   };
   const empty = emptyCopy({ enabled: search.enabled, canRead, lastRunAt: search.lastRunAt });
 

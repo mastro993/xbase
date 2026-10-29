@@ -3,7 +3,9 @@ import { getDb } from '@xbase/db/client';
 import { followedAccounts, hiddenAuthors, xAccounts } from '@xbase/db/schema';
 import { eq } from 'drizzle-orm';
 import { getAccountCredentials } from '../accounts';
+import { getDiscoverySettings } from '../discovery-settings';
 import { getUserList, X_USER_LISTS, type XUserList } from '../x-api-client';
+import { refilterCandidates } from './filter';
 
 // The account's own lists on X, cached per account: who it follows (a priority hint on each
 // candidate) and who it muted or blocked (never suggested). A run refreshes them at its start, at
@@ -41,7 +43,7 @@ async function readIds(accountId: string, lists: XUserList[]): Promise<Set<strin
   return ids;
 }
 
-/** Replaces one cache's rows and stamps its clock, in one write. */
+/** Replaces one cache's rows and stamps its clock; runs inside the caller's transaction. */
 function storeIds(
   accountId: string,
   table: typeof followedAccounts | typeof hiddenAuthors,
@@ -49,18 +51,17 @@ function storeIds(
   ids: Set<string>,
   now: Date,
 ): void {
-  getDb().transaction((tx) => {
-    tx.delete(table).where(eq(table.accountId, accountId)).run();
-    if (ids.size > 0) {
-      tx.insert(table)
-        .values([...ids].map((userId) => ({ accountId, userId })))
-        .run();
-    }
-    tx.update(xAccounts)
-      .set({ [clock]: now })
-      .where(eq(xAccounts.id, accountId))
+  const db = getDb();
+  db.delete(table).where(eq(table.accountId, accountId)).run();
+  if (ids.size > 0) {
+    db.insert(table)
+      .values([...ids].map((userId) => ({ accountId, userId })))
       .run();
-  });
+  }
+  db.update(xAccounts)
+    .set({ [clock]: now })
+    .where(eq(xAccounts.id, accountId))
+    .run();
 }
 
 function cachedFollowing(accountId: string): Set<string> {
@@ -84,20 +85,29 @@ export async function followingFor(accountId: string, now: Date): Promise<Set<st
   if (!grants(account.scope, 'following')) return null;
   if (isFresh(account.followingRefreshedAt, now)) return cachedFollowing(accountId);
   const ids = await readIds(accountId, ['following']);
-  if (ids) storeIds(accountId, followedAccounts, 'followingRefreshedAt', ids, now);
+  if (ids) {
+    getDb().transaction(() =>
+      storeIds(accountId, followedAccounts, 'followingRefreshedAt', ids, now),
+    );
+  }
   return ids;
 }
 
 /**
  * Reads the accounts the user muted or blocked on X into the cache the filters use, when it is
- * a day old. A grant without `mute.read` and `block.read` skips it: nothing is known, so nothing
- * extra is hidden. A refused read keeps the old cache: a stale list beats suggesting a muted
- * account.
+ * a day old, and re-checks the stored candidates against it: a mute made on X hides what earlier
+ * runs listed, as Mute author does. A grant without `mute.read` and `block.read` skips it:
+ * nothing is known, so nothing extra is hidden. A refused read keeps the old cache: a stale list
+ * beats suggesting a muted account.
  */
 export async function refreshHiddenAuthors(accountId: string, now: Date): Promise<void> {
   const account = credentialsOf(accountId);
   if (!grants(account.scope, 'muting') || !grants(account.scope, 'blocking')) return;
   if (isFresh(account.hiddenAuthorsRefreshedAt, now)) return;
   const ids = await readIds(accountId, ['muting', 'blocking']);
-  if (ids) storeIds(accountId, hiddenAuthors, 'hiddenAuthorsRefreshedAt', ids, now);
+  if (!ids) return;
+  getDb().transaction(() => {
+    storeIds(accountId, hiddenAuthors, 'hiddenAuthorsRefreshedAt', ids, now);
+    refilterCandidates(accountId, getDiscoverySettings(accountId), now);
+  });
 }

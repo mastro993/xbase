@@ -220,6 +220,33 @@ describe('authors muted or blocked on X', () => {
     expect(listed(searchId)).toEqual(['p-keep']);
   });
 
+  it('re-checks what earlier runs listed when the lists change on X', async () => {
+    await run({ found: [{ id: 'p1', author_id: 'm1' }] });
+    expect(listed(searchId)).toEqual(['p1']);
+
+    // Muted on X since: the next run reads the new list, and X returns nothing new.
+    staleLists();
+    serve({
+      [MUTING]: { data: [{ id: 'm1', username: 'muted' }], meta: {} },
+      [BLOCKING]: { data: [], meta: {} },
+      [HOME]: page([]),
+      [SEARCH]: page([]),
+    });
+    await runDiscovery(accountId);
+    expect(listed(searchId)).toEqual([]);
+
+    // Unmuted again: the post comes back the same way.
+    staleLists();
+    serve({
+      [MUTING]: { data: [], meta: {} },
+      [BLOCKING]: { data: [], meta: {} },
+      [HOME]: page([]),
+      [SEARCH]: page([]),
+    });
+    await runDiscovery(accountId);
+    expect(listed(searchId)).toEqual(['p1']);
+  });
+
   it('keeps the last lists when X refuses a read, and the run goes on', async () => {
     cacheLists(accountId, [], ['m1']);
     staleLists();
