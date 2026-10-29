@@ -4,6 +4,7 @@ import {
   oauthGrants,
   oauthTokens,
   sessions,
+  suggestedPosts,
   xApiCalls,
   xPosts,
 } from '@xbase/db/schema';
@@ -152,5 +153,15 @@ describe('runHousekeeping', () => {
     expect(runHousekeeping(NOW)).toMatchObject({ apiCalls: 1, cachedPosts: 1 });
     expect(ids(db.select().from(xApiCalls).all(), 'id')).toEqual(new Set(['recent']));
     expect(ids(db.select().from(xPosts).all(), 'postId')).toEqual(new Set(['recent']));
+  });
+
+  // A post the owner skipped years ago must still never come back.
+  it('keeps what discovery remembers, however old', () => {
+    const accountId = seedAccount();
+    db.insert(suggestedPosts)
+      .values({ accountId, xPostId: 'p1', status: 'skipped', createdAt: at(-3650) })
+      .run();
+    runHousekeeping(NOW);
+    expect(ids(db.select().from(suggestedPosts).all(), 'xPostId')).toEqual(new Set(['p1']));
   });
 });

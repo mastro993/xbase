@@ -10,7 +10,7 @@ import type { CandidateDto, SavedSearchDto } from '@xbase/core/discover';
 import { ButtonLink } from '@xbase/ui/components/base/buttons/button';
 import { Switch } from '@xbase/ui/components/base/switch/switch';
 import { Callout } from '@xbase/ui/components/xbase/callout';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { ADD_ACCOUNT_HREF } from '@/features/accounts/AccountMenu';
 import { LocalTime } from '@/features/posts/LocalTime';
 import { ConfirmButton } from '@/features/shell/ConfirmButton';
@@ -53,13 +53,13 @@ function emptyCopy({
     return {
       title: 'No candidates yet',
       description:
-        'Run discovery to read your home timeline and this search. Fresh original and quote posts from the last day show up here, in full.',
+        'Run discovery to read your home timeline and this search. Fresh original and quote posts show up here, in full, unless your filters leave them out.',
     };
   }
   return {
-    title: 'No candidates in the last run',
+    title: 'Nothing to reply to here',
     description:
-      'Everything it returned was a reply, a repost, older than a day, or a quote X couldn’t return in full.',
+      'What the last run found was a reply or a repost, older than your age cap, left out by your filters, or already skipped or replied to.',
   };
 }
 
@@ -84,6 +84,18 @@ export function SavedSearchView({
   const setEnabled = useServerFn(setSavedSearchEnabledFn);
   const [toggling, setToggling] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const candidatesHeading = useRef<HTMLHeadingElement>(null);
+  const [announcement, setAnnouncement] = useState('');
+
+  // The card and the button that had the focus are gone: say what happened and go to the list.
+  // Cleared first, so the same message twice in a row is still announced.
+  const handled = (message: string) => {
+    setAnnouncement('');
+    requestAnimationFrame(() => {
+      setAnnouncement(message);
+      candidatesHeading.current?.focus();
+    });
+  };
   const empty = emptyCopy({ enabled: search.enabled, canRead, lastRunAt: search.lastRunAt });
 
   // Leave first, so the workbench never renders a search that's gone.
@@ -178,9 +190,17 @@ export function SavedSearchView({
       </section>
 
       <section aria-labelledby="candidates-heading" className="flex flex-col gap-3">
-        <h3 id="candidates-heading" className="text-title-3-semibold text-text-primary">
+        <h3
+          id="candidates-heading"
+          ref={candidatesHeading}
+          tabIndex={-1}
+          className="text-title-3-semibold text-text-primary outline-none"
+        >
           Latest candidates
         </h3>
+        <p role="status" className="sr-only">
+          {announcement}
+        </p>
         {candidates.length === 0 ? (
           <EmptyState
             icon={SearchFocusIcon}
@@ -198,7 +218,7 @@ export function SavedSearchView({
           <ul className="flex flex-col gap-3">
             {candidates.map((candidate) => (
               <li key={candidate.id}>
-                <CandidateCard candidate={candidate} />
+                <CandidateCard candidate={candidate} onHandled={handled} />
               </li>
             ))}
           </ul>

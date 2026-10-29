@@ -171,6 +171,26 @@ describe('exclusions and language', () => {
     expect(saved.politics.enabled).toBe(true);
   });
 
+  it('give a section saved before the thread length existed the default, keeping its lists', () => {
+    const { maxThreadPosts: _, ...older } = DEFAULT_DISCOVERY_SETTINGS.exclusions;
+    const settings = readDiscoverySettings({
+      exclusions: { ...older, bait: { enabled: true, keywords: ['tabs or spaces'] } },
+    });
+    expect(settings.exclusions.maxThreadPosts).toBe(8);
+    expect(settings.exclusions.bait.keywords).toEqual(['tabs or spaces']);
+  });
+
+  it('bound the longest thread, naming the field', () => {
+    const exclusions = (maxThreadPosts: number) => () =>
+      parseDiscoverySection('exclusions', {
+        ...DEFAULT_DISCOVERY_SETTINGS.exclusions,
+        maxThreadPosts,
+      });
+    expect(messages(exclusions(1))).toContain('Longest thread (posts): use 2 or more');
+    expect(messages(exclusions(51))).toContain('Longest thread (posts): use 50 or less');
+    expect(exclusions(50)().maxThreadPosts).toBe(50);
+  });
+
   it('take only languages XBase offers', () => {
     expect(parseDiscoverySection('language', { posts: 'it', replies: 'en' })).toEqual({
       posts: 'it',

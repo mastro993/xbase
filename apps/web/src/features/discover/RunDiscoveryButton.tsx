@@ -1,6 +1,9 @@
+// Bring Array#toSorted along: the app's lib setting stops at ES2022.
+/// <reference lib="es2023.array" />
 import { PlayIcon } from '@hugeicons/core-free-icons';
 import { useRouter } from '@tanstack/react-router';
 import { useServerFn } from '@tanstack/react-start';
+import { EXCLUSION_REASON_LABELS, type ExclusionReason } from '@xbase/core/discovery-filters';
 import { Button } from '@xbase/ui/components/base/buttons/button';
 import { Callout } from '@xbase/ui/components/xbase/callout';
 import { Spinner } from '@xbase/ui/components/xbase/spinner';
@@ -10,11 +13,23 @@ import { runDiscoveryFn } from './discover.functions';
 
 type Run = Awaited<ReturnType<typeof runDiscoveryFn>>;
 
-/** What the run read, in one sentence: the counts the page then shows per search. */
-function summaryOf({ home, searches }: Run): string {
+/** What the filters kept out, biggest reason first: "3 left out by your filters: bait 2, crypto 1." */
+function excludedLine(excluded: Run['excluded']): string {
+  if (excluded.length === 0) return '';
+  const counts = new Map<ExclusionReason, number>();
+  for (const { reason } of excluded) counts.set(reason, (counts.get(reason) ?? 0) + 1);
+  const reasons = [...counts]
+    .toSorted(([, a], [, b]) => b - a)
+    .map(([reason, count]) => `${EXCLUSION_REASON_LABELS[reason]} ${count}`)
+    .join(', ');
+  return ` ${excluded.length} left out by your filters: ${reasons}.`;
+}
+
+/** What the run read, in a sentence or two: the counts the page then shows per search. */
+function summaryOf({ home, searches, excluded }: Run): string {
   const found = home + searches.reduce((total, search) => total + search.candidates, 0);
   const sources = searches.length === 1 ? '1 search' : `${searches.length} searches`;
-  return `${found} candidate${found === 1 ? '' : 's'} from your home timeline and ${sources}.`;
+  return `${found} candidate${found === 1 ? '' : 's'} from your home timeline and ${sources}.${excludedLine(excluded)}`;
 }
 
 /**

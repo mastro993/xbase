@@ -9,7 +9,7 @@ It is a Node server built with [TanStack Start](https://tanstack.com/start) and 
 - **Accounts**: sign in with X. The first account to sign in owns the XBase; add more from Settings and switch between them at the foot of the sidebar. Drafts, the queue and the voice belong to the account you work as.
 - **Drafts**: write a post or a thread of up to 25 posts. Each post shows X's weighted character count (a link counts 23, an emoji or a CJK character 2) against the 280 limit. Save with ⌘S or Ctrl+S. **Refine with AI** rewrites a post in the account's voice, using your own AI provider key.
 - **Queue**: schedule a draft at a time in your browser's time zone. The queue lists scheduled posts by day; reschedule them, edit them or move them back to the drafts.
-- **Discover**: keep the X searches you'd run by hand, in X's search syntax, and open any of them on x.com.
+- **Discover**: keep the X searches you'd run by hand, in X's search syntax, and open any of them on x.com. A discovery run reads your home timeline and those searches, and each search lists the fresh posts your filters let through. **Mark replied** or **Skip** takes a post off the list for good; **Mute author** hides all their posts until you take them off the Never suggest list.
 - **Stats**: a placeholder for now: engagement rate, the best times to post and follower growth arrive with the X API.
 - **Settings**: a modal with its own grouped navigation: Accounts and Sessions under Account; Provider, Voice and Decision model under AI; Topics, Sources and Filters under Discovery; X API, API keys and MCP under Integrations. It covers the X accounts, X API spend and caps, AI writing, discovery rules, access for other apps and sessions. Opening it replaces the current page; closing it returns to the page you were on. Provider keys come from the environment, never from the page.
 - **For other apps**: a [REST API](#rest-api) for drafts, with API keys, and an [MCP server](#mcp) with OAuth, so assistants such as Claude can write and schedule.
@@ -21,7 +21,7 @@ It signs in with X, keeps sessions on the server so signing out ends them, migra
 XBase works through **your own X developer app**, with the official X API only. Signing in uses it, and XBase keeps each account's X tokens, with permission to post, for what comes next. The rest isn't built yet, so for now:
 
 - **Scheduled posts aren't published.** They wait in the queue, and the Queue page says so.
-- **Discover lists no posts** and **Stats shows no numbers**. Both pages say what will appear.
+- **Discover doesn't pick posts or write replies yet**: it lists what a run found and filtered. **Stats shows no numbers**, and says what will appear.
 
 Two facts about the X API shape what comes next (as of October 2026; check X's developer docs for current terms):
 
@@ -75,15 +75,17 @@ Reply discovery has its own rules. **Settings → Discovery** holds them for the
 
 They start at what suits most accounts, so a first run needs no setup:
 
-- **Niches and keywords** is empty, which considers every topic. Fill it and a run drops posts outside the list, and builds its searches from the words.
-- **Watch list** boosts the accounts you always check, and never suggests the ones you block. Paste a list and it lands without the `@`, in lower case, once each.
-- **Thresholds** are the author's size (5,000 followers), the post's age (best under 6 hours, never older than 24), replies (ideal under 20, crowded from 40, never more than 60), an author cooldown of 3 days, one post per author and 15 per batch. Combinations that can't work — a hard cap below the best age, a crowded penalty at the ideal — are rejected with the reason.
-- **Exclusions** drop engagement bait, giveaways, promotions, politics, crypto, image-only posts and long threads, with a keyword list for each of the first five. Switch one off to let those posts through again, keywords and all.
+- **Niches and keywords** is empty, which considers every topic. Fill it and a run drops home timeline posts outside the list (saved searches keep their own query), and builds its searches from the words.
+- **Watch list** boosts the accounts you always check, and never suggests the ones you block, nor a post quoting them. Accounts you mute or block on X are never suggested either: a run reads both lists once a day. Paste a list and it lands without the `@`, in lower case, once each. **Mute author** on a Discover post adds its author here.
+- **Thresholds** are the author's size (5,000 followers), the post's age (best under 6 hours, never older than 24: a run reads X only that far back), replies (ideal under 20, crowded from 40, never more than 60), an author cooldown of 3 days, one post per author and 15 per batch. Combinations that can't work — a hard cap below the best age, a crowded penalty at the ideal — are rejected with the reason.
+- **Exclusions** drop engagement bait, giveaways, promotions, politics, crypto, image-only posts and long threads, with a keyword list for each of the first five. A keyword matches whole words in the post and in the post it quotes, ignoring case and styled letters, with or without the spaces and hyphens in a phrase ("pre-sale" finds "presale" and "#PreSale"), plurals included. Engagement bait also catches the "Comment "AI" for the guide" formula, when the word is quoted or in capitals. Long threads are posts that open one with more parts than the limit, 8 by default ("1/12 🧵"). Switch one off to let those posts through again, keywords and all.
 - **Language** is the language a run looks for posts in and the one it writes your replies in; both default to English.
 - **Sources** is the home timeline page count: one page of up to 25 posts per run by default, with the extra cost shown before you save it.
 - **Budget** is this account's own daily and monthly cap, inside the workspace's hard cap in **Settings → Integrations → X API**. Both are blank (no cap) until you set one, and spend resets at midnight UTC and on the first of the month.
 
-A saved change applies from the next run. Runs themselves arrive with the X API client and the batch runner; until then, the settings are stored and the rules are ready for them.
+A saved change applies from the next run. Niches, the watch list, thresholds and exclusions also re-check the posts a run already found, so a filter you switch off brings its posts back at once. Niches apply to the home timeline only: a saved search already matches your own query.
+
+A post you marked replied or skipped never comes back, whichever run finds it again; neither does an author you muted, until you remove them from the watch list. The list holds handles, so an author who renames shows up again until you mute the new handle; muting or blocking them on X follows them across renames. Scoring and batches arrive with the batch runner; until then, Discover lists every post that passes the filters.
 
 ## Environment
 

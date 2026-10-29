@@ -1,16 +1,26 @@
 import { searchQueryForX } from '@xbase/core/discover';
 import { discoveryCandidates, followedAccounts, savedSearches, xAccounts } from '@xbase/db/schema';
-import { createTestDb, seedAccount } from '@xbase/db/testing';
+import { createTestDb } from '@xbase/db/testing';
 import { eq } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { saveAccountTokens } from '../accounts';
 import { createSavedSearch, listCandidates, listSavedSearches } from '../discover';
-import { FOLLOWING_REFRESH_MS, runDiscovery } from '../discovery/fetch';
+import { runDiscovery } from '../discovery/fetch';
+import { LIST_REFRESH_MS } from '../discovery/relations';
 import type { Env } from '../env';
 import { getPosts } from '../x-api-client';
-
-const NOW = new Date('2026-10-27T15:00:00.000Z');
-const DAY_MS = 24 * 60 * 60 * 1000;
+import {
+  cacheLists,
+  DAY_MS,
+  FOLLOWING,
+  HOME,
+  NOW,
+  page,
+  reply,
+  SEARCH,
+  seed,
+  serve as serveX,
+  urlOf,
+} from './discovery-run-stub';
 
 const env = vi.hoisted(() => ({
   vars: {
@@ -23,116 +33,12 @@ vi.mock('../env', () => ({ getEnv: () => env.vars }));
 
 const fetchMock = vi.fn<typeof fetch>();
 
-const urlOf = (input: Parameters<typeof fetch>[0]): URL => {
-  if (input instanceof URL) return input;
-  if (typeof input === 'string') return new URL(input);
-  return new URL(input.url);
-};
-
-const reply = (body: unknown, init: ResponseInit = {}) => {
-  const headers = new Headers(init.headers);
-  headers.set('content-type', 'application/json');
-  return new Response(JSON.stringify(body), { ...init, headers });
-};
-
-type Tweet = {
-  id: string;
-  text?: string;
-  author_id?: string;
-  username?: string;
-  createdAt?: string;
-  note_tweet?: { text: string };
-  references?: { type: string; id: string }[];
-};
-
-const asTweet = (tweet: Tweet) => ({
-  id: tweet.id,
-  text: tweet.text ?? `Post ${tweet.id}`,
-  author_id: tweet.author_id ?? 'a1',
-  created_at: tweet.createdAt ?? new Date(NOW.getTime() - 60 * 60_000).toISOString(),
-  public_metrics: {
-    impression_count: 500,
-    like_count: 7,
-    reply_count: 1,
-    retweet_count: 2,
-    quote_count: 0,
-  },
-  ...(tweet.note_tweet ? { note_tweet: tweet.note_tweet } : {}),
-  ...(tweet.references ? { referenced_tweets: tweet.references } : {}),
-});
-
-/** A page with every author and every quoted post in includes, as X returns them. */
-function page(tweets: Tweet[], quoted: Tweet[] = []) {
-  const authors = new Map<
-    string,
-    { id: string; username: string; name: string; public_metrics: { followers_count: number } }
-  >();
-  for (const tweet of [...tweets, ...quoted]) {
-    const id = tweet.author_id ?? 'a1';
-    if (!authors.has(id)) {
-      authors.set(id, {
-        id,
-        username: tweet.username ?? `user_${id}`,
-        name: `User ${id}`,
-        public_metrics: { followers_count: 2_400 },
-      });
-    }
-  }
-  return {
-    data: tweets.map(asTweet),
-    includes: {
-      users: [...authors.values()],
-      ...(quoted.length > 0 ? { tweets: quoted.map(asTweet) } : {}),
-    },
-    meta: {},
-  };
-}
-
 let db: ReturnType<typeof createTestDb>;
 let accountId: string;
 
-/** A linked account whose tokens are stored as x-api-http expects them. */
-function seed(scope = 'tweet.read users.read follows.read tweet.write offline.access') {
-  seedAccount({ id: '1001', username: 'owner' });
-  saveAccountTokens('1001', {
-    accessToken: 'access-1001',
-    refreshToken: 'refresh-1001',
-    expiresAt: new Date(Date.now() + 2 * 60 * 60_000),
-    scope,
-  });
-  return '1001';
-}
-
-/** The follow list as a fresh cache: a run then spends nothing to learn who the user follows. */
-function cacheFollowing(userIds: string[]) {
-  db.transaction((tx) => {
-    if (userIds.length > 0) {
-      tx.insert(followedAccounts)
-        .values(userIds.map((userId) => ({ accountId, userId })))
-        .run();
-    }
-    tx.update(xAccounts)
-      .set({ followingRefreshedAt: NOW })
-      .where(eq(xAccounts.id, accountId))
-      .run();
-  });
-}
-
-/** Answers every request by pathname; `calls` records each URL for assertions. */
-function serve(routes: Record<string, unknown>, calls: URL[] = []): URL[] {
-  fetchMock.mockImplementation(async (input) => {
-    const url = urlOf(input);
-    calls.push(url);
-    const route = routes[url.pathname];
-    if (route === undefined) throw new Error(`Unexpected X call: ${url.pathname}`);
-    return reply(route);
-  });
-  return calls;
-}
-
-const HOME = '/2/users/1001/timelines/reverse_chronological';
-const SEARCH = '/2/tweets/search/recent';
-const FOLLOWING = '/2/users/1001/following';
+const cacheFollowing = (userIds: string[]) => cacheLists(accountId, userIds);
+const serve = (routes: Record<string, unknown>, calls: URL[] = []) =>
+  serveX(fetchMock, routes, calls);
 
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] });
@@ -274,7 +180,7 @@ describe('a discovery run', () => {
     expect(run.dropped).toEqual([
       { xPostId: 'reply', reason: 'reply' },
       { xPostId: 'repost', reason: 'repost' },
-      { xPostId: 'old', reason: 'old' },
+      { xPostId: 'old', reason: 'too_old' },
     ]);
     expect(
       db
@@ -355,7 +261,7 @@ describe('a discovery run', () => {
   it('reads and caches the follow list when the cache is older than a day', async () => {
     cacheFollowing(['stale']);
     db.update(xAccounts)
-      .set({ followingRefreshedAt: new Date(NOW.getTime() - FOLLOWING_REFRESH_MS - 1) })
+      .set({ followingRefreshedAt: new Date(NOW.getTime() - LIST_REFRESH_MS - 1) })
       .where(eq(xAccounts.id, accountId))
       .run();
     createSavedSearch({ name: 'makers', query: 'mixed' });

@@ -11,7 +11,7 @@ import { DiscoveryCard, useDiscoverySection } from './DiscoveryCard';
 const FIELDS: { field: DiscoveryThreshold; hint: string }[] = [
   { field: 'minAuthorFollowers', hint: 'Smaller accounts are skipped.' },
   { field: 'bestAgeHours', hint: 'Newer posts score best.' },
-  { field: 'hardMaxAgeHours', hint: 'Never suggest an older post.' },
+  { field: 'hardMaxAgeHours', hint: 'Never suggest an older post: runs read X this far back.' },
   { field: 'idealReplies', hint: 'Up to here, a post still looks quiet.' },
   { field: 'crowdedFrom', hint: 'From here on, the score drops.' },
   { field: 'hardReplyCap', hint: 'Never suggest a busier post.' },

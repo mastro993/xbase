@@ -9,8 +9,11 @@ import {
   type SavedSearchRun,
   savedSearchRuns,
   savedSearches,
+  suggestedPosts,
 } from '@xbase/db/schema';
-import { and, desc, eq, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, inArray, isNull, notExists, sql } from 'drizzle-orm';
+import { getDiscoverySettings } from './discovery-settings';
+import { oldestWanted } from './discovery/filter';
 
 // Saved X searches for the Discover page, and the candidates a run stored for them. The run
 // itself is @xbase/server/discovery/fetch; this module is the page's reads and its toggle.
@@ -126,15 +129,34 @@ export function deleteSavedSearch(id: string): void {
   getDb().delete(savedSearches).where(eq(savedSearches.id, id)).run();
 }
 
-/** One search's newest candidates for this account, most recently posted first. */
+/**
+ * One search's newest candidates for this account, most recently posted first: the ones the
+ * filters let through, within the account's age cap, that the owner hasn't skipped or replied to.
+ */
 export function listCandidates(accountId: string, savedSearchId: string): CandidateDto[] {
-  return getDb()
+  const db = getDb();
+  const oldest = oldestWanted(getDiscoverySettings(accountId), new Date());
+  return db
     .select()
     .from(discoveryCandidates)
     .where(
       and(
         eq(discoveryCandidates.accountId, accountId),
         eq(discoveryCandidates.savedSearchId, savedSearchId),
+        isNull(discoveryCandidates.excludedReason),
+        gte(discoveryCandidates.postedAt, oldest),
+        notExists(
+          db
+            .select({ xPostId: suggestedPosts.xPostId })
+            .from(suggestedPosts)
+            .where(
+              and(
+                eq(suggestedPosts.accountId, discoveryCandidates.accountId),
+                eq(suggestedPosts.xPostId, discoveryCandidates.xPostId),
+                inArray(suggestedPosts.status, ['skipped', 'replied']),
+              ),
+            ),
+        ),
       ),
     )
     .orderBy(desc(discoveryCandidates.postedAt), desc(discoveryCandidates.fetchedAt))

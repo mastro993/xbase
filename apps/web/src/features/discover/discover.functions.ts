@@ -1,5 +1,6 @@
 import { createServerFn } from '@tanstack/react-start';
 import {
+  CandidateIdInput,
   SavedSearchEnabledInput,
   SavedSearchIdInput,
   SavedSearchInput,
@@ -14,7 +15,12 @@ import {
   setSavedSearchEnabled,
   updateSavedSearch,
 } from '@xbase/server/discover';
-import { runDiscovery } from '@xbase/server/discovery';
+import {
+  markCandidateReplied,
+  muteCandidateAuthor,
+  runDiscovery,
+  skipCandidate,
+} from '@xbase/server/discovery';
 import { requireSession } from '@/features/auth/session.server';
 
 // The Discover page's entry points to @xbase/server/discover and @xbase/server/discovery.
@@ -47,3 +53,18 @@ export const deleteSavedSearchFn = createServerFn({ method: 'POST' })
 export const runDiscoveryFn = createServerFn({ method: 'POST' }).handler(() =>
   runDiscovery(requireSession().accountId),
 );
+
+/** The owner passed on a candidate: it leaves the lists for good. */
+export const skipCandidateFn = createServerFn({ method: 'POST' })
+  .validator(validator(CandidateIdInput))
+  .handler(({ data }) => skipCandidate(requireSession().accountId, data.id));
+
+/** The owner replied on x.com: the candidate leaves the lists for good. */
+export const markCandidateRepliedFn = createServerFn({ method: 'POST' })
+  .validator(validator(CandidateIdInput))
+  .handler(({ data }) => markCandidateReplied(requireSession().accountId, data.id));
+
+/** Adds the candidate's author to the never-suggest list, hiding all their posts. */
+export const muteCandidateAuthorFn = createServerFn({ method: 'POST' })
+  .validator(validator(CandidateIdInput))
+  .handler(({ data }) => muteCandidateAuthor(requireSession().accountId, data.id));

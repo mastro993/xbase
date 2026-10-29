@@ -7,18 +7,20 @@ import type { XPage, XPost } from '../x-api-client';
 // tested without the network or a database. Runs pay for what X returns; this drops what a run
 // would never keep, which is why the API filters in x-api-client.ts are only a first pass.
 
-/** Posts older than this are never kept, however recently a search returned them. */
-export const MAX_CANDIDATE_AGE_MS = 24 * 60 * 60 * 1000;
-
-/** Why a post X returned was not kept; a run logs these, one line each (see #16). */
+/**
+ * Why a post X returned was not stored; a run logs these, one line each (see #16). The filters'
+ * reasons are separate: a post they exclude is stored, with its reason, in case a setting changes.
+ */
 export type DropReason =
-  | 'old'
+  | 'too_old'
   | 'undated'
   | 'reply'
   | 'repost'
   | 'author_missing'
   | 'empty_text'
-  | 'quote_missing';
+  | 'quote_missing'
+  /** Already shown, skipped or replied to: never suggested again (see memory.ts). */
+  | 'remembered';
 
 export type DroppedPost = { xPostId: string; reason: DropReason };
 
@@ -82,8 +84,8 @@ type PageOptions = {
   savedSearchId?: string | null;
   /** The accounts the user follows, or null when the follow list can't be read. */
   following: Set<string> | null;
-  /** The run's reference time: the age cutoff is measured from it. */
-  now: Date;
+  /** The oldest post a run keeps: the account's hard age cap before the run started. */
+  since: Date;
 };
 
 type PageResult = { candidates: CandidateRow[]; dropped: DroppedPost[] };
@@ -95,7 +97,7 @@ type PageResult = { candidates: CandidateRow[]; dropped: DroppedPost[] };
  */
 export function candidatesFromPage(page: XPage, options: PageOptions): PageResult {
   const users = new Map(page.users.map((user) => [user.id, user]));
-  const cutoff = options.now.getTime() - MAX_CANDIDATE_AGE_MS;
+  const cutoff = options.since.getTime();
   const candidates: CandidateRow[] = [];
   const dropped: DroppedPost[] = [];
 
@@ -119,7 +121,7 @@ export function candidatesFromPage(page: XPage, options: PageOptions): PageResul
       continue;
     }
     if (created.getTime() < cutoff) {
-      drop('old');
+      drop('too_old');
       continue;
     }
 

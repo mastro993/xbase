@@ -65,6 +65,8 @@ export type XAccountCredentials = {
   reconnectRequiredAt: Date | null;
   /** When discovery last read this account's follow list; null until it does. */
   followingRefreshedAt: Date | null;
+  /** When discovery last read this account's mute and block lists; null until it does. */
+  hiddenAuthorsRefreshedAt: Date | null;
 };
 
 /** The row a read works with; null when the account was removed. */
@@ -80,6 +82,7 @@ export function getAccountCredentials(id: string): XAccountCredentials | null {
         scope: row.scope,
         reconnectRequiredAt: row.reconnectRequiredAt,
         followingRefreshedAt: row.followingRefreshedAt,
+        hiddenAuthorsRefreshedAt: row.hiddenAuthorsRefreshedAt,
       }
     : null;
 }

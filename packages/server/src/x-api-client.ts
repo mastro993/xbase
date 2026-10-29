@@ -64,8 +64,8 @@ export type XUser = {
   metrics: Record<string, number> | null;
 };
 
-/** One account someone follows: enough for the follow flag a discovery run stores. */
-export type XFollow = { id: string; username: string };
+/** One account on a follow, mute or block list: its id is what discovery matches. */
+export type XListUser = { id: string; username: string };
 
 export type XPage = { posts: XPost[]; users: XUser[] };
 
@@ -364,8 +364,18 @@ export async function getPosts(
 }
 
 /**
+ * Recent search reaches seven days back from when X receives the request, and rejects an older
+ * `start_time`: a minute's margin covers the time a run spends before the request goes out.
+ */
+const RECENT_SEARCH_REACH_MS = 7 * 24 * 60 * 60 * 1000 - 60 * 1000;
+
+const searchStart = (since: Date): Date =>
+  new Date(Math.max(since.getTime(), Date.now() - RECENT_SEARCH_REACH_MS));
+
+/**
  * One page of recent search, newest first, at most the tier's 25 results. `since` is sent as
- * `start_time`, so X never bills posts a caller would throw away as too old.
+ * `start_time`, so X never bills posts a caller would throw away as too old; one older than
+ * search reaches is sent as the oldest it accepts.
  */
 export async function searchRecent(
   accountId: string,
@@ -381,7 +391,7 @@ export async function searchRecent(
       query: query.trim(),
       max_results: String(X_SEARCH_RESULTS_PER_CALL),
       sort_order: 'recency',
-      ...(since ? { start_time: since.toISOString() } : {}),
+      ...(since ? { start_time: searchStart(since).toISOString() } : {}),
       'tweet.fields': TWEET_FIELDS,
       expansions: EXPANSIONS,
     },
@@ -460,27 +470,36 @@ export async function getUsersByUsername(
   return users;
 }
 
-/** The follow list's ceiling: ten pages of 1,000 accounts is far more than a run needs. */
-const MAX_FOLLOWING_PAGES = 10;
+/** A list's ceiling: ten pages of 1,000 accounts is far more than a run needs. */
+const MAX_LIST_PAGES = 10;
+
+/** The account lists XBase reads, and the scope each one needs. */
+export const X_USER_LISTS = {
+  following: 'follows.read',
+  muting: 'mute.read',
+  blocking: 'block.read',
+} as const;
+export type XUserList = keyof typeof X_USER_LISTS;
 
 /**
- * Every account `accountId` follows, in pages of 1,000. Needs the follows.read scope, which an
- * account linked before that scope existed doesn't have: the caller checks first and treats the
- * list as unknown rather than asking X. Follower reads are the cheapest kind, at $0.001 each, so
- * 1,000 follows cost about a dollar; discovery caches the list for a day.
+ * Every account `accountId` follows, mutes or blocks, in pages of 1,000. Each list needs its own
+ * scope, which an account linked before the scope existed doesn't have: the caller checks first
+ * and treats the list as unknown rather than asking X. These reads are the cheapest kind, at
+ * $0.001 per account, so 1,000 cost about a dollar; discovery caches each list for a day.
  */
-export async function getFollowing(
+export async function getUserList(
   accountId: string,
+  list: XUserList,
   { feature }: { feature: XApiFeature },
-): Promise<XFollow[]> {
-  const follows: XFollow[] = [];
+): Promise<XListUser[]> {
+  const users: XListUser[] = [];
   let nextToken: string | undefined;
-  for (let page = 0; page < MAX_FOLLOWING_PAGES; page += 1) {
+  for (let page = 0; page < MAX_LIST_PAGES; page += 1) {
     // oxlint-disable-next-line no-await-in-loop -- pages are paid calls: each passes the cap check before the next sends
     const body = await xRequest({
       accountId,
-      endpoint: 'GET /2/users/:id/following',
-      path: `/users/${encodeURIComponent(accountId)}/following`,
+      endpoint: `GET /2/users/:id/${list}`,
+      path: `/users/${encodeURIComponent(accountId)}/${list}`,
       params: {
         max_results: '1000',
         'user.fields': USER_FIELDS,
@@ -498,11 +517,11 @@ export async function getFollowing(
     });
     const parsed = FollowPage.safeParse(body);
     if (!parsed.success) throw new Error('X answered in a shape XBase doesn’t understand.');
-    follows.push(...(parsed.data.data ?? []).map(({ id, username }) => ({ id, username })));
+    users.push(...(parsed.data.data ?? []).map(({ id, username }) => ({ id, username })));
     nextToken = parsed.data.meta?.next_token ?? undefined;
     if (!nextToken) break;
   }
-  return follows;
+  return users;
 }
 
 /**

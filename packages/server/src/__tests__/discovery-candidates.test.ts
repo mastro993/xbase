@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { candidatesFromPage, MAX_CANDIDATE_AGE_MS } from '../discovery/candidates';
+import { candidatesFromPage } from '../discovery/candidates';
 import type { XPage, XPost, XUser } from '../x-api-client';
 
 // The mapping is pure: a page the read layer returned goes in, the rows a run stores come out.
 // Every test fixes the clock, so the age cutoff is the same on every machine.
 
 const NOW = new Date('2026-10-27T15:00:00.000Z');
+/** The run's age cap: a day, the default. */
+const SINCE = new Date(NOW.getTime() - 24 * 60 * 60 * 1000);
 
 type PostInput = {
   id: string;
@@ -81,7 +83,7 @@ const options = (overrides: Partial<Parameters<typeof candidatesFromPage>[1]> = 
   source: 'search' as const,
   savedSearchId: 's1',
   following: null,
-  now: NOW,
+  since: SINCE,
   ...overrides,
 });
 
@@ -139,9 +141,9 @@ describe('candidates', () => {
     expect(candidates[0]?.authorFollowing).toBe(false);
   });
 
-  it('keeps a post exactly at the 24-hour cutoff and drops the one a second older', () => {
-    const boundary = new Date(NOW.getTime() - MAX_CANDIDATE_AGE_MS).toISOString();
-    const older = new Date(NOW.getTime() - MAX_CANDIDATE_AGE_MS - 1_000).toISOString();
+  it('keeps a post exactly at the age cutoff and drops the one a second older', () => {
+    const boundary = SINCE.toISOString();
+    const older = new Date(SINCE.getTime() - 1_000).toISOString();
     const { candidates, dropped } = candidatesFromPage(
       page([
         postOf({ id: 'boundary', createdAt: boundary }),
@@ -150,7 +152,7 @@ describe('candidates', () => {
       options(),
     );
     expect(candidates.map(({ xPostId }) => xPostId)).toEqual(['boundary']);
-    expect(dropped).toEqual([{ xPostId: 'older', reason: 'old' }]);
+    expect(dropped).toEqual([{ xPostId: 'older', reason: 'too_old' }]);
   });
 
   it('drops replies and plain reposts, and says which was which', () => {

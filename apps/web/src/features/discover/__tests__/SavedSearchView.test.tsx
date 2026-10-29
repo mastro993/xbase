@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { CandidateDto, SavedSearchDto } from '@xbase/core/discover';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
@@ -18,8 +18,11 @@ vi.mock('../discover.functions', () => ({
   deleteSavedSearchFn: mocks.deleteSavedSearchFn,
   listCandidatesFn: vi.fn(),
   listSavedSearchesFn: vi.fn(),
+  markCandidateRepliedFn: vi.fn(),
+  muteCandidateAuthorFn: vi.fn(),
   runDiscoveryFn: mocks.runDiscoveryFn,
   setSavedSearchEnabledFn: mocks.setSavedSearchEnabledFn,
+  skipCandidateFn: vi.fn(),
   updateSavedSearchFn: vi.fn(),
 }));
 vi.mock('@/features/accounts/AccountMenu', () => ({
@@ -80,9 +83,49 @@ it('shows the candidates in full, with the post they quote', () => {
   render(<SavedSearchView search={SEARCH} candidates={[CANDIDATE]} canRead />);
   expect(screen.getByText('The whole long post, with the ending X hides.')).toBeTruthy();
   expect(screen.getByText('The quoted post, in full.')).toBeTruthy();
-  expect(screen.getByText('@alice')).toBeTruthy();
+  // The card's buttons repeat the handle for screen readers.
+  expect(screen.getByText('@alice', { ignore: '.sr-only, script, style' })).toBeTruthy();
   expect(screen.getByText('@quoted')).toBeTruthy();
   expect(screen.queryByText('Results need the X API')).toBeNull();
+});
+
+it('moves to the list and says what happened once a candidate is skipped', async () => {
+  const user = userEvent.setup();
+  render(<SavedSearchView search={SEARCH} candidates={[CANDIDATE]} canRead />);
+
+  await user.click(screen.getByRole('button', { name: 'Skip @alice’s post' }));
+  expect(await screen.findByText('Skipped @alice’s post.')).toBeTruthy();
+  await waitFor(() =>
+    expect(document.activeElement).toBe(screen.getByRole('heading', { name: 'Latest candidates' })),
+  );
+});
+
+it('announces the same result again for a second post', async () => {
+  const user = userEvent.setup();
+  const second = { ...CANDIDATE, id: 'c2', xPostId: 'p2' };
+  const { rerender } = render(
+    <SavedSearchView search={SEARCH} candidates={[CANDIDATE, second]} canRead />,
+  );
+
+  const [first] = screen.getAllByRole('button', { name: 'Skip @alice’s post' });
+  if (!first) throw new Error('No Skip button');
+  await user.click(first);
+  const status = await screen.findByText('Skipped @alice’s post.');
+  rerender(<SavedSearchView search={SEARCH} candidates={[second]} canRead />);
+
+  // The region empties before the same words return, so a screen reader reads them again.
+  const frames: FrameRequestCallback[] = [];
+  const frame = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+    frames.push(callback);
+    return frames.length;
+  });
+  await user.click(screen.getByRole('button', { name: 'Skip @alice’s post' }));
+  await waitFor(() => expect(status.textContent).toBe(''));
+  act(() => {
+    for (const callback of frames.splice(0)) callback(0);
+  });
+  expect(status.textContent).toBe('Skipped @alice’s post.');
+  frame.mockRestore();
 });
 
 it('asks to reconnect only when the account’s X access no longer works', () => {
@@ -114,12 +157,39 @@ it('runs discovery and reports what it kept', async () => {
     home: 3,
     searches: [{ id: 's1', name: 'Indie makers', candidates: 4 }],
     dropped: [],
+    excluded: [],
     stop: null,
   });
   render(<SavedSearchView search={SEARCH} candidates={[]} canRead />);
 
   await user.click(screen.getByRole('button', { name: 'Run discovery' }));
   expect(mocks.runDiscoveryFn).toHaveBeenCalled();
-  expect(await screen.findByText(/7 candidates from your home timeline and 1 search/)).toBeTruthy();
+  expect(
+    await screen.findByText('7 candidates from your home timeline and 1 search.'),
+  ).toBeTruthy();
   expect(mocks.invalidate).toHaveBeenCalled();
+});
+
+it('says what the filters left out, biggest reason first', async () => {
+  const user = userEvent.setup();
+  mocks.runDiscoveryFn.mockResolvedValue({
+    startedAt: '2026-10-27T15:00:00.000Z',
+    home: 1,
+    searches: [],
+    dropped: [{ xPostId: 'r1', reason: 'reply' }],
+    excluded: [
+      { xPostId: 'p1', reason: 'crypto' },
+      { xPostId: 'p2', reason: 'off_topic' },
+      { xPostId: 'p3', reason: 'off_topic' },
+    ],
+    stop: null,
+  });
+  render(<SavedSearchView search={SEARCH} candidates={[]} canRead />);
+
+  await user.click(screen.getByRole('button', { name: 'Run discovery' }));
+  expect(
+    await screen.findByText(
+      '1 candidate from your home timeline and 0 searches. 3 left out by your filters: off-topic 2, crypto 1.',
+    ),
+  ).toBeTruthy();
 });

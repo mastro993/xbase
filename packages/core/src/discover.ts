@@ -105,3 +105,5 @@ export const SavedSearchInput = z.object({
 export const UpdateSavedSearchInput = SavedSearchInput.extend({ id: Id });
 export const SavedSearchIdInput = z.object({ id: Id });
 export const SavedSearchEnabledInput = z.object({ id: Id, enabled: z.boolean() });
+/** One of the account's stored candidates, for Skip, Mark replied and Mute author. */
+export const CandidateIdInput = z.object({ id: Id });
