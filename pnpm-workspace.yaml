@@ -8,9 +8,9 @@ strictDepBuilds: true
 
 # Versions every app must agree on. Reference them as "catalog:".
 catalog:
-  '@hugeicons/core-free-icons': ^4.3.5
+  '@hugeicons/core-free-icons': ^4.4.0
   '@hugeicons/react': ^1.1.10
-  '@tailwindcss/vite': ^4.3.3
+  '@tailwindcss/vite': ^4.3.4
   '@testing-library/dom': ^10.4.2
   '@testing-library/react': ^16.3.3
   '@testing-library/user-event': ^14.6.8
@@ -23,9 +23,9 @@ catalog:
   react: ^19.3.1
   react-aria-components: ^1.22.1
   react-dom: ^19.3.1
-  tailwindcss: ^4.3.3
+  tailwindcss: ^4.3.4
   typescript: ^6.0.3
-  vite: ^8.3.5
+  vite: ^8.3.6
   vitest: ^4.1.12
   zod: ^4.6.7
 
