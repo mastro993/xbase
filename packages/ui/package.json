@@ -15,7 +15,7 @@
     "@hugeicons/core-free-icons": "catalog:",
     "@hugeicons/react": "catalog:",
     "react-aria-components": "catalog:",
-    "tailwind-merge": "^3.7.0"
+    "tailwind-merge": "^3.7.1"
   },
   "devDependencies": {
     "@testing-library/dom": "catalog:",
